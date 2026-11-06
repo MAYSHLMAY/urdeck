@@ -1,0 +1,124 @@
+'use client';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { M, D } from '@/lib/srs';
+import { useEngine, esc } from './ui';
+import { useRefs } from './refHooks';
+import { renderQuestion } from './Highlights';
+
+export function Stage({ onInfo }: { onInfo: (id: string) => void }) {
+  const e = useEngine();
+  if (e.loadErr && !e.Q.length)
+    return <section id="stage"><div className="card"><div className="q">Could not load the cards</div>
+      <p className="info">{e.loadErr}</p><div className="row"><button className="solid" onClick={() => e.init()}>Try again</button></div></div></section>;
+  if (!e.ready) return <section id="stage"><p className="info">Loading cards…</p></section>;
+  if (!e.cur) return <section id="stage">{e.phase === 'done' ? <Done /> : <p className="info">Loading cards…</p>}</section>;
+  return <section id="stage"><Question onInfo={onInfo} /></section>;
+}
+
+function Question({ onInfo }: { onInfo: (id: string) => void }) {
+  const e = useEngine(), R = useRefs(), cur = e.cur!, c = e.get(cur.id), x = e.O, ph = e.phase, i = e.chosen;
+  const [menu, setMenu] = useState(false);
+  const qRef = useRef<HTMLHeadingElement>(null), fbRef = useRef<HTMLDivElement>(null);
+  const flag = e.S.cards[cur.id];
+  const mark = !!(flag && flag.mark);
+
+  useLayoutEffect(() => { if (qRef.current) renderQuestion(qRef.current, cur.q, e.NOTES[cur.id] || []); }, [cur.id, e.showN, e.notesVer]);
+  useEffect(() => { setMenu(false); }, [cur.id, e.showN]);
+  useEffect(() => {
+    if (!menu) return;
+    const f = (ev: MouseEvent) => { if (!(ev.target as HTMLElement).closest('#more,#cm')) setMenu(false); };
+    document.addEventListener('click', f); return () => document.removeEventListener('click', f);
+  }, [menu]);
+  useEffect(() => { if (ph !== 'q' && fbRef.current) fbRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, [ph]);
+
+  const badge = ({ new: 'New', learn: 'Learning', review: 'Review', relearn: 'Relearning' } as any)[c.t];
+  const answered = ph !== 'q';
+  const good = i != null && i >= 0 && !!e.curOpts[i]?.ok;
+  const wm = x.wrongMin === x.wrongMax ? x.wrongMin : x.wrongMin + '–' + x.wrongMax;
+
+  return (
+    <div className="card pop" key={e.showN}>
+      <div className="qhead">
+        <span className="l">
+          {cur.p ? <><b className="tag">PAST EXAM</b> </> : null}
+          {e.isNewPE(cur) ? <><b className="tag nw">NEW</b> </> : null}
+          {(cur.n ? cur.n + ' · ' : '') + cur.t}
+        </span>
+        <span className="r">
+          <b className={'badge ' + c.t}>{badge}</b>
+          <button className={'mini' + (mark ? ' on' : '')} id="mark" aria-label="Mark card" title="Mark (M)" onClick={() => e.toggleFlag(cur.id, 'mark')}>{mark ? '★' : '☆'}</button>
+          <button className="mini" id="more" aria-label="More" onClick={ev => { ev.stopPropagation(); setMenu(m => !m); }}>⋯</button>
+          <div className={'menu' + (menu ? ' on' : '')} id="cm">
+            <button onClick={() => { setMenu(false); e.toggleFlag(cur.id, 'susp'); }}>Suspend this card</button>
+            <button onClick={() => { setMenu(false); e.buryCard(cur.id); }}>Bury until tomorrow</button>
+            <button onClick={() => { setMenu(false); onInfo(cur.id); }}>Card info</button>
+          </div>
+        </span>
+      </div>
+      <h2 className="q" ref={qRef} />
+      <div className="opts">
+        {e.curOpts.map((o, k) => (
+          <button key={k} className={'opt' + (answered ? (o.ok ? ' right' : k === i ? ' wrong' : '') : '')} disabled={answered} onClick={() => e.answer(k)}>
+            <kbd>{k + 1}</kbd><span dangerouslySetInnerHTML={{ __html: o.t }} />
+          </button>
+        ))}
+      </div>
+      <div className="row refrow">
+        <button className={'ghost refbtn' + (R.open ? ' on' : '')} onClick={() => R.toggle(cur)} aria-expanded={R.open} title="Reference PDF (R)">
+          📎 {R.open ? 'Hide Reference PDF' : 'Open Reference PDF'}
+        </button>
+      </div>
+      {!answered && <div className="row"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button><button className="ghost" onClick={() => e.answer(-1)}>I don’t know</button></div>}
+      <div id="fb" ref={fbRef}>
+        {ph === 'cr' && <>
+          <p className={'say ' + (good ? 'yes' : 'no')}>{good ? 'Correct.' : (i! < 0 ? 'No problem.' : 'Not quite.')} Practice mode: nothing is rescheduled.</p>
+          <button className="g g2 wide" onClick={() => e.show()}><b>Continue</b></button>
+        </>}
+        {ph === 'ok' && (x.autoGood ? <>
+          <p className="say yes">Correct.</p>
+          <button className="g g2 wide" onClick={() => e.grade(2)}><b>Continue</b><small>Good · {e.lab(cur.id, c, 2)}</small></button>
+          <div className="row"><button className="ghost" onClick={() => e.grade(1)}>Hard · {e.lab(cur.id, c, 1)}</button><button className="ghost" onClick={() => e.grade(3)}>Easy · {e.lab(cur.id, c, 3)}</button></div>
+        </> : <>
+          <p className="say yes">Correct. How easy was it?</p>
+          <div className="grades">
+            {([[1, 'Hard'], [2, 'Good'], [3, 'Easy']] as [number, string][]).map(([g, n]) => (
+              <button key={g} className={'g g' + g} onClick={() => e.grade(g)}><b>{n}</b><small>{e.lab(cur.id, c, g)}</small></button>
+            ))}
+          </div>
+        </>)}
+        {ph === 'bad' && <>
+          <p className="say no">{i! < 0 ? 'No problem.' : 'Not quite.'} The right answer is highlighted. This card comes back in {wm} minutes.</p>
+          <button className="g g0 wide" onClick={() => e.show()}><b>Continue</b></button>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+function Done() {
+  const e = useEngine(), S = e.S, info = e.doneInfo(), [tk, setTk] = useState(0);
+  const first = info.first;
+  useEffect(() => {
+    if (e.phase !== 'done') return;
+    if (first && Date.now() >= first - e.O.learnAhead * M) { e.show(); return; }
+    if (first && first - Date.now() <= 3600e3) { const id = setTimeout(() => setTk(t => t + 1), 1000); return () => clearTimeout(id); }
+  }, [tk, first, e.ver]);
+  const t = Date.now();
+  let msg = `${S.done} answered today${S.done ? ', ' + Math.round(S.ok / S.done * 100) + '% right' : ''}.`;
+  if (first) { const sec = Math.max(0, Math.round((first - t) / 1000)); msg += ` Next learning card in ${sec >= 3600 ? Math.round(sec / 3600) + ' h' : Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0')}.`; }
+  else if (info.nxtRev.length) { const d = Math.max(1, Math.ceil((info.nxtRev[0] - t) / D)); msg += ` Next review in about ${d} day${d > 1 ? 's' : ''}.`; }
+  return (
+    <div className="card">
+      <h2 className="q" style={{ marginTop: 4 }}>{info.waiting ? 'Waiting for the next card' : e.cram ? 'Nothing to practice here' : 'You’re clear for now.'}</h2>
+      <p className="say">{msg}</p>
+      <div className="row">
+        {info.c.n && S.newToday >= S.limit ? <button className="ghost" onClick={() => e.learnMore()}>Learn 10 more new cards</button> : null}
+        {info.tomorrow ? <button className="ghost" onClick={() => e.reviewAhead()}>Review {info.tomorrow} card{info.tomorrow > 1 ? 's' : ''} due tomorrow</button> : null}
+        {info.P && !e.cram ? <button className="ghost" onClick={() => e.startPractice()}>Practice mode</button> : null}
+        <button className="ghost" onClick={() => e.show()}>Check again</button>
+      </div>
+    </div>
+  );
+}
+
+export { esc };

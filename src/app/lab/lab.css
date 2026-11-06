@@ -1,0 +1,18 @@
+.lab .wrap{max-width:760px;padding:10px 14px 40px}
+.lab .top{display:flex;align-items:center;gap:8px;justify-content:flex-start}
+.lab .top a,.lab .top button{color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;font:inherit;text-decoration:none;cursor:pointer}
+.lab .top select{flex:1;min-width:0;font:inherit;padding:9px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)}
+.lab #cv{position:relative;height:50vh;min-height:280px;margin:10px 0;border:1.5px solid var(--line);border-radius:18px;overflow:hidden;background:#EFE6D6}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .lab #cv{background:#14100c}}
+.lab #cv canvas{display:block;width:100%;height:100%;touch-action:none}
+.lab #hud{position:absolute;left:10px;top:8px;font-size:.75rem;color:var(--mute);pointer-events:none}
+.lab .bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;height:auto;background:none;overflow:visible}
+.lab .bar button,.lab .tabs button{font:inherit;font-size:.85rem;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:7px 11px;cursor:pointer}
+.lab .bar button.on,.lab .tabs button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.lab .tabs{display:flex;gap:6px;margin:6px 0 10px}.lab .tabs button{flex:1;font-weight:650}
+.lab .f{display:block;margin:12px 0}.lab .f label{display:flex;justify-content:space-between;font-weight:600;font-size:.92rem}.lab .f label b{color:var(--acc);font-variant-numeric:tabular-nums}
+.lab .f small{display:block;color:var(--mute);font-size:.76rem;margin-top:1px}.lab .f input{width:100%;accent-color:var(--acc);margin-top:6px;padding:0;border:0;background:none}
+.lab table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:8px}.lab td{padding:7px 4px;border-top:1.5px solid var(--line)}.lab td:last-child{text-align:right;font-weight:650;font-variant-numeric:tabular-nums}
+.lab .part{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin:6px 0;cursor:pointer}
+.lab .part.on{border-color:var(--acc);background:var(--accbg)}.lab .part small{display:block;color:var(--mute);margin-top:3px;line-height:1.4}
+.lab .note{color:var(--mute);font-size:.85rem;line-height:1.55}.lab #msg{font-size:.8rem;white-space:pre-wrap;color:var(--mute);margin:6px 0}.lab #msg.err{color:var(--bad)}

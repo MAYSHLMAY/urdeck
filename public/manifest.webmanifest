@@ -1,0 +1,9 @@
+{
+  "name": "Flight Recall",
+  "short_name": "Flight Recall",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF4EA",
+  "theme_color": "#CF5F27",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

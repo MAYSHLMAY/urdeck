@@ -1,0 +1,32 @@
+{
+  "name": "flight-recall",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Flight Recall: spaced-repetition flashcards with a 3D lab. Next.js + Supabase.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "import": "tsx scripts/import.ts",
+    "import:dry": "tsx scripts/import.ts --dry"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "next": "14.2.35",
+    "pdfjs-dist": "3.11.174",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18.18"
+  }
+}

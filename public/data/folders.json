@@ -1,0 +1,48 @@
+{
+ "v": 1,
+ "folders": [
+  {
+   "id": "aero",
+   "name": "Aerodynamics",
+   "parent": "root"
+  },
+  {
+   "id": "aero2",
+   "name": "Aerodynamics 2",
+   "parent": "aero"
+  },
+  {
+   "id": "fmw32lmd02lz",
+   "name": "Influence of Load Factor",
+   "parent": "aero2"
+  },
+  {
+   "id": "fmw345lfka9v",
+   "name": "Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "parent": "aero2"
+  },
+  {
+   "id": "fmw4g6fmz5hu",
+   "name": "Care and Use of Drafting Tools",
+   "parent": "fmw4frcyuhfe"
+  },
+  {
+   "id": "fmw4gzn2rrfh",
+   "name": "Layout, Border Line, Title Block, Alphabet of Lines and Symbols",
+   "parent": "fmw4frcyuhfe"
+  }
+ ],
+ "place": {
+  "dir:g:2.2": "aero2",
+  "dir:g:2.1": "aero2",
+  "dir:g:hard": "aero2",
+  "dir:g:pe": "aero2",
+  "dir:g:2.4": "aero2",
+  "2.5 Theory of Turn": "aero2",
+  "tags:2.5 Theory of Turn": "turn, yaw, directional stability",
+  "2.6 Influence of Load Factor": "fmw32lmd02lz",
+  "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices": "fmw345lfka9v",
+  "1.6 Care and Use of Drafting Tools": "fmw4g6fmz5hu",
+  "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols": "fmw4gzn2rrfh"
+ }
+}

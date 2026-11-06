@@ -1,0 +1,260 @@
+{
+ "v": 1,
+ "name": "2.4 Steady State Flights & Performance.txt",
+ "chapter": "2.4",
+ "title": "Steady State Flights & Performance",
+ "at": 1793801716360,
+ "count": 25,
+ "cards": [
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "Do lift, weight, thrust and drag act through the same point in a real aircraft?",
+   "c": "No. Each force acts along its own distinct line because they originate from different parts of the aircraft.",
+   "w": [
+    "Yes, all four forces intersect at the exact center of gravity",
+    "Yes, in steady flight all forces share a single common line of action",
+    "No, only lift and weight act through a single point"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "Through which point does lift act, and what determines where it is?",
+   "c": "Lift acts through the Centre of Pressure (CP); its position depends on the position of the wings and changes with angle of attack.",
+   "w": [
+    "Lift acts through the Centre of Gravity; it is fixed by total weight",
+    "Lift acts through the engine centerline; it depends on thrust setting",
+    "Lift acts through the tailplane; it depends on aircraft speed"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "How does the position of the centre of pressure change?",
+   "c": "It changes with changes in angle of attack (alpha).",
+   "w": [
+    "It remains fixed at the exact geometric center of the wing",
+    "It moves backward as speed decreases to zero",
+    "It shifts entirely to the tail when banking"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "Through which point does weight act, and what does that point depend on?",
+   "c": "Weight acts through the Centre of Gravity (CG); it depends on weight distribution and fuel usage.",
+   "w": [
+    "Weight acts through the Centre of Pressure; it depends on lift generation",
+    "Weight acts through the nosecone; it depends on payload volume",
+    "Weight acts through the propeller hub; it depends on engine power"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "What decides the line of thrust?",
+   "c": "The position of the propeller shaft or jet engine centerline.",
+   "w": [
+    "The angle of attack of the main wings",
+    "The position of the centre of pressure on the airfoil",
+    "The placement of the horizontal tailplane"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "Why is the drag line the most difficult to find?",
+   "c": "Because drag is the combined resistance of every part of the aircraft, requiring separate estimates or wind-tunnel testing.",
+   "w": [
+    "Because drag acts in the opposite direction of lift",
+    "Because drag remains constant regardless of airspeed or angle of attack",
+    "Because drag only exists when the engines are shut down"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "How does drag behave as angle of attack changes?",
+   "c": "Drag is liable to change with changing angles of attack.",
+   "w": [
+    "Drag decreases linearly to zero at high angles of attack",
+    "Drag stays completely constant during all flight maneuvers",
+    "Drag shifts instantly to the center of gravity"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "In Figure 2.20, which line is higher: thrust or drag? Which is further back: lift or weight?",
+   "c": "Drag is higher than thrust; lift is further back than weight.",
+   "w": [
+    "Thrust is higher than drag; weight is further back than lift",
+    "Both forces share identical lines of action with no offset",
+    "Thrust is higher than drag; lift is directly aligned with weight"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "Why is it advantageous to place lift slightly behind weight?",
+   "c": "It gives a nose-down pitching tendency in the event of loss of thrust, automatically pitching the nose down into a safe glide.",
+   "w": [
+    "It ensures that the aircraft climbs automatically without engine power",
+    "It eliminates the need for any tailplane or control surfaces",
+    "It makes the aircraft accelerate infinitely when thrust is increased"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "Why should the drag line be above the thrust line, according to the source?",
+   "c": "To create a nose-up couple that counteracts the nose-down tendency of the lift-weight couple.",
+   "w": [
+    "To make the aircraft roll faster during banking maneuvers",
+    "To ensure that drag aids the engine in pushing the aircraft forward",
+    "To eliminate all aerodynamic pitching moments entirely"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "What is a couple, and what are the two couples in Figure 2.20?",
+   "c": "A couple is a pair of equal, opposite forces that do not act along the same line, producing a turning effect; the two couples are the L-W couple and the T-D couple.",
+   "w": [
+    "A couple is a single force acting on two wings; the couples are lift and weight",
+    "A couple is an engine pairing; the couples are port and starboard thrust",
+    "A couple is a flight maneuver; the couples are climb and descent"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "What must be true of the two opposing couples for equilibrium?",
+   "c": "They should be equal and opposite and cancel each other out (net force and net turning effect are both zero).",
+   "w": [
+    "The lift-weight couple must be twice as strong as the thrust-drag couple",
+    "The thrust-drag couple must dominate to keep the aircraft climbing",
+    "Both couples must act along the exact same straight line"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "What happens in pitch if thrust is lost in the ideal arrangement?",
+   "c": "The nose-down lift-weight couple is left alone, causing the aircraft's nose to drop naturally into a safe glide.",
+   "w": [
+    "The aircraft immediately stalls because all lift disappears instantly",
+    "The nose-up thrust-drag couple takes over and flips the aircraft upside down",
+    "The aircraft maintains level flight indefinitely using remaining momentum"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "What does the source call the arrangement of Figure 2.20?",
+   "c": "The ideal arrangement (or ideal disposition).",
+   "w": [
+    "The balanced aerodynamic failure mode",
+    "The neutral stability configuration",
+    "The unstable divergence setup"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "What provides help when the ideal arrangement is not possible?",
+   "c": "The tailplane (the small horizontal wing at the tail).",
+   "w": [
+    "The main landing gear doors",
+    "The vertical stabilizer and rudder assembly",
+    "Extra fuel tanks mounted on the wingtips"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "In Figure 2.21, what do P and G represent?",
+   "c": "P represents the Centre of Pressure (where lift acts), and G represents the Centre of Gravity (where weight acts).",
+   "w": [
+    "P represents propeller thrust; G represents ground friction",
+    "P represents pitch angle; G represents gravitational acceleration",
+    "P represents pilot controls; G represents gravitational force"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "In Figure 2.21, in which direction is the tailplane force, and what is it opposing?",
+   "c": "The tailplane force acts downward (or upward depending on L-W offset) and opposes the net pitching couple of the main forces.",
+   "w": [
+    "The tailplane force acts forward and opposes total aircraft drag",
+    "The tailplane force acts vertically up and opposes total aircraft weight",
+    "The tailplane force acts sideways and opposes yawing moments"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "Why can the tailplane be small if it is far from the centre of gravity?",
+   "c": "Because a tailplane far from the CG has a long lever arm, meaning a small force can create a large turning effect (moment = force * distance).",
+   "w": [
+    "Because air density is much lower at the tail than at the wings",
+    "Because the tailplane produces more lift than the main wings",
+    "Because it does not experience any aerodynamic drag"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "If lift is behind weight (box analogy view), which way does the tailplane force act?",
+   "c": "A downward force is needed at the tail to balance the nose-down tendency.",
+   "w": [
+    "An upward force is needed at the tail to lift the fuselage",
+    "A sideways force is needed to counteract engine torque",
+    "No tail force is needed because the forces balance automatically"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "If lift is in front of weight, which way does the tailplane force act?",
+   "c": "An upward force is needed at the tail to balance the nose-up tendency.",
+   "w": [
+    "A downward force is needed to push the tail into the ground",
+    "A backward force is needed to slow down the aircraft",
+    "No force is needed because the aircraft is naturally unstable"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "What is the job of the tailplane according to the source?",
+   "c": "To provide the upward or downward force necessary to counteract the behaviour of the four main forces and restore equilibrium.",
+   "w": [
+    "To generate 50% of the total lift required by the aircraft",
+    "To act as the primary engine mount for twin-engine aircraft",
+    "To replace the rudder during high-speed turns"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "A student says that if L = W and T = D the aircraft is necessarily in equilibrium. Correct this.",
+   "c": "Wrong. Balanced forces are not the same as balanced turning effects; the lines of action must also be offset/balanced to prevent rotation.",
+   "w": [
+    "Right. Equal forces always guarantee complete flight equilibrium",
+    "Right, because forces completely describe all aircraft motion",
+    "Wrong, because lift must always exceed weight in level flight"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "A lift-weight couple of 800 lb-ft nose-down must be balanced by a tailplane 16 ft behind the centre of gravity. What force is needed?",
+   "c": "Force = Moment / Distance = 800 / 16 = 50 lb (downward).",
+   "w": [
+    "Force = 800 * 16 = 12,800 lb",
+    "Force = 16 / 800 = 0.02 lb",
+    "Force = 800 lb (equal to the couple magnitude)"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "Compare the effects on pitch of lift behind weight and of drag above thrust, including the box analogy view.",
+   "c": "Lift behind weight acts like pulling the top of a box backward while weight pushes down, creating a nose-down moment; drag above thrust pushes the top forward while thrust pushes the bottom, creating a nose-up moment.",
+   "w": [
+    "Both couples create identical nose-up pitching moments",
+    "Lift behind weight creates a nose-up moment while drag above thrust creates a nose-down moment",
+    "Both couples create nose-down pitching moments that require full engine power to cancel"
+   ]
+  },
+  {
+   "s": "2.4 Steady State Flights & Performance",
+   "q": "Which factors can change the centre of gravity during a flight, according to the source?",
+   "c": "Weight distribution and fuel usage as fuel is burned from the tanks.",
+   "w": [
+    "Changes in ambient air temperature and barometric pressure",
+    "The deployment of landing gear and flaps",
+    "Variations in angle of attack and airspeed"
+   ]
+  }
+ ]
+}

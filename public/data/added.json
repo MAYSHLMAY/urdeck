@@ -1,0 +1,1864 @@
+{
+ "v": 1,
+ "cards": [
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What is centripetal force?",
+   "c": "A centre-seeking force needed for any curved path, acting along the radius towards the centre.",
+   "w": [
+    "A centrifugal force pushing the object outward",
+    "A linear force acting forward along the flight path",
+    "A gravitational force pulling the aircraft downward"
+   ],
+   "at": 1793853720129
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "For an aircraft in a turn, what is the centripetal force also called?",
+   "c": "The horizontal component of lift.",
+   "w": [
+    "The vertical component of weight",
+    "The total engine thrust vector",
+    "The induced drag component"
+   ],
+   "at": 1793853720129
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What does the third law of motion say about centripetal force, according to the source?",
+   "c": "It is opposed by an equal and opposite force called the centrifugal force (a centre-fleeing force).",
+   "w": [
+    "It creates an infinite acceleration toward the center",
+    "It eliminates all aerodynamic drag on the airframe",
+    "It converts gravitational energy directly into kinetic energy"
+   ],
+   "at": 1793853720129
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What happens to an object on a string if the string is released? Which law explains it?",
+   "c": "The object flies off in a straight line at a tangent; explained by Newton's first law of motion.",
+   "w": [
+    "The object flies straight outward along the radius; explained by Newton's second law",
+    "The object stops instantly; explained by Newton's third law",
+    "The object spirals downward; explained by gravity"
+   ],
+   "at": 1793853720129
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "Does the released object fly outwards along the radius? Explain.",
+   "c": "No, the object goes off straight along the tangent (touching the circle at one point), not radially outwards.",
+   "w": [
+    "Yes, centrifugal force throws it straight out along the radius",
+    "Yes, because the string's tension pushes it outward upon release",
+    "No, it falls straight down to the center of the earth"
+   ],
+   "at": 1793853720129
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "Can any object, car or aircraft, turn without centripetal force?",
+   "c": "No, without centripetal force, no object can be made to turn.",
+   "w": [
+    "Yes, cars can turn using engine power alone without any sideways force",
+    "Yes, aircraft turn purely through gravity without centripetal force",
+    "Yes, momentum automatically curves any path without forces"
+   ],
+   "at": 1793853720129
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "On what three things does centripetal force depend, and how?",
+   "c": "Directly proportional to the mass (or weight) of the body, directly proportional to the square of its speed, and inversely proportional to the radius of the turn.",
+   "w": [
+    "Directly to speed, inversely to mass, and independent of radius",
+    "Directly to radius and mass, inversely to speed cubed",
+    "Independent of mass, directly to radius squared"
+   ],
+   "at": 1793853720129
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "Write the centripetal-force formula in lb and in newtons.",
+   "c": "Centripetal force = (W * V^2) / (g * r) in lb, or (m * v^2) / r in newtons.",
+   "w": [
+    "Centripetal force = (W * r) / V^2 in lb",
+    "Centripetal force = (m * g * r) / V in newtons",
+    "Centripetal force = W * V * r in lb"
+   ],
+   "at": 1793853720129
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What does each symbol W, V^2, r, g mean? Give both unit systems for g.",
+   "c": "W = weight (or m = mass); V^2 = square of TAS; r = radius of turn; g = gravitational acceleration (9.81 m/s^2 or 32.2 ft/s^2).",
+   "w": [
+    "W = wind speed; V^2 = volume squared; r = rate; g = gear ratio",
+    "W = wing loading; V^2 = velocity; r = roll rate; g = gravity constant (10 m/s^2)",
+    "W = watts; V^2 = voltage; r = resistance; g = ground speed"
+   ],
+   "at": 1793853720130
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "Give the formula for acceleration towards the centre.",
+   "c": "Acceleration = V^2 / r.",
+   "w": [
+    "Acceleration = r / V^2",
+    "Acceleration = g * r * V",
+    "Acceleration = V / (g * r)"
+   ],
+   "at": 1793853720130
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "Find the centripetal force for W = 3220 lb, V = 100 ft/s, r = 1000 ft, g = 32.2 ft/s^2.",
+   "c": "F = (3220 * 100^2) / (32.2 * 1000) = 1000 lb.",
+   "w": [
+    "F = (3220 * 100) / 1000 = 322 lb",
+    "F = 32,200 lb",
+    "F = 100 lb"
+   ],
+   "at": 1793853720130
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "Find the centripetal force in newtons for m = 1000 kg, V = 50 m/s, r = 300 m.",
+   "c": "F = (1000 * 50^2) / 300 = 8333.33 newtons.",
+   "w": [
+    "F = (1000 * 50) / 300 = 166.6 newtons",
+    "F = 50,000 newtons",
+    "F = 15,000 newtons"
+   ],
+   "at": 1793853720130
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What happens to the centripetal force if the speed is doubled and the radius is unchanged?",
+   "c": "It increases by a factor of four (doubling speed needs four times the force because speed is squared).",
+   "w": [
+    "It doubles because force is directly proportional to speed",
+    "It remains completely unchanged",
+    "It halves because speed and force are inversely related"
+   ],
+   "at": 1793853720130
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "Find the acceleration towards the centre if V = 60 m/s and r = 360 m.",
+   "c": "Acceleration = 60^2 / 360 = 3600 / 360 = 10 m/s^2.",
+   "w": [
+    "Acceleration = 60 / 360 = 0.16 m/s^2",
+    "Acceleration = 360 / 60 = 6 m/s^2",
+    "Acceleration = 60 * 360 = 21,600 m/s^2"
+   ],
+   "at": 1793853720130
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "How is the centripetal force of an aircraft derived?",
+   "c": "By resolving the inclined total lift force into a vertical lift component and a horizontal lift component.",
+   "w": [
+    "By increasing engine thrust to push the aircraft sideways",
+    "By deflecting the rudder to push tail air outward",
+    "By shifting fuel weight from wing to wing"
+   ],
+   "at": 1793853720130
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "In Figure 2.22, name the three arrows (other than weight) and how they are related.",
+   "c": "Total lift, vertical lift component, and centripetal force (horizontal lift component); total lift is the vector sum of the two components.",
+   "w": [
+    "Thrust, drag, and lift; they sum to zero",
+    "Lift, side force, and centrifugal force; they balance weight",
+    "Centripetal force, centrifugal force, and gravity; they form a closed loop"
+   ],
+   "at": 1793853720131
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What is the \"double role\" of lift in a turn?",
+   "c": "It must provide the horizontal component to create centripetal force and a vertical component large enough to maintain constant height.",
+   "w": [
+    "It must accelerate the aircraft forward while simultaneously slowing it down",
+    "It must generate cabin pressurization and control surface response",
+    "It must balance both weight and engine torque simultaneously"
+   ],
+   "at": 1793853720131
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "Why does the aircraft tend to descend if the angle of attack is not increased in a turn?",
+   "c": "Because tilting the total lift vector sideways reduces the vertical lift component below the aircraft's weight.",
+   "w": [
+    "Because banking increases aircraft weight instantly",
+    "Because turning turns off the engine automatically",
+    "Because horizontal lift pulls the aircraft downward toward the earth"
+   ],
+   "at": 1793853720131
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What must the pilot do to the angle of attack in a level turn, and what is the consequence for drag and power?",
+   "c": "The pilot must increase the angle of attack; this causes a surge in induced drag, which requires more engine power to keep speed constant.",
+   "w": [
+    "The pilot must decrease the angle of attack; drag drops and speed increases",
+    "The pilot must keep angle of attack constant; power remains unchanged",
+    "The pilot must shut down the engine to prevent overspeeding"
+   ],
+   "at": 1793853720131
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What is a steep turn?",
+   "c": "A turn having an angle of bank in excess of 45 degrees.",
+   "w": [
+    "Any turn executed above 10,000 feet altitude",
+    "A turn where the aircraft banks vertically at 90 degrees",
+    "A turn performed with the engine at idle power"
+   ],
+   "at": 1793853720131
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "Why do larger bank angles need a larger angle of attack?",
+   "c": "Because steeper banks tilt more lift sideways, requiring a larger total-lift increment (higher angle of attack) to keep the vertical lift equal to weight.",
+   "w": [
+    "Because higher bank angles make the wings heavier",
+    "Because speed automatically drops to zero in a steep bank",
+    "Because gravity pulls the tail down during a bank"
+   ],
+   "at": 1793853720131
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What happens as the aircraft in a steep turn reaches a very low speed?",
+   "c": "The angle of attack and induced drag become so high that full power is usually necessary, risking an acceleration stall.",
+   "w": [
+    "The aircraft magically gains altitude without power",
+    "The wings fold automatically due to excess G-force",
+    "The flight controls lock completely"
+   ],
+   "at": 1793853720131
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What does Figure 2.23 show about the lift required in a steep turn compared with Figure 2.22?",
+   "c": "A much longer, more tilted total-lift arrow is shown to account for the steeper bank angle.",
+   "w": [
+    "A shorter, flatter lift vector because less lift is needed at high bank angles",
+    "No change in lift magnitude, only a change in engine thrust",
+    "An inverted lift vector pointing toward the ground"
+   ],
+   "at": 1793853720131
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "Define wing loading, what does it affect?",
+   "c": "Wing loading is the weight of the aircraft divided by the wing area; it affects both the maximum and minimum stalling speeds.",
+   "w": [
+    "Wing loading is wing area divided by weight; it affects only engine fuel consumption",
+    "Wing loading is total lift minus drag; it affects only cruise altitude",
+    "Wing loading is engine power divided by mass; it affects climb rate only"
+   ],
+   "at": 1793853720131
+  },
+  {
+   "s": "2.5 Theory of Turn",
+   "q": "What is the modern tendency regarding wing loading and landing speeds?",
+   "c": "Higher wing loading (smaller area, higher speed), using movable flaps to cut landing speeds.",
+   "w": [
+    "Lower wing loading (larger area, lower speed) with no flaps allowed",
+    "Constant wing loading across all aircraft types regardless of size",
+    "Removing wings entirely in favor of jet thrust"
+   ],
+   "at": 1793853720131
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What is load factor n, and what is its value in straight and level flight?",
+   "c": "Load factor is lift divided by weight (n = L/W); its value is 1 in straight and level flight[span_0](start_span)[span_0](end_span).",
+   "w": [
+    "Load factor is thrust divided by drag; its value is 0",
+    "Load factor is weight divided by wing area; its value equals wing loading",
+    "Load factor is centripetal force multiplied by gravity; its value is 2"
+   ],
+   "at": 1793854417446
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "How is load factor related to bank angle according to the source?",
+   "c": "It varies as the secant of the bank angle (n = sec phi = 1 / cos phi)[span_1](start_span)[span_1](end_span).",
+   "w": [
+    "It varies as the tangent of the bank angle",
+    "It varies as the sine of the bank angle squared",
+    "It remains constant regardless of bank angle"
+   ],
+   "at": 1793854417446
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What is the load factor in a 60 degree bank turn?",
+   "c": "n = 1 / cos(60 deg) = 1 / 0.5 = 2.0 (the aircraft experiences 2 g)[span_2](start_span)[span_2](end_span).",
+   "w": [
+    "n = 1.0 (no change from level flight)",
+    "n = 1.414 (equal to square root of two)",
+    "n = 4.0 (quadruples due to secant scaling)"
+   ],
+   "at": 1793854417446
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "How is the stalling speed in a maneuver related to the load factor?",
+   "c": "New stalling speed equals basic stalling speed multiplied by the square root of the load factor (V_new = V_s * sqrt(n))[span_3](start_span)[span_3](end_span).",
+   "w": [
+    "New stalling speed equals basic stalling speed multiplied by n cubed",
+    "New stalling speed equals basic stalling speed divided by n",
+    "Stalling speed is completely independent of load factor"
+   ],
+   "at": 1793854417446
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "If a basic stalling speed is 85 knots, what is the stalling speed in a 60 degree bank turn (n = 2)?",
+   "c": "V_new = 85 * sqrt(2) approx 120 knots[span_4](start_span)[span_4](end_span).",
+   "w": [
+    "V_new = 85 * 2 = 170 knots",
+    "V_new = 85 knots (unchanged)",
+    "V_new = 85 / 1.414 = 60 knots"
+   ],
+   "at": 1793854417447
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What is an accelerated (high-speed) stall in a turn, and what causes it?",
+   "c": "An accelerated stall happens when a high bank angle forces the plane to reach the critical angle of attack at a higher speed due to increased load factor[span_5](start_span)[span_5](end_span).",
+   "w": [
+    "An accelerated stall happens when the engine runs out of fuel at high altitudes",
+    "An accelerated stall is caused by flying below the minimum design speed in straight flight",
+    "An accelerated stall occurs when landing flaps are deployed at supersonic speeds"
+   ],
+   "at": 1793854417447
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What can happen if one wing stalls before the other during an accelerated stall?",
+   "c": "The aircraft may experience a sudden roll toward the unlifted wing, known as a flicking movement due to unequal lift distribution[span_6](start_span)[span_6](end_span).",
+   "w": [
+    "The aircraft immediately pitches straight up into a vertical climb",
+    "The flight controls lock completely in place",
+    "The engine shuts down automatically to prevent structural failure"
+   ],
+   "at": 1793854417447
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "How is recovery initiated from an accelerated stall?",
+   "c": "By moving the control column forward, decreasing the angle of attack, and thereby unstalling the aircraft[span_7](start_span)[span_7](end_span).",
+   "w": [
+    "By pulling back harder on the stick to regain altitude immediately",
+    "By applying full rudder in the direction of the spin",
+    "By shutting down all electrical systems"
+   ],
+   "at": 1793854417447
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What does a wing always stall at, and why is an accelerated stall called \"high-speed\"?",
+   "c": "A wing always stalls at the same critical angle of attack, but at a higher speed in a turn because increased G-force raises the stall speed[span_8](start_span)[span_8](end_span).",
+   "w": [
+    "It stalls at a higher angle of attack only when flying above 300 knots",
+    "It is called high-speed because the engine is pushed to maximum RPM",
+    "It is called high-speed because air density drops rapidly"
+   ],
+   "at": 1793854417448
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What practical factors limit the minimum radius of a turn?",
+   "c": "Maximum permitted load factor (G-limit), maximum lift before reaching the stall, airspeed, and available engine performance.",
+   "w": [
+    "The amount of fuel remaining in the wing tanks only",
+    "The length of the runway used for takeoff",
+    "The color scheme and paint weight of the aircraft airframe"
+   ],
+   "at": 1793854417448
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "If an aircraft reaches its maximum permitted G-load, can it keep increasing its turning force indefinitely?",
+   "c": "B. No (turning force is restricted by structural G-limits and stall boundaries).",
+   "w": [
+    "A. Yes, G-limits can be exceeded safely without structural damage",
+    "A. Yes, engine thrust compensates for all structural load limits",
+    "B. No, because gravity turns off during high-G maneuvers"
+   ],
+   "at": 1793854417448
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What determines maximum rate of turn?",
+   "c": "Airspeed, how much turning force the aircraft can produce, and balancing turning performance against stall and structural limits.",
+   "w": [
+    "The total weight of the pilot and baggage capacity",
+    "The number of engines mounted on the fuselage",
+    "The geographical latitude of the flight path"
+   ],
+   "at": 1793854417448
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What is corner speed in aircraft performance?",
+   "c": "Corner speed is approximately the speed at which the aircraft can reach its maximum permitted load factor without exceeding its stall limit (maximum turning performance without stalling).",
+   "w": [
+    "Corner speed is the maximum safe speed for lowering landing gear",
+    "Corner speed is the speed where induced drag drops completely to zero",
+    "Corner speed is the minimum speed required to start the engine"
+   ],
+   "at": 1793854417448
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What governs the minimum radius of a turn according to the equations in the text?",
+   "c": "The minimum radius is set by speed squared and the maximum lift coefficient (r = (V^2 / g) * (C_Lmax / C_L)), with engine power as the final deciding factor[span_9](start_span)[span_9](end_span)[span_10](start_span)[span_10](end_span).",
+   "w": [
+    "The minimum radius is determined entirely by aircraft weight and fuel capacity",
+    "The minimum radius depends strictly on propeller pitch and rudder deflection",
+    "The minimum radius is fixed at 500 feet for all aircraft types"
+   ],
+   "at": 1793854417449
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What is the difference between a minimum radius turn and a maximum rate turn?",
+   "c": "A minimum radius turn gives the smallest physical circle, while a maximum rate turn gives the shortest time to change heading (highest angular velocity)[span_11](start_span)[span_11](end_span)[span_12](start_span)[span_12](end_span).",
+   "w": [
+    "A minimum radius turn uses zero engine power, while maximum rate uses full power",
+    "A minimum radius turn is performed upside down, while maximum rate is level",
+    "There is no difference between the two terms in aerodynamics"
+   ],
+   "at": 1793854417449
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What three conditions provide a maximum-rate turn?",
+   "c": "Fly at the stalling speed, fly at the maximum load factor, and fly in air that is as dense as possible[span_13](start_span)[span_13](end_span).",
+   "w": [
+    "Fly at maximum speed, minimum load factor, and at maximum service ceiling altitude",
+    "Fly with full flaps, zero engine power, and a 90-degree bank angle",
+    "Fly straight and level without banking while accelerating rapidly"
+   ],
+   "at": 1793854417449
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "Why does a climbing turn tend towards an over-bank, and what must the pilot do?",
+   "c": "The outer wing travels a greater distance and moves faster, generating more lift and increasing the bank angle; the pilot must hold bank off using opposite aileron[span_14](start_span)[span_14](end_span)[span_15](start_span)[span_15](end_span).",
+   "w": [
+    "The inner wing generates more lift because it moves slower, pulling the nose down; the pilot must pull back harder",
+    "The tailplane stalls from excess downwash, forcing a level recovery",
+    "Gravity pulls the heavy side down, requiring full rudder application"
+   ],
+   "at": 1793854417449
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What is the effect on the outer wing vs inner wing in a descending turn?",
+   "c": "In a descending turn the inner wing has the greater angle of attack, and the bank must be held on by the pilot[span_16](start_span)[span_16](end_span).",
+   "w": [
+    "The outer wing completely loses all lift instantly",
+    "Both wings experience zero angle of attack due to downward momentum",
+    "The aircraft enters an immediate unrecoverable spin toward the outer wing"
+   ],
+   "at": 1793854417450
+  },
+  {
+   "s": "2.6 Influence of Load Factor",
+   "q": "What is a pull-out maneuver, and what sequence of events occurs when a pilot pulls back on the control column during a descent?",
+   "c": "When the pilot pulls back, the elevator deflects upward, raising the nose, increasing the wing's angle of attack and lift, which curves the flight path upward to transition the aircraft from descending to level flight.",
+   "w": [
+    "When the pilot pulls back, the spoilers deploy, the nose drops, and the aircraft dives steeper",
+    "When the pilot pulls back, engine thrust cuts off, airspeed drops, and the aircraft enters a flat spin",
+    "When the pilot pulls back, the flaps retract automatically, causing a sudden loss of altitude"
+   ],
+   "at": 1793854417450
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What does washout allow the pilot to retain during the stall?",
+   "c": "The pilot retains roll control during the stall because the wing root stalls before the wing tip.",
+   "w": [
+    "Full engine power and zero aerodynamic drag",
+    "Constant altitude without any drop in airspeed",
+    "Complete elimination of all boundary-layer friction"
+   ],
+   "at": 1793857029957
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "Why may an aircraft \"drop a wing\" even with washout?",
+   "c": "Even with washout, adverse boundary-layer air near the surface may behave badly and cause the outer wing part to stall first.",
+   "w": [
+    "Because the tailplane generates more lift than the main wings",
+    "Because the engine torque forces a roll to the left",
+    "Because fuel consumption lightens the left wing faster than the right"
+   ],
+   "at": 1793857029957
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What are stall wedges (stall strips), and where are they mounted?",
+   "c": "Small, wedge-shaped strips mounted on the leading edge of the wings at about one-third span.",
+   "w": [
+    "Large aerodynamic plates mounted underneath the fuselage",
+    "Movable flaps installed on the trailing edge near the tips",
+    "Retractable slats built into the vertical stabilizer"
+   ],
+   "at": 1793857029957
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What do stall wedges do at large angles of attack approaching the stall?",
+   "c": "They disrupt the boundary-layer airflow, ensuring the airflow breaks away (stalls) at the root end of the wing first.",
+   "w": [
+    "They increase total lift by 50% at supersonic speeds",
+    "They eliminate all induced drag from the wingtips",
+    "They lock the ailerons in a neutral position automatically"
+   ],
+   "at": 1793857029958
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What do they do at smaller angles of attack?",
+   "c": "They produce an effect similar to a wing fence, resulting in a smoother airflow over the ailerons and retaining optimum roll control.",
+   "w": [
+    "They generate reverse thrust to slow down the aircraft",
+    "They cause the aircraft to enter an immediate steep dive",
+    "They decouple the flight controls from the wing surfaces"
+   ],
+   "at": 1793857029958
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "In Figure 2.53, what do the labels \"Stall Strip\" and \"Stall Warning\" point to?",
+   "c": "\"Stall Strip\" points to a small wedge-shaped strip on the leading edge near the root; \"Stall Warning\" points to a small tab (stall-warning sensor) a little further out.",
+   "w": [
+    "\"Stall Strip\" points to the landing flap; \"Stall Warning\" points to the altimeter",
+    "Both labels point to the main engine fuel injectors",
+    "Both labels point to the wingtip navigation lights"
+   ],
+   "at": 1793857029958
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "How do stall wedges differ from washout in how they make the root stall first?",
+   "c": "Washout changes the wing's geometry (the tip is set at a lower angle), whereas a stall wedge changes the airflow by deliberately disrupting it at the root end.",
+   "w": [
+    "Washout uses active electrical heating, while stall wedges use hydraulic pressure",
+    "Stall wedges change the weight distribution, while washout changes the engine power",
+    "There is no difference; both rely entirely on movable slats"
+   ],
+   "at": 1793857029958
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What problem do vortex generators solve in the boundary layer?",
+   "c": "They inject fresh high-energy energy into the sluggish boundary layer air, preventing it from slowing down and separating prematurely.",
+   "w": [
+    "They cool down the engine exhaust gases before they touch the wing",
+    "They increase air density inside the cabin during high-altitude flight",
+    "They eliminate gravitational acceleration acting on the aircraft"
+   ],
+   "at": 1793857029959
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What are vortex generators, and about how big are they?",
+   "c": "Small plates or wedges projecting up from the surface of an aerofoil, about 25 mm tall.",
+   "w": [
+    "Large folding wings spanning over 10 feet each",
+    "Retractable landing gear doors located beneath the cockpit",
+    "Massive external fuel tanks mounted under the wing roots"
+   ],
+   "at": 1793857029959
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "How tall are they compared with the typical boundary layer thickness?",
+   "c": "They are about three times the typical boundary layer thickness.",
+   "w": [
+    "They are exactly one-tenth of the boundary layer thickness",
+    "They are identical in height to the boundary layer thickness",
+    "They are fifty times taller than the boundary layer thickness"
+   ],
+   "at": 1793857029959
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "How do the vortices from vortex generators invigorate the boundary layer?",
+   "c": "They shed small, lively vortices from their tips that act as scavengers, mixing high-energy free-stream air into the sluggish boundary-layer air.",
+   "w": [
+    "They push hot exhaust air directly over the entire top surface of the wing",
+    "They create a complete vacuum that pulls the aircraft forward faster",
+    "They freeze the boundary-layer air to eliminate surface friction completely"
+   ],
+   "at": 1793857029959
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What effect do they have on the transition point?",
+   "c": "They push the transition point (where smooth flow turns turbulent) backwards toward the trailing edge.",
+   "w": [
+    "They pull the transition point forward to the extreme leading edge",
+    "They eliminate the transition point entirely so flow remains laminar forever",
+    "They cause the transition point to shift off the wing into the atmosphere"
+   ],
+   "at": 1793857029960
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "Why is the drag of the vortices acceptable?",
+   "c": "Because the small amount of drag created by the vortices is far more than compensated by the considerable boundary-layer drag which they save.",
+   "w": [
+    "Because vortex drag is completely zero under all flight conditions",
+    "Because the FAA requires high drag to slow down during landings",
+    "Because vortex drag actually powers the aircraft's electrical system"
+   ],
+   "at": 1793857029960
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What are the benefits of vortex generators at high speed?",
+   "c": "They weaken the shock wave at high speed and reduce shock drag.",
+   "w": [
+    "They increase the maximum cabin altitude limit instantly",
+    "They convert the aircraft into a supersonic interceptor automatically",
+    "They cool down the wing structure to prevent structural melting"
+   ],
+   "at": 1793857029960
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What does downwash do to the local flow direction?",
+   "c": "It tilts the local approach flow direction downward relative to the free-stream flow.",
+   "w": [
+    "It accelerates the air straight upward over the cockpit canopy",
+    "It reverses the airflow completely so it travels from trailing to leading edge",
+    "It eliminates airflow velocity entirely behind the trailing edge"
+   ],
+   "at": 1793857029960
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "Why does the tilted resultant force contribute to drag, and what is that drag called?",
+   "c": "Because the resultant force is tilted backwards relative to the flight direction, its backward component contributes to induced drag.",
+   "w": [
+    "Because friction with the ground creates parasitic profile drag",
+    "Because engine exhaust creates an opposing thermal drag vector",
+    "Because cabin pressurization leaks create fuselage form drag"
+   ],
+   "at": 1793857029963
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What happens to the effective angle of attack because of the downwash?",
+   "c": "It is reduced relative to the geometric angle (alpha_eff = alpha - alpha_i), meaning less lift unless the wing is tilted to a greater angle.",
+   "w": [
+    "It increases dramatically, causing an immediate high-speed stall",
+    "It remains completely identical to the geometric angle under all conditions",
+    "It drops to absolute zero, eliminating all aerodynamic forces"
+   ],
+   "at": 1793857029963
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "What is the relation between geometric angle, induced angle, and effective angle?",
+   "c": "Effective angle equals geometric angle minus induced angle (alpha_eff = alpha - alpha_i).",
+   "w": [
+    "Effective angle equals geometric angle plus induced angle multiplied by two",
+    "Effective angle equals induced angle divided by geometric angle squared",
+    "Effective angle is completely independent of induced angle"
+   ],
+   "at": 1793857029964
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "Is downwash entirely responsible for lift according to the source?",
+   "c": "No, while downwash changes momentum, trailing-edge vortices also produce a large upwash outboard of the tips, and upward/downward momentum changes cancel out.",
+   "w": [
+    "Yes, downwash is the sole and exclusive source of all aerodynamic lift on an aircraft",
+    "Yes, because air pressure above the wing plays zero role in flight generation",
+    "No, lift is created entirely by jet engine exhaust pushing against the ground"
+   ],
+   "at": 1793857029964
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "On what does downwash depend?",
+   "c": "It depends on wing circulation and varies with flight conditions.",
+   "w": [
+    "It depends strictly on the outside air temperature and humidity",
+    "It depends exclusively on the type of fuel burned in the engines",
+    "It remains completely constant regardless of airspeed or angle of attack"
+   ],
+   "at": 1793857029964
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "If the geometric angle is 10 degrees and the induced angle is 2.5 degrees, find the effective angle using alpha_eff = alpha - alpha_i.",
+   "c": "10 degrees - 2.5 degrees = 7.5 degrees.",
+   "w": [
+    "10 degrees + 2.5 degrees = 12.5 degrees",
+    "10 degrees * 2.5 degrees = 25 degrees",
+    "10 degrees / 2.5 degrees = 4 degrees"
+   ],
+   "at": 1793857029964
+  },
+  {
+   "s": "2.12 Boundary Layer Control Using Vortex Generators, Stall Wedges or Leading Edge Devices",
+   "q": "Minimum Radius Top Note: What produces the turning force required for a minimum radius turn?",
+   "c": "High turning force is achieved through lift, higher load factor, and flying near the stall boundary.",
+   "w": [
+    "Engine thrust pushing the aircraft sideways",
+    "Gravity pulling the nose downward into a spiral dive",
+    "Rudder deflection pushing tail air outward"
+   ],
+   "at": 1793857029964
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What does the drawing board slide (24) show?",
+   "c": "Two boards, a movable (portable flat) board and an adjustable (stand-mounted, tiltable) drawing table.",
+   "w": [
+    "Two fixed wall-mounted boards",
+    "A light table and a computer monitor",
+    "A board with a built-in printer"
+   ],
+   "at": 1793937688999
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which three jobs is the T-square used for?",
+   "c": "Drawing horizontal lines, guiding triangles/set squares, and positioning drawing paper.",
+   "w": [
+    "Drawing circles, measuring angles, and erasing",
+    "Drawing vertical lines, dimensioning, and shading",
+    "Dividing lines, drawing arcs, and lettering"
+   ],
+   "at": 1793937688999
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "The T-square picture on slide 25 labels two parts. What are they?",
+   "c": "The head (stock) and the blade.",
+   "w": [
+    "The beam and the socket",
+    "The needle and the pencil leg",
+    "The bow and the nib"
+   ],
+   "at": 1793937688999
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which statement about the T-square is FALSE?",
+   "c": "Its head slides along the top edge of the board to draw vertical lines directly.",
+   "w": [
+    "It is used to draw horizontal lines",
+    "Triangles are guided along its blade",
+    "It helps position the drawing paper"
+   ],
+   "at": 1793937688999
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What do the six small views on slide 26 show?",
+   "c": "The T-square with triangles used to draw horizontal, vertical and inclined lines at standard angles.",
+   "w": [
+    "The T-square being used to draw circles and arcs",
+    "How to sharpen a pencil",
+    "How to fold a drawing"
+   ],
+   "at": 1793937689000
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which three things are triangles (set squares) used for?",
+   "c": "Drawing vertical lines, lines at standard angles, and angles that are multiples of 15 degrees.",
+   "w": [
+    "Drawing horizontal lines only, circles, and arcs",
+    "Measuring scale, dividing lines, and erasing",
+    "Drawing irregular curves, ellipses, and borders"
+   ],
+   "at": 1793937689000
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What is the scale formula given in the deck?",
+   "c": "Scale = drawing size / actual size.",
+   "w": [
+    "Scale = actual size / drawing size",
+    "Scale = drawing size x actual size",
+    "Scale = actual size - drawing size"
+   ],
+   "at": 1793937689000
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "A scale of 2:1 on the scale table belongs to which column?",
+   "c": "Enlarged.",
+   "w": [
+    "Same size",
+    "Reduced",
+    "None of them"
+   ],
+   "at": 1793937689000
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which scale ratio belongs to the \"Same size\" column?",
+   "c": "1:1.",
+   "w": [
+    "1:2",
+    "2:1",
+    "1:10"
+   ],
+   "at": 1793937689000
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which of the following scales is a REDUCTION scale in the table?",
+   "c": "1:100.",
+   "w": [
+    "10:1",
+    "50:1",
+    "2:1"
+   ],
+   "at": 1793937689001
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What is the largest enlargement and the largest reduction scale shown on the table?",
+   "c": "2000:1 enlarged and 1:1000 reduced.",
+   "w": [
+    "1000:1 enlarged and 1:2000 reduced",
+    "200:1 enlarged and 1:100 reduced",
+    "50:1 enlarged and 1:50 reduced"
+   ],
+   "at": 1793937689001
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What two properties of scales are stated in the deck?",
+   "c": "They are made from different materials and with different divisions.",
+   "w": [
+    "They are made only from wood and have one division",
+    "They are always triangular and metal",
+    "They are electronic and self-calibrating"
+   ],
+   "at": 1793937689001
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What tool draws circles and arcs?",
+   "c": "The compass.",
+   "w": [
+    "The divider",
+    "The protractor",
+    "The French curve"
+   ],
+   "at": 1793937689001
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "How is the beam compass different from an ordinary compass?",
+   "c": "It has a beam with sliding sockets carrying steel or pencil points and is used for drawing large circles.",
+   "w": [
+    "It has two fixed legs and draws only small arcs",
+    "It has a ruler and a pen for straight lines",
+    "It is an electronic circle plotter"
+   ],
+   "at": 1793937689001
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What are French curves used for, and what rule applies to aligning them?",
+   "c": "Drawing irregular curves; align a minimum of three points of the curve.",
+   "w": [
+    "Drawing straight lines; align a minimum of two points",
+    "Drawing circles; align a minimum of four points",
+    "Drawing ellipses only; align one point"
+   ],
+   "at": 1793937689002
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which statement about drawing templates is TRUE?",
+   "c": "They are patterns that serve as a guide and contain circles, squares, rectangles, arcs and similar shapes.",
+   "w": [
+    "They are used only for dividing lines",
+    "They are made only for freehand lettering",
+    "They replace the need for any scale"
+   ],
+   "at": 1793937689002
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What are the two templates in the picture on slide 32?",
+   "c": "A yellow template with various shapes and a green template with circles and arcs.",
+   "w": [
+    "Two protractors",
+    "Two erasing shields",
+    "Two rapidographs"
+   ],
+   "at": 1793937689002
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "How are dividers similar to compasses, and what are they used for?",
+   "c": "They look similar, and are used to lay off distances from a scale or other parts of the drawing.",
+   "w": [
+    "They are electronic and measure voltage",
+    "They draw circles with ink",
+    "They measure angles in degrees"
+   ],
+   "at": 1793937689002
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What method is used with dividers to divide a line into n equal parts?",
+   "c": "Trial and error.",
+   "w": [
+    "Exact formula",
+    "Protractor reading",
+    "Triangle projection"
+   ],
+   "at": 1793937689002
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What is a protractor and in what units does it usually measure?",
+   "c": "A circular or semicircular tool for measuring an angle or circle, usually in degrees.",
+   "w": [
+    "A tool for drawing circles, measured in millimetres",
+    "A tool for erasing, measured in grams",
+    "A tool for scaling, measured in ratios"
+   ],
+   "at": 1793937689003
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "The protractor in the picture on slide 34 is which shape, and what is the maximum reading?",
+   "c": "Semicircular, reading up to 180 degrees.",
+   "w": [
+    "Full circle, reading up to 360 degrees",
+    "Rectangular, reading up to 100",
+    "Triangular, reading up to 90"
+   ],
+   "at": 1793937689003
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What is the purpose of the erasing shield?",
+   "c": "It allows erasers to be used through it to erase lines and text without removing nearby lines that must stay.",
+   "w": [
+    "It protects the pencil from breaking",
+    "It protects the board from scratches",
+    "It holds the paper flat"
+   ],
+   "at": 1793937689003
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "How is the pencil sharpener operated?",
+   "c": "Manually or by electric motor.",
+   "w": [
+    "Only by hand",
+    "Only by electric motor",
+    "Only by pressure"
+   ],
+   "at": 1793937689003
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which of these is NOT listed as a drawing material (an item consumed with use)?",
+   "c": "Compass.",
+   "w": [
+    "Paper",
+    "Eraser",
+    "Rapidography"
+   ],
+   "at": 1793937689003
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which five items are listed as drawing materials?",
+   "c": "Paper, pencil, eraser, drafting tape, and rapidography.",
+   "w": [
+    "Paper, compass, scale, triangle, and tape",
+    "Pencil, divider, protractor, eraser, and ink",
+    "Board, T-square, pencil, tape, and paper"
+   ],
+   "at": 1793937689003
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What are the drawing paper types listed?",
+   "c": "Rectangular grid, white plan paper, and tracing paper.",
+   "w": [
+    "Carbon paper, newsprint, and cardboard",
+    "Graph paper only",
+    "Photographic paper and tissue"
+   ],
+   "at": 1793937689003
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What does the drawing sheet determine?",
+   "c": "The selection of the pencil grade.",
+   "w": [
+    "The selection of the border line",
+    "The size of the title block",
+    "The scale of the drawing"
+   ],
+   "at": 1793937689004
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What are the A-series drawing sheet sizes on slide 39 in mm?",
+   "c": "A4 210 x 297, A3 297 x 420, A2 420 x 594, A1 594 x 841, A0 841 x 1189.",
+   "w": [
+    "A4 200 x 290, A3 290 x 400, A2 400 x 580, A1 580 x 800, A0 800 x 1100",
+    "A4 297 x 420, A3 420 x 594, A2 594 x 841, A1 841 x 1189, A0 1189 x 1500",
+    "A4 148 x 210, A3 210 x 297, A2 297 x 420, A1 420 x 594, A0 594 x 841"
+   ],
+   "at": 1793937689004
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which sheet is the largest and which is the smallest on the sheet-size chart?",
+   "c": "A0 is the largest and A4 is the smallest.",
+   "w": [
+    "A4 is the largest and A0 is the smallest",
+    "A1 is the largest and A3 is the smallest",
+    "A2 is the largest and A0 is the smallest"
+   ],
+   "at": 1793937689004
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "How do the sheet sizes change from A4 up to A0 on the chart?",
+   "c": "Each size is a trimmed or doubled version of the next, shown as nested rectangles with A0 the outermost.",
+   "w": [
+    "They all have the same area",
+    "They get narrower but longer",
+    "They are unrelated to each other"
+   ],
+   "at": 1793937689004
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Most drawing pencil leads are made from what, and in how many degrees of hardness?",
+   "c": "Graphite, in 17 degrees of hardness.",
+   "w": [
+    "Charcoal, in 9 degrees",
+    "Carbon fibre, in 20 degrees",
+    "Wax, in 5 degrees"
+   ],
+   "at": 1793937689004
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which pencil is the hardest and which is the softest and blackest?",
+   "c": "9H is the hardest; 6B is the softest and blackest.",
+   "w": [
+    "6H is the hardest; 9B is the softest",
+    "9B is the hardest; 6H is the softest",
+    "HB is the hardest; F is the softest"
+   ],
+   "at": 1793937689005
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Place these in order from hardest to softest: HB, 2H, F, B, 6B.",
+   "c": "2H, F, HB, B, 6B.",
+   "w": [
+    "6B, B, HB, F, 2H",
+    "F, 2H, HB, B, 6B",
+    "HB, F, 2H, B, 6B"
+   ],
+   "at": 1793937689005
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What do the letters mean: F, HB, and H?",
+   "c": "F is intermediate between soft and hard; HB is medium soft; H is medium hard.",
+   "w": [
+    "F is very hard; HB is extra soft; H is soft",
+    "F is soft; HB is hard; H is intermediate",
+    "F is firm black; HB is hardest; H is hardest and blackest"
+   ],
+   "at": 1793937689005
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which statement about pencil grades is FALSE?",
+   "c": "5B is extra hard and 4B is extremely hard.",
+   "w": [
+    "5B is extremely soft",
+    "4H is very hard",
+    "3B is very soft"
+   ],
+   "at": 1793937689005
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which grade is described as \"extremely hard, plus\"?",
+   "c": "8H.",
+   "w": [
+    "7H",
+    "9H",
+    "6H"
+   ],
+   "at": 1793937689005
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which factors guide the selection of a drawing pencil?",
+   "c": "The type and quality of the drawing paper, and how thick and dark you want the line to be.",
+   "w": [
+    "The price of the pencil and the colour of the barrel",
+    "The length of the pencil and the user's hand size",
+    "The size of the title block only"
+   ],
+   "at": 1793937689005
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "How should pencil lines be?",
+   "c": "Clean and sharp, and dark enough for the views to be seen when the standard lines are drawn.",
+   "w": [
+    "Faint and wide so that they can be erased",
+    "Thick and fuzzy",
+    "Light for visible lines"
+   ],
+   "at": 1793937689006
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What happens if you use too much pressure with a pencil, and how can you avoid it?",
+   "c": "You will groove the drawing surface; use the proper grade of lead.",
+   "w": [
+    "The pencil will break; use a softer pencil",
+    "The paper will turn yellow; use tape",
+    "The line will fade; use ink"
+   ],
+   "at": 1793937689006
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What should you do with the pencil as you draw a line?",
+   "c": "Turn the pencil between your thumb and forefinger.",
+   "w": [
+    "Hold it still without rotating",
+    "Press down at a steep angle",
+    "Tilt it only to one side"
+   ],
+   "at": 1793937689006
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What do \"eraser\" and \"rubber\" mean in the deck?",
+   "c": "Eraser is the US term and rubber is the UK term for the article used to rub out pencil and also pen mistakes.",
+   "w": [
+    "Rubber is the US term and eraser is the UK term",
+    "They are different tools for ink only",
+    "Eraser is for pen and rubber is for pencil"
+   ],
+   "at": 1793937689006
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What is drafting tape used for?",
+   "c": "Holding drawings, sketches, blueprints or other papers to drawing boards.",
+   "w": [
+    "Measuring lengths",
+    "Joining torn drawings permanently",
+    "Erasing lines"
+   ],
+   "at": 1793937689006
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What is a rapidograph?",
+   "c": "A type of drawing pen by which lines are drawn on tracing paper.",
+   "w": [
+    "A type of pencil with hard lead",
+    "A type of scale",
+    "A type of eraser"
+   ],
+   "at": 1793937689006
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which properties of rapidograph ink are listed?",
+   "c": "Light resistant, waterproof, precise and consistent for any application.",
+   "w": [
+    "Fast-drying, erasable and thick",
+    "Colourful and transparent",
+    "Cheap, light and removable"
+   ],
+   "at": 1793937689006
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What is the difference between a compass and a divider?",
+   "c": "A compass draws circles and arcs, while a divider lays off distances without drawing curves.",
+   "w": [
+    "A compass lays off distances, while a divider draws circles",
+    "They are identical in use",
+    "A divider measures angles"
+   ],
+   "at": 1793937689007
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which tool and purpose are mismatched?",
+   "c": "Protractor: drawing irregular curves.",
+   "w": [
+    "T-square: drawing horizontal lines",
+    "French curve: drawing irregular curves",
+    "Erasing shield: erasing without disturbing nearby lines"
+   ],
+   "at": 1793937689007
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "Which tool is paired correctly with its image on slide 36?",
+   "c": "Pencil sharpener: a manual coloured set and an electric desktop sharpener.",
+   "w": [
+    "Pencil sharpener: a protractor and compass",
+    "Pencil sharpener: a drafting tape and eraser",
+    "Pencil sharpener: a T-square and triangle"
+   ],
+   "at": 1793937689007
+  },
+  {
+   "s": "1.6 Care and Use of Drafting Tools",
+   "q": "What items do the pictures on slide 42 (eraser) and 43 (drafting tape) show?",
+   "c": "A pink/blue eraser and a white PILOT eraser; rolls of drafting tape and a sheet taped at its corners on a board.",
+   "w": [
+    "Two pencils and a ruler",
+    "Two compasses",
+    "Two protractors"
+   ],
+   "at": 1793937689007
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What is a border line, and how far is it usually from the edge of the paper?",
+   "c": "A line drawn around the inside edge of the paper, usually 5 to 20 mm from the edge.",
+   "w": [
+    "A line drawn outside the paper edge, usually 50 mm away",
+    "A line drawn through the centre of the paper, usually 100 mm long",
+    "A line drawn only at the top, usually 1 mm from the edge"
+   ],
+   "at": 1793939052492
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "In the border-line figure on slide 45, which margins are shown and what are their values?",
+   "c": "The left margin is 20 and the top, bottom and right margins are 10 each.",
+   "w": [
+    "All four margins are 20",
+    "The left margin is 10 and the other three are 20",
+    "The top and bottom are 5 and the sides are 20"
+   ],
+   "at": 1793939052493
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What is labelled in the middle of the bordered rectangle on slide 45?",
+   "c": "Drawing Area.",
+   "w": [
+    "Title Block",
+    "Notes Area",
+    "Revision Table"
+   ],
+   "at": 1793939052493
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which statement about the title block is FALSE?",
+   "c": "It carries the least information on an engineering drawing sheet.",
+   "w": [
+    "It has the highest concentration of information on the sheet",
+    "It is the door to understanding the drawing and the company",
+    "It includes the information that enables the drawing to be interpreted and identified"
+   ],
+   "at": 1793939052493
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What information appears in the sample title block on slide 46?",
+   "c": "Drawn by, checked by, date, scale, the academy name, the drawing title, drawing number and sheet number.",
+   "w": [
+    "Only the scale and the material",
+    "Only the company logo",
+    "Only dimensions and tolerances"
+   ],
+   "at": 1793939052493
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What are the drawing title, scale and sheet number in the sample title block?",
+   "c": "BISECTION OF A LINE, scale 1:1, sheet 1 of 1.",
+   "w": [
+    "ANGLE BISECTOR, scale 2:1, sheet 2 of 3",
+    "DIVISION OF A LINE, scale 1:2, sheet 1 of 2",
+    "BISECTION OF AN ARC, scale 1:5, sheet 3 of 3"
+   ],
+   "at": 1793939052493
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Why is a contrast needed between the lines used in a drawing?",
+   "c": "To show every feature distinctly and without ambiguity.",
+   "w": [
+    "To make the drawing colourful",
+    "To save ink",
+    "To make erasing easier"
+   ],
+   "at": 1793939052493
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Into which three weights are lines divided to improve appearance and legibility?",
+   "c": "Thick, medium and thin.",
+   "w": [
+    "Heavy, light and dotted",
+    "Solid, dashed and chain",
+    "Black, grey and white"
+   ],
+   "at": 1793939052493
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which line type is THICK in the alphabet of lines table?",
+   "c": "Object line.",
+   "w": [
+    "Hidden line",
+    "Center line",
+    "Dimension line"
+   ],
+   "at": 1793939052493
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What weight is the hidden line shown with, and how does it look?",
+   "c": "Medium weight, drawn as short evenly spaced dashes.",
+   "w": [
+    "Thick weight, drawn as a continuous line",
+    "Thin weight, drawn as long and short dashes",
+    "Thick weight, drawn as a zigzag"
+   ],
+   "at": 1793939052494
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which line is drawn as alternating long and short dashes with thin weight?",
+   "c": "Center line.",
+   "w": [
+    "Hidden line",
+    "Object line",
+    "Leader line"
+   ],
+   "at": 1793939052494
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What is the use of an object line?",
+   "c": "To indicate the visible edge of an object.",
+   "w": [
+    "To indicate invisible edges",
+    "To indicate the centre of a part",
+    "To indicate the cutting plane"
+   ],
+   "at": 1793939052494
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What do hidden lines indicate?",
+   "c": "Invisible edges or contours.",
+   "w": [
+    "Visible edges of an object",
+    "The center of holes only",
+    "Measurement values"
+   ],
+   "at": 1793939052494
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What does a center line indicate?",
+   "c": "The center of an object or part of an object.",
+   "w": [
+    "The visible outline",
+    "The termination of a dimension",
+    "The position of a cutting plane"
+   ],
+   "at": 1793939052494
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What is the purpose of a dimension line?",
+   "c": "To indicate the distance or measurement value of an object or edge.",
+   "w": [
+    "To show invisible edges",
+    "To show hatching",
+    "To show a break"
+   ],
+   "at": 1793939052494
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What is the purpose of an extension line?",
+   "c": "To show the termination of a dimension line.",
+   "w": [
+    "To show the centre of a circle",
+    "To show the direction of sight",
+    "To show a missing part"
+   ],
+   "at": 1793939052494
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What is the purpose of a leader line, and what ends can it have?",
+   "c": "It indicates a part to which a note, number or other reference applies, ending with an arrow or dot.",
+   "w": [
+    "It indicates the cutting plane, ending with a square",
+    "It shows hidden edges, ending with a cross",
+    "It shows the break of a part, ending with a zigzag"
+   ],
+   "at": 1793939052494
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What is the weight of the leader, dimension and extension lines?",
+   "c": "Thin.",
+   "w": [
+    "Thick",
+    "Medium",
+    "Thick for leader and thin for the others"
+   ],
+   "at": 1793939052494
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which line designates where an imaginary cutting took place?",
+   "c": "Cutting plane line.",
+   "w": [
+    "Viewing line",
+    "Section line",
+    "Phantom line"
+   ],
+   "at": 1793939052494
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What is the weight of the cutting plane line?",
+   "c": "Thick.",
+   "w": [
+    "Thin",
+    "Medium",
+    "Not defined"
+   ],
+   "at": 1793939052495
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which line indicates the direction of sight when a partial view is used?",
+   "c": "Viewing line.",
+   "w": [
+    "Cutting plane line",
+    "Leader line",
+    "Extension line"
+   ],
+   "at": 1793939052495
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which two lines are drawn with the same thick long-and-short dash style with arrowheads at the ends?",
+   "c": "Cutting plane line and viewing line.",
+   "w": [
+    "Hidden line and center line",
+    "Phantom line and break line",
+    "Leader line and section line"
+   ],
+   "at": 1793939052495
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which line indicates the exposed surfaces of an object in a sectional view?",
+   "c": "Section line.",
+   "w": [
+    "Phantom line",
+    "Object line",
+    "Hidden line"
+   ],
+   "at": 1793939052495
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What does a phantom line indicate?",
+   "c": "The alternate position of parts of the object or the relative position of a missing part.",
+   "w": [
+    "The exposed surfaces in a section",
+    "The centre of an object",
+    "The termination of a dimension"
+   ],
+   "at": 1793939052495
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which line is drawn as a thin line with one long and two short dashes?",
+   "c": "Phantom line.",
+   "w": [
+    "Center line",
+    "Hidden line",
+    "Cutting plane line"
+   ],
+   "at": 1793939052495
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What do break lines indicate?",
+   "c": "That a portion of the object is not shown on the drawing.",
+   "w": [
+    "The centre of a hole",
+    "The direction of sight",
+    "The measured distance"
+   ],
+   "at": 1793939052495
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What are the two types of break line and their weights?",
+   "c": "Long break is thin with zigzag marks, and short break is thick and wavy.",
+   "w": [
+    "Long break is thick and wavy, and short break is thin with zigzag",
+    "Both are thin and straight",
+    "Both are thick zigzags"
+   ],
+   "at": 1793939052496
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which statement about the alphabet of lines is FALSE?",
+   "c": "A section line is a thick line drawn at random angles.",
+   "w": [
+    "A hidden line is medium weight",
+    "An object line is thick",
+    "A phantom line is thin"
+   ],
+   "at": 1793939052496
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Match: Which line is correct for a long break?",
+   "c": "A thin line with a zigzag in the middle.",
+   "w": [
+    "A thick wavy line",
+    "A thin chain line",
+    "A thick dashed line"
+   ],
+   "at": 1793939052496
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which lines are labelled in the combined line example on slide 50?",
+   "c": "Phantom line, center line, outline, hidden line, dimension line, extension line, leader line, break line, cutting plane line and sectioning line.",
+   "w": [
+    "Only object and hidden lines",
+    "Only dimension and extension lines",
+    "Only section and break lines"
+   ],
+   "at": 1793939052496
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "In the combined line example on slide 50, what is shown at the right end, and what is it labelled?",
+   "c": "A hexagon with hatching inside two circles, labelled Section AA, with the sectioning line pointing to the hatching.",
+   "w": [
+    "A plain circle labelled Hole",
+    "A square labelled Key",
+    "A triangle labelled Wedge"
+   ],
+   "at": 1793939052496
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "In the combined example, which line shows the swept outline of a part at its alternate position at the left side?",
+   "c": "Phantom line.",
+   "w": [
+    "Break line",
+    "Hidden line",
+    "Cutting plane line"
+   ],
+   "at": 1793939052496
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "In the cutting-plane figure on slide 47, which labels appear?",
+   "c": "Cutting plane line, object lines, hidden line, leader line, hole, section line, phantom line, center line, dimension line (3.00) and extension line.",
+   "w": [
+    "Only object line and center line",
+    "Only phantom and break lines",
+    "Only title block labels"
+   ],
+   "at": 1793939052496
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What value is shown on the dimension line in the slide 47 figure?",
+   "c": "3.00.",
+   "w": [
+    "2.00",
+    "1.50",
+    "5.00"
+   ],
+   "at": 1793939052496
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What are drawing symbols composed of?",
+   "c": "Symbols and conventions that represent the shape and material of a component.",
+   "w": [
+    "Only text notes",
+    "Only numbers",
+    "Only colours"
+   ],
+   "at": 1793939052496
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What do section line (material) symbols show?",
+   "c": "The kind of material from which the part is to be constructed.",
+   "w": [
+    "The size of the part",
+    "The weight of the part",
+    "The finish of the part"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which hatch pattern is used for cast iron?",
+   "c": "Evenly spaced thin parallel diagonal lines.",
+   "w": [
+    "Dense dots with short dashes",
+    "Cross-hatching",
+    "Wavy grain lines"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which material symbol is shown with thick, closely spaced diagonal lines?",
+   "c": "Steel.",
+   "w": [
+    "Cast iron",
+    "Rubber",
+    "Brass"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which materials share the symbol with thin dashed line and dots in the first picture?",
+   "c": "Magnesium, aluminum and aluminum alloys.",
+   "w": [
+    "Brass, bronze and copper",
+    "Babbitt, lead, zinc and alloys",
+    "Wood"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which symbol is for rubber, plastic and electrical insulation?",
+   "c": "Wide diagonal lines with a thin line between pairs.",
+   "w": [
+    "Dense cross-hatching",
+    "Wood grain",
+    "Dots"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which materials use alternating long and short diagonal lines?",
+   "c": "Brass, bronze and copper.",
+   "w": [
+    "Cast iron",
+    "Steel",
+    "Rubber"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which pattern is used for babbitt, lead, zinc and alloys?",
+   "c": "Cross-hatching (a net of intersecting diagonal lines).",
+   "w": [
+    "Parallel diagonal lines",
+    "Concentric circles",
+    "Wavy lines"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "How are wood across grain and wood with grain shown?",
+   "c": "Across grain: concentric rings with radial lines; with grain: long wavy parallel lines.",
+   "w": [
+    "Across grain: diagonal lines; with grain: dots",
+    "Across grain: cross-hatching; with grain: dashes",
+    "Both as plain parallel lines"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which statement about material symbols is FALSE?",
+   "c": "Steel and cast iron use the same hatch pattern.",
+   "w": [
+    "Cast iron and steel are different patterns",
+    "Wood across grain differs from wood with grain",
+    "Rubber has its own symbol"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What are shape symbols used for?",
+   "c": "To show the shape of an object when needed, to excellent advantage.",
+   "w": [
+    "To show the material of an object",
+    "To show electrical devices",
+    "To show dimensions"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which sections are shown in the shape symbols slide?",
+   "c": "Square section (metal and wood), round section (solid and tubular), angle section, channel section, I-beam and square section (tubular).",
+   "w": [
+    "Only round sections",
+    "Only angle sections",
+    "Only wood sections"
+   ],
+   "at": 1793939052497
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which shape symbol is shown in a metal bar with hatching at the end of a long strip?",
+   "c": "Angle section (metal).",
+   "w": [
+    "Square section (wood)",
+    "Round section (solid)",
+    "Square section (tubular)"
+   ],
+   "at": 1793939052498
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "How is the I-beam shown?",
+   "c": "As a long beam with an I-shaped cross-section on its end.",
+   "w": [
+    "As a circle with a hole",
+    "As a square with a hole",
+    "As a curved bar"
+   ],
+   "at": 1793939052498
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "What are electrical symbols?",
+   "c": "Symbols that represent various electrical devices rather than an actual drawing of the units.",
+   "w": [
+    "Actual drawings of the units",
+    "Photographs of units",
+    "Colour codes for wires"
+   ],
+   "at": 1793939052498
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which components are shown in the electrical symbols picture?",
+   "c": "Switch, cell, battery, lamp, voltmeter, ammeter, resistor, variable resistor, motor, diode, wire crossing, AC supply and DC supply.",
+   "w": [
+    "Only switch and lamp",
+    "Only resistor and diode",
+    "Only battery and motor"
+   ],
+   "at": 1793939052498
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which letter appears inside the voltmeter symbol and which in the ammeter symbol?",
+   "c": "V for voltmeter and A for ammeter.",
+   "w": [
+    "A for voltmeter and V for ammeter",
+    "M for both",
+    "R for both"
+   ],
+   "at": 1793939052498
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which symbol is drawn as a circle with a cross?",
+   "c": "Lamp.",
+   "w": [
+    "Motor",
+    "Voltmeter",
+    "AC supply"
+   ],
+   "at": 1793939052498
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "How is the variable resistor symbol different from the resistor?",
+   "c": "It is a rectangle with an arrow crossing it diagonally.",
+   "w": [
+    "It is a circle with an M",
+    "It is a triangle with a bar",
+    "It is a plain wavy line"
+   ],
+   "at": 1793939052498
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which symbol has a circle with a wavy line inside, and which has a circle with two straight lines and a plus sign?",
+   "c": "AC supply has the wavy line; DC supply has the straight lines with plus.",
+   "w": [
+    "DC supply has the wavy line; AC supply has the lines",
+    "Motor and lamp respectively",
+    "Cell and battery respectively"
+   ],
+   "at": 1793939052498
+  },
+  {
+   "s": "1.7 Layout, Border Line and Title Block and 1.8 Alphabet of Lines and Symbols",
+   "q": "Which symbol is a triangle with a bar at its tip?",
+   "c": "Diode.",
+   "w": [
+    "Cell",
+    "Switch",
+    "Motor"
+   ],
+   "at": 1793939052498
+  }
+ ]
+}

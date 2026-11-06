@@ -1,0 +1,87 @@
+/* Reference PDF drawer, category pools, PDF viewer. Uses the app's theme variables. */
+:root{--refw:min(46vw,640px)}
+body{transition:padding .28s ease}
+@media(min-width:900px){body.ref-open{padding-right:var(--refw)}}
+@media(max-width:899px){body.ref-open{padding-bottom:62vh}}
+
+.refrow{margin-top:4px}
+.refbtn.on{border-color:var(--acc);color:var(--acc);background:var(--accbg)}
+
+.refd{position:fixed;z-index:30;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);border:1.5px solid var(--line);box-shadow:0 10px 40px rgba(0,0,0,.25);
+ visibility:hidden;transition:transform .28s ease,visibility 0s linear .28s}
+.refd.on{visibility:visible;transform:none!important;transition:transform .28s ease,visibility 0s}
+@media(min-width:900px){.refd{top:0;right:0;bottom:0;width:var(--refw);border-radius:0;border-width:0 0 0 1.5px;transform:translateX(102%)}}
+@media(max-width:899px){.refd{left:0;right:0;bottom:0;height:62vh;border-radius:18px 18px 0 0;border-width:1.5px 0 0;transform:translateY(102%);padding-bottom:env(safe-area-inset-bottom)}}
+.refh{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1.5px solid var(--line);flex:none}
+.reft{display:flex;gap:4px}
+.reft button{font:inherit;font-size:.8rem;font-weight:650;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer}
+.reft button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.reft small{opacity:.85}
+.refn{flex:1;min-width:0;font-size:.78rem;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.refb{position:relative;flex:1;min-height:0}
+.refv,.refp{position:absolute;inset:0;overflow:auto;visibility:hidden;pointer-events:none;display:flex;flex-direction:column}
+.refp{padding:10px 12px 24px;display:block}
+.refv.show,.refp.show{visibility:visible;pointer-events:auto}
+.reftools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:6px 10px;border-bottom:1.5px solid var(--line);flex:none}
+.reftools .ghost{padding:5px 10px;font-size:.8rem}
+.chipx{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;background:var(--accbg);color:var(--acc);border-radius:999px;padding:4px 10px}
+.chipx button{all:unset;cursor:pointer;opacity:.7}
+.refmsg{position:absolute;left:10px;right:10px;bottom:10px;margin:0;padding:8px 12px;border-radius:12px;background:var(--card);border:1.5px solid var(--line);font-size:.82rem;z-index:3}
+.refmsg.bad{color:var(--bad);border-color:var(--bad)}
+
+/* viewer */
+.pdf-scroll{position:relative;flex:1;min-height:0;overflow:auto;padding:8px;background:color-mix(in srgb,var(--ink) 7%,var(--bg));-webkit-overflow-scrolling:touch}
+.pdf-page{position:relative;margin:0 auto 10px;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.18);contain:layout paint;width:100%}
+.pdf-host{position:absolute;inset:0}
+.pdf-host canvas{display:block}
+.pdf-no{position:absolute;right:6px;bottom:4px;font-size:.68rem;color:#777;pointer-events:none}
+.pdf-page .textLayer{position:absolute;inset:0;overflow:hidden;opacity:1;line-height:1;text-align:initial;text-size-adjust:none;forced-color-adjust:none;transform-origin:0 0}
+.pdf-page .textLayer span,.pdf-page .textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0 0}
+.pdf-page .textLayer .markedContent{display:contents}
+.pdf-page .textLayer ::selection{background:rgba(207,95,39,.35)}
+.pdf-hl{position:absolute;pointer-events:none;border-radius:3px;mix-blend-mode:multiply}
+.pdf-note{background:rgba(255,214,10,.42)}
+.pdf-target{background:rgba(207,95,39,.30);outline:2px solid var(--acc);animation:pdfpulse 1.6s ease-out 2}
+@keyframes pdfpulse{0%{box-shadow:0 0 0 0 rgba(207,95,39,.6)}100%{box-shadow:0 0 0 18px rgba(207,95,39,0)}}
+.pdf-msg{padding:24px 16px;text-align:center;color:var(--mute);font-size:.9rem}
+.refv>.pdf-msg{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;background:var(--bg)}
+
+/* selection bubble */
+.selbub{position:fixed;z-index:40;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:6px;box-shadow:0 6px 22px rgba(0,0,0,.28);width:max-content;max-width:min(260px,calc(100vw - 16px))}
+.selbub .row{margin:0;gap:6px}
+.selbub textarea{width:100%;box-sizing:border-box;min-height:64px;font:inherit;font-size:.85rem;padding:7px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:6px;resize:vertical}
+
+/* category pools */
+.pools{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+.pool{position:relative;overflow:hidden;min-height:92px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;border-radius:18px;border:1.5px solid color-mix(in srgb,var(--c) 55%,var(--line));background:color-mix(in srgb,var(--c) 7%,var(--card));padding:0;isolation:isolate}
+.pool.on{box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 45%,transparent);border-color:var(--c)}
+.pool .water{position:absolute;left:0;right:0;bottom:0;height:var(--lvl);background:color-mix(in srgb,var(--c) 30%,transparent);transition:height .6s ease;z-index:-1}
+.pool .wv{position:absolute;left:-30%;top:-52%;width:160%;height:160%;border-radius:41%;background:color-mix(in srgb,var(--c) 30%,transparent);animation:poolspin 9s linear infinite}
+.pool .wv.w2{border-radius:45%;animation-duration:14s;animation-direction:reverse;opacity:.7}
+@keyframes poolspin{to{transform:rotate(360deg)}}
+.pool .pn{display:flex;flex-direction:column;gap:2px;padding:12px}
+.pool .pn b{font-size:.92rem;line-height:1.2}.pool .pn small{color:var(--mute);font-size:.74rem}
+@media(prefers-reduced-motion:reduce){.pool .wv{animation:none}body{transition:none}.refd,.refd.on{transition:none}.pdf-target{animation:none}}
+.poold{margin-top:12px;border:1.5px solid var(--line);border-radius:16px;padding:10px;background:var(--card)}
+.poolh{display:flex;align-items:center;gap:8px;margin-bottom:6px}.poolh b{flex:1}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.pdfrow{display:flex;align-items:center;gap:6px;width:100%;box-sizing:border-box;text-align:left;font:inherit;color:var(--ink);background:none;border:0;padding:4px 0}
+button.pdfrow{padding:9px 10px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);margin:6px 0;cursor:pointer}
+.pdfopen{flex:1;min-width:0;display:flex;gap:10px;align-items:center;text-align:left;font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:9px 10px;cursor:pointer}
+.pdfrow .ic{font-size:1.2rem}.pdfrow .tx{display:flex;flex-direction:column;min-width:0}.pdfrow .tx b{font-size:.9rem;overflow:hidden;text-overflow:ellipsis}.pdfrow .tx small{color:var(--mute);font-size:.74rem}
+.pickl{display:flex;flex-direction:column;gap:2px;max-height:46vh;overflow:auto;margin:6px 0}
+.pickl.small{max-height:150px}
+.pickr{display:flex;align-items:center;gap:9px;padding:6px 2px;font-size:.9rem;cursor:pointer}
+.pickr input{width:18px;height:18px;accent-color:var(--acc);flex:none}
+.mgbox{margin-top:12px;border:1.5px solid var(--line);border-radius:14px;padding:8px 12px;background:var(--card)}
+.mgbox summary{cursor:pointer;font-weight:650;padding:4px 0}
+.mgbox .fld{display:block;width:100%;box-sizing:border-box;font:inherit;padding:9px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);margin:8px 0}
+.mgbox input[type=file]{margin:6px 0;max-width:100%}
+
+/* notes */
+.notehead{margin-bottom:8px}.notehead .n{margin:4px 0}
+.nrow{border:1.5px solid var(--line);border-radius:14px;padding:8px 10px;margin:8px 0;background:var(--card)}
+.nmeta{display:flex;align-items:center;gap:6px}.nmeta .ghost{padding:4px 10px;font-size:.78rem;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nmeta .sync{margin-left:auto;font-size:.85rem}
+.nrow blockquote{margin:8px 0;padding:6px 10px;border-left:3px solid rgba(255,214,10,.9);background:rgba(255,214,10,.12);font-size:.85rem;line-height:1.45;border-radius:0 8px 8px 0}
+.nrow textarea{width:100%;box-sizing:border-box;min-height:48px;font:inherit;font-size:.85rem;padding:7px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);resize:vertical}
