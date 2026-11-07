@@ -58,7 +58,12 @@ const P: Record<string, ReactNode> = {
   dots: <><circle cx="5" cy="12" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="19" cy="12" r="1.4" /></>,
   note: <><path d="M5 4h14v12l-4 4H5z" /><path d="M15 20v-4h4" /></>,
   search: <><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></>,
-  home: <path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z" />
+  home: <path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z" />,
+  grid: <><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></>,
+  eye: <><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>,
+  eyeOff: <><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.5 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4.2-1M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>,
+  flag: <path d="M5 21V4M5 4h11l-2 4 2 4H5" />,
+  list: <path d="M4 6h16M4 12h16M4 18h16" />
 };
 const FILLED = new Set(['play', 'dots']);
 /** Small line icon that follows the text colour and size. `fill` fills it (e.g. a pinned star). */

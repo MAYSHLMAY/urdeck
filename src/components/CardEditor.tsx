@@ -1,15 +1,19 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { askPassword, Sheet, SheetFrame, useEngine, Ic } from './ui';
+import { ask, askPassword, Sheet, SheetFrame, useEngine, Ic } from './ui';
+import { isOwner } from '@/lib/api';
 
 export type EditorState = { mode: 'edit' | 'add'; id?: string; section?: string } | null;
 
-/** Owner-only: edit a card's question and choices, remove it, or add one new card to an existing set. */
+/** Owner: changes are saved for everyone. Everyone else: changes are private, kept on this device only. */
 export function CardEditor({ state, onClose }: { state: EditorState; onClose: () => void }) {
   const e = useEngine();
   const open = !!state, edit = state?.mode === 'edit';
   const [s, setS] = useState(''), [q, setQ] = useState(''), [c, setC] = useState(''), [w, setW] = useState<string[]>(['', '', '']), [p, setP] = useState(false);
-  const [err, setErr] = useState(''), [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(''), [busy, setBusy] = useState(false), [ns, setNs] = useState('');
+  // private mode: not the owner, or the card is one of my own
+  const mine = !!(state?.id && e.isMine(state.id));
+  const priv = !isOwner() || mine;
 
   const sets = useMemo(() => {
     if (!open) return [] as { s: string; label: string }[];
@@ -19,7 +23,7 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
 
   useEffect(() => {
     if (!state) return;
-    setErr(''); setBusy(false);
+    setErr(''); setBusy(false); setNs('');
     if (state.mode === 'edit') {
       const card = state.id ? e.qById(state.id) : null;
       if (card) { setS(card.s); setQ(card.q); setC(card.c); setW(card.w.length ? [...card.w] : ['']); setP(!!card.p); }
@@ -28,11 +32,17 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
   }, [state]);
 
   const wrong = w.map(x => x.trim()).filter(Boolean);
-  const ok = q.trim() && c.trim() && wrong.length >= 1 && (edit || s);
+  const setName = s === '__new' ? ns.trim() : s;
+  const ok = q.trim() && c.trim() && wrong.length >= 1 && (edit || setName);
 
   async function save() {
     if (!ok || busy) return;
     setBusy(true); setErr('');
+    if (priv) {
+      const m = edit ? e.myEditCard(state!.id!, { q: q.trim(), c: c.trim(), w: wrong, p }) : e.myAddCard({ s: setName, q: q.trim(), c: c.trim(), w: wrong, p });
+      setBusy(false); if (m) { setErr(m); return; }
+      e.toast(edit ? 'Saved for you' : 'Card added for you'); onClose(); return;
+    }
     const m = edit ? await e.editCard(state!.id!, { q: q.trim(), c: c.trim(), w: wrong, p }) : await e.addOneCard({ s, q: q.trim(), c: c.trim(), w: wrong, p });
     setBusy(false);
     if (m) { setErr(m); return; }
@@ -40,6 +50,11 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
   }
   async function remove() {
     if (!state?.id || busy) return;
+    if (priv) {
+      const r = await ask({ title: mine ? 'Delete your card?' : 'Remove this card for you?', msg: mine ? 'This card exists only on this device, so it will be gone for good.' : 'It is hidden only on this device. Everyone else still sees it, and you can bring it back in Settings.', acts: [{ k: 'ok', l: mine ? 'Delete my card' : 'Remove for me' }] });
+      if (r && r.act) { e.myRemoveCard(state.id); e.toast(mine ? 'Card deleted' : 'Card removed for you'); onClose(); }
+      return;
+    }
     const pw = await askPassword('Delete this card?', 'It is removed for everyone and cannot be undone. Enter the owner password.');
     if (!pw) return;
     setBusy(true); setErr('');
@@ -51,16 +66,19 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
 
   return (
     <Sheet open={open} onClose={onClose} className="sheet cedit">
-      <SheetFrame title={edit ? 'Edit card' : 'Add a card'} onClose={onClose}>
+      <SheetFrame title={edit ? (priv ? 'Edit card (only for you)' : 'Edit card') : (priv ? 'Add your own card' : 'Add a card')} onClose={onClose}>
         <div className="sc">
           {edit
-            ? <p className="n">Set: <b>{(() => { const i = e.FT.secInfo.get(s); return i ? (i.n ? i.n + ' · ' : '') + i.t : s; })()}</b>. Progress, notes and PDF links of this card are kept.</p>
+            ? <p className="n">Set: <b>{(() => { const i = e.FT.secInfo.get(s); return i ? (i.n ? i.n + ' · ' : '') + i.t : s; })()}</b>. Progress, notes and PDF links of this card are kept.{priv && !mine ? ' Your version is saved only on this device; the original is untouched.' : ''}</p>
             : <>
               <label className="cl">Add to card set</label>
               <select value={s} onChange={ev => setS(ev.target.value)}>
-                {!sets.length && <option value="">No card sets yet</option>}
+                {!sets.length && !priv && <option value="">No card sets yet</option>}
                 {sets.map(x => <option key={x.s} value={x.s}>{x.label}</option>)}
+                {priv && <option value="__new">New set of my own…</option>}
               </select>
+              {s === '__new' && <input type="text" value={ns} onChange={ev => setNs(ev.target.value)} maxLength={80} placeholder="Name of your set, e.g. My weak spots" />}
+              {priv && <p className="n">Private: stays on this device and is never uploaded.</p>}
             </>}
           <label className="cl">Question</label>
           <textarea value={q} onChange={ev => setQ(ev.target.value)} rows={3} maxLength={3900} placeholder="Type the question" />
@@ -77,7 +95,7 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
           <label className="pickr" style={{ marginTop: 10 }}><input type="checkbox" checked={p} onChange={ev => setP(ev.target.checked)} /><span>Past exam question</span></label>
           {err && <p className="n err" role="alert">{err}</p>}
           <div className="row" style={{ marginTop: 12 }}>
-            {edit && <button type="button" className="ghost danger" disabled={busy} onClick={remove}><Ic n="trash" /> Delete card</button>}
+            {edit && <button type="button" className="ghost danger" disabled={busy} onClick={remove}><Ic n="trash" /> {priv && !mine ? 'Remove for me' : 'Delete card'}</button>}
             <button type="button" className="ghost" onClick={onClose}>Cancel</button>
             <button type="button" className="solid" disabled={!ok || busy} onClick={save}>{busy ? 'Saving…' : edit ? 'Save changes' : 'Add card'}</button>
           </div>

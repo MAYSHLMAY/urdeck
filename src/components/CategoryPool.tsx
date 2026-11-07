@@ -1,8 +1,9 @@
 'use client';
 import { useRef, useState } from 'react';
 import { isOwner } from '@/lib/api';
-import { canUpload, MAX_PDF_MB, type Category, type PdfDoc } from '@/lib/refs';
-import { Sheet, askPassword, Ic } from './ui';
+import { canAddLocal, canUpload, MAX_PDF_MB, type Category, type PdfDoc } from '@/lib/refs';
+import { Sheet, askPassword, ask, Ic } from './ui';
+import { notes } from '@/lib/notes';
 import { useRefs } from './refHooks';
 
 const mb = (n: number | null) => (n ? (n / 1048576 >= 1 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB') : '');
@@ -65,10 +66,11 @@ export function PdfChooserModal() {
 export function CategoryPool({ section }: { section: string | null }) {
   const R = useRefs(), own = isOwner(), up = canUpload();
   const [err, setErr] = useState(''), [info, setInfo] = useState('');
-  const [picker, setPicker] = useState<null | { kind: 'pdfCats'; pdf: PdfDoc } | { kind: 'catPdfs'; cat: Category }>(null);
+  const [picker, setPicker] = useState<null | { kind: 'pdfCats'; pdf: PdfDoc } | { kind: 'catPdfs'; cat: Category } | { kind: 'myCats'; pdf: PdfDoc }>(null);
   const [nm, setNm] = useState(''), [color, setColor] = useState('#3b82f6');
   const [file, setFile] = useState<File | null>(null), [title, setTitle] = useState(''), [upCats, setUpCats] = useState<Set<string>>(new Set());
   const fileEl = useRef<HTMLInputElement>(null);
+  const [lf, setLf] = useState<File | null>(null), [lt, setLt] = useState(''), [lc, setLc] = useState<Set<string>>(new Set()), lel = useRef<HTMLInputElement>(null);
 
   const act = async (f: () => Promise<unknown>, ok = '') => { setErr(''); setInfo(''); try { await f(); if (ok) setInfo(ok); } catch (e: any) { setErr(e.message || 'Something went wrong.'); } };
   const maxN = Math.max(1, ...R.categories.map(c => R.pdfsOf(c.id).length));
@@ -110,8 +112,8 @@ export function CategoryPool({ section }: { section: string | null }) {
               <button className="pdfopen" onClick={() => R.openPdf(p.id, 1, null, sel.id)}>
                 <span className="ic"><Ic n="file" /></span><span className="tx"><b>{p.title}</b><small>{mb(p.file_size)}{R.catsOf(p.id).length > 1 ? ` · in ${R.catsOf(p.id).length} pools` : ''}</small></span>
               </button>
-              {own && <button className="go mgr" aria-label="Pools for this PDF" title="Pools for this PDF" onClick={() => setPicker({ kind: 'pdfCats', pdf: p })}><Ic n="layers" /></button>}
-              {own && <button className="go mgr" aria-label="Delete PDF" title="Delete PDF" onClick={async () => { const pw = await askPassword(`Delete “${p.title}”?`, 'This removes the PDF for everyone. Enter the owner password.'); if (pw) act(() => R.deletePdf(p.id, pw), 'PDF deleted.'); }}><Ic n="trash" /></button>}
+              {own && !p.local && <button className="go mgr" aria-label="Pools for this PDF" title="Pools for this PDF" onClick={() => setPicker({ kind: 'pdfCats', pdf: p })}><Ic n="layers" /></button>}
+              {own && !p.local && <button className="go mgr" aria-label="Delete PDF" title="Delete PDF" onClick={async () => { const pw = await askPassword(`Delete “${p.title}”?`, 'This removes the PDF for everyone. Enter the owner password.'); if (pw) act(() => R.deletePdf(p.id, pw), 'PDF deleted.'); }}><Ic n="trash" /></button>}
             </div>
           ))}
           {!docs.length && <p className="info">No PDFs in this pool yet.</p>}
@@ -142,7 +144,38 @@ export function CategoryPool({ section }: { section: string | null }) {
           </div>
         </details>
       )}
-      {!up && <p className="n">Only the owner can upload PDFs. Tap <b>+</b> on the main screen and unlock to add some.</p>}
+      {canAddLocal() && (
+        <details className="mgbox" open={R.localPdfs.length > 0}>
+          <summary>My PDFs <small className="gm">· only on this device</small></summary>
+          <p className="n">These files are stored on this device (phone or computer) and are <b>never uploaded</b>. Notes you take on them stay here too.</p>
+          {R.localPdfs.map(p => (
+            <div key={p.id}>
+              <div className="pdfrow">
+                <button className="pdfopen" onClick={() => R.openPdf(p.id, 1, null, null)}>
+                  <span className="ic"><Ic n="file" /></span><span className="tx"><b>{p.title}</b><small>{mb(p.file_size)} · on this device</small></span>
+                </button>
+                <button className="go mgr" aria-label="Pools for this PDF" title="Show in pools" onClick={() => setPicker({ kind: 'myCats', pdf: p })}><Ic n="layers" /></button>
+                <button className="go mgr" aria-label="Remove PDF" title="Remove from this device" onClick={async () => { const r = await ask({ title: `Remove “${p.title}”?`, msg: 'It is deleted from this device only, together with your notes on it.', acts: [{ k: 'ok', l: 'Remove from this device' }] }); if (r && r.act) { notes().list(p.id).forEach(n => notes().remove(n.id)); await R.deleteLocalPdf(p.id); setInfo('Removed from this device.'); } }}><Ic n="trash" /></button>
+              </div>
+              {section && <label className="pickr"><input type="checkbox" checked={R.localSecs.some(l => l.pdf_id === p.id && l.section === section)} onChange={ev => R.setLocalSection(p.id, section, ev.target.checked)} /><span>Open this for the current card set <small className="gm">(finds the matching page automatically)</small></span></label>}
+            </div>
+          ))}
+          <input ref={lel} type="file" accept="application/pdf,.pdf" onChange={ev => { const f = ev.target.files?.[0] || null; setLf(f); if (f && !lt) setLt(f.name.replace(/\.pdf$/i, '')); }} />
+          <input type="text" className="fld" placeholder="Title" value={lt} onChange={ev => setLt(ev.target.value)} maxLength={200} />
+          {R.categories.length > 0 && <div className="pickl small">
+            <p className="n" style={{ margin: 0 }}>Show in pools (optional):</p>
+            {R.categories.map(c => (
+              <label key={c.id} className="pickr"><input type="checkbox" checked={lc.has(c.id)} onChange={ev => { const s = new Set(lc); ev.target.checked ? s.add(c.id) : s.delete(c.id); setLc(s); }} /><span>{c.name}</span></label>
+            ))}
+          </div>}
+          <div className="row">
+            <button className="solid" disabled={!lf || !!R.busy} onClick={() => lf && act(async () => {
+              const d = await R.addLocalPdf(lf, lt, [...lc]); setLf(null); setLt(''); setLc(new Set()); if (lel.current) lel.current.value = ''; R.openPdf(d.id, 1, null, null);
+            }, 'Saved on this device.')}>Save on this device</button>
+          </div>
+        </details>
+      )}
+      {!up && !own && <p className="n">Shared PDFs are added by the owner. Your own PDFs go in <b>My PDFs</b> above.</p>}
 
       {own && (
         <details className="mgbox">
@@ -161,6 +194,11 @@ export function CategoryPool({ section }: { section: string | null }) {
         <CheckPicker title={`Pools for “${picker.pdf.title}”`} hint="One PDF can live in several pools."
           items={R.categories.map(c => ({ id: c.id, label: c.name, checked: R.catsOf(picker.pdf.id).includes(c.id) }))}
           onToggle={(id, on) => R.setLink(id, picker.pdf.id, on)} onClose={() => setPicker(null)} />
+      )}
+      {picker && picker.kind === 'myCats' && (
+        <CheckPicker title={`Pools for “${picker.pdf.title}”`} hint="Only on this device. Other people never see this link."
+          items={R.categories.map(c => ({ id: c.id, label: c.name, checked: R.catsOf(picker.pdf.id).includes(c.id) }))}
+          onToggle={async (id, on) => R.setLocalLink(id, picker.pdf.id, on)} onClose={() => setPicker(null)} />
       )}
       {picker && picker.kind === 'catPdfs' && (
         <CheckPicker title={`PDFs in “${picker.cat.name}”`} hint="One pool can hold several PDFs."

@@ -3,14 +3,14 @@
  * React components subscribe to it (see useEngine) and call its methods.
  */
 import { fnv } from './fnv';
-import { parsePack, parseRaw, ready } from './parse';
+import { parsePack, parseRaw, ready, cook } from './parse';
 import { DEF, M, D, addDays, dayStart, fmtIv, lab as labFn, nxt, steps, ymd, type CS, type Opts } from './srs';
 import { applyMut, buildTree, emptyTree, fpath, type Tree } from './tree';
 import { emptyMeta, fetchMeta, readCache, saveCards, syncCards, type Meta } from './library';
 import { api, isOwner } from './api';
 import type { Card, FoldDB, LocalPack, Mut, QCard } from './types';
 
-const K_PROG = 'fr-progress-v1', K_MINE = 'fr-mine-v1', K_FOLD = 'fr-folders-local-v1', K_NOTES = 'fr-notes-v1';
+const K_SH = 'fr-shaky-v1', K_MY = 'fr-my-v1', K_PROG = 'fr-progress-v1', K_MINE = 'fr-mine-v1', K_FOLD = 'fr-folders-local-v1', K_NOTES = 'fr-notes-v1';
 const WORD = ['all', 'book', 'hard', 'pe', 'penew', 'weak', 'marked', 'leech'];
 
 const rnd = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
@@ -41,6 +41,10 @@ export class Engine {
   /* shared library */
   server: Card[] = [];
   extra: Card[] = [];
+  /** Cards the learner marked "unsure" (the Shaky pile). Kept apart from the Study pile; this device only. */
+  SH: Record<string, 1> = {};
+  /** Private layer (this device only): personal cards, plus edits / removals applied on top of any card. */
+  MY: { cards: Card[]; edits: Record<string, any> } = { cards: [], edits: {} };
   meta: Meta = emptyMeta();
   Q: QCard[] = [];
   GT: Record<string, string> = {};
@@ -66,6 +70,8 @@ export class Engine {
   constructor() {
     const m = jget(K_MINE);
     if (m) { this.DATA.packs = m.packs || []; this.DATA.titles = m.titles || {}; }
+    const sh = jget(K_SH); if (sh) this.SH = sh;
+    const my = jget(K_MY); if (my) this.MY = { cards: my.cards || [], edits: my.edits || {} };
     const p = jget(K_PROG);
     if (p && p.S) Object.assign(this.S, p.S);
     if (p && p.PE) Object.assign(this.PE, p.PE);
@@ -157,9 +163,15 @@ export class Engine {
   }
   buildQ() {
     const ids = new Set<string>(), all: Card[] = [];
-    const add = (c: Card) => { const k = String(c.id); if (!ids.has(k)) { ids.add(k); all.push(c); } };
+    const ed = this.MY.edits;
+    const add = (c: Card) => {
+      const k = String(c.id); if (ids.has(k)) return;
+      const e = ed[k]; if (e && e.del) return;               // removed for me only
+      ids.add(k); all.push(e ? ({ ...c, q: e.q, c: e.c, w: e.w, p: e.p ?? c.p, id: c.id } as Card) : c);
+    };
     this.server.forEach(add); this.extra.forEach(add);
     this.DATA.packs.forEach(pk => this.packCards(pk).forEach(add));
+    this.MY.cards.forEach(add);
     this.Q = all.map(ready);
     this.qver++;
     this.buildTitles(); this.buildTree();
@@ -371,6 +383,20 @@ export class Engine {
     if (this.phase !== 'ok' || !this.cur) return;
     this.phase = 'graded'; this.commit(this.cur.id, g); this.show();
   }
+  /* ---------- Study pile / Shaky pile (separate, per card, so per set) ---------- */
+  isShaky(id: string) { return !!this.SH[id]; }
+  setShaky(id: string, on: boolean) {
+    if (on) this.SH[id] = 1; else delete this.SH[id];
+    try { localStorage.setItem(K_SH, JSON.stringify(this.SH)); } catch { /* storage full: still works this session */ }
+    this.emit();
+  }
+  /** Practice exactly these cards (random order). Nothing is rescheduled. */
+  startPracticeIds(ids: string[]) {
+    const a = ids.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    if (!a.length) return;
+    this.deck = a; this.practiced = a.length; this.cram = true; this.later = {}; this.last = null; this.show();
+  }
   /** Practice deck: the cards of the current selection that match `kind`, shuffled. Progress and schedule are never touched. */
   deck: string[] = []; practiced = 0;
   practiceCounts() {
@@ -536,9 +562,55 @@ export class Engine {
     } catch (x: any) { return x.message || 'Could not add the card.'; }
   }
 
+  /* ---------- private cards and edits (never leave this device) ---------- */
+  saveMy(): boolean {
+    try { localStorage.setItem(K_MY, JSON.stringify(this.MY)); return true; }
+    catch { this.toast('Storage is full. Download a backup.'); return false; }
+  }
+  isMine(id: string) { return this.MY.cards.some(c => c.id === id); }
+  myChanges() {
+    const ed = Object.values(this.MY.edits) as any[];
+    return { mine: this.MY.cards.length, edited: ed.filter(x => !x.del).length, hidden: ed.filter(x => x.del).length };
+  }
+  private myAfter(isCur: boolean) {
+    this.saveMy(); this.rebuild(); this.later = {};
+    if (isCur) { this.pend = null; this.show(); } else this.emit();
+  }
+  private myClean(f: { s?: string; q: string; c: string; w: string[]; p?: boolean }) {
+    const w = f.w.map(x => x.trim()).filter(Boolean);
+    if (!f.q.trim() || !f.c.trim()) return { err: 'The question and the correct answer cannot be empty.' } as const;
+    if (w.length < 1 || w.length > 5) return { err: 'Give between 1 and 5 wrong answers.' } as const;
+    return { card: cook({ s: (f.s || 'My cards').trim() || 'My cards', q: f.q.trim(), c: f.c.trim(), w, p: f.p ? 1 : undefined }) } as const;
+  }
+  /** Add one personal card. It is only on this device, and shows up inside whichever set you choose. */
+  myAddCard(f: { s: string; q: string; c: string; w: string[]; p?: boolean }): string | null {
+    const r = this.myClean(f); if ('err' in r) return r.err;
+    const id = 'm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    this.MY.cards.push({ ...r.card, id });
+    this.myAfter(this.phase === 'done' || !this.cur); return null;
+  }
+  /** Edit any card for yourself only: personal cards change in place, shared cards get a private override. */
+  myEditCard(id: string, f: { q: string; c: string; w: string[]; p?: boolean }): string | null {
+    const r = this.myClean(f); if ('err' in r) return r.err;
+    const i = this.MY.cards.findIndex(c => c.id === id);
+    if (i >= 0) this.MY.cards[i] = { ...this.MY.cards[i], q: r.card.q, c: r.card.c, w: r.card.w, p: r.card.p };
+    else this.MY.edits[id] = { q: r.card.q, c: r.card.c, w: r.card.w, p: r.card.p };
+    const isCur = !!this.cur && String(this.cur.id) === String(id); if (isCur) this.forced = id;
+    this.myAfter(isCur); return null;
+  }
+  /** Remove a card for yourself only. Shared cards are hidden (restorable in Settings); personal cards are deleted. */
+  myRemoveCard(id: string) {
+    const isCur = !!this.cur && String(this.cur.id) === String(id);
+    if (this.isMine(id)) this.MY.cards = this.MY.cards.filter(c => c.id !== id); else this.MY.edits[id] = { del: 1 };
+    this.myAfter(isCur);
+  }
+  /** Undo every private edit and removal (personal cards stay). */
+  myRestoreOriginals() { this.MY.edits = {}; this.myAfter(false); }
+  myRestoreCard(id: string) { delete this.MY.edits[id]; this.myAfter(false); }
+
   /* ---------- adding cards ---------- */
   async addPack(name: string, text: string, where: string, tags: string): Promise<{ ok: boolean; msg: string }> {
-    if (!isOwner()) return { ok: false, msg: 'Locked. Unlock with the password first.' };
+    const mineOnly = !isOwner();   // everyone else adds privately, on this device only
     const parsed = parseRaw(name, text), cooked = parsePack(name, text);
     if (!cooked.cards.length) return { ok: false, msg: name + ': no questions found.' + (cooked.errs.length ? '\n' + cooked.errs.slice(0, 6).join('\n') : '') };
     const seen = new Set(this.Q.map(c => String(c.id)));
@@ -558,6 +630,14 @@ export class Engine {
     }
     this.later = {}; this.last = null; this.emit();
 
+    if (mineOnly) {
+      const P = this.DATA.packs.slice(); P.push({ name: this.uniqName(name), text, at: Date.now() });
+      const old = this.DATA.packs; this.DATA.packs = P;
+      const ids = new Set(fresh.map(c => c.id)); this.extra = this.extra.filter(c => !ids.has(c.id));
+      if (!this.persistMine()) { this.DATA.packs = old; this.buildQ(); this.emit(); return { ok: false, msg: 'Storage is full. Nothing was added.' }; }
+      this.buildQ(); this.emit();
+      return { ok: true, msg: `${name}: ${add} new card${add > 1 ? 's' : ''} added for you (saved on this device only).` + skip };
+    }
     // 2. save it to the database in the background
     this.cardsBusy++; this.emit();
     try {
@@ -590,7 +670,7 @@ export class Engine {
 
   /* ---------- backup, restore, merge ---------- */
   backupJSON() {
-    return JSON.stringify({ app: 'flight-recall', v: 5, progress: { S: this.S, PE: this.PE }, packs: this.DATA.packs, titles: this.DATA.titles, notes: this.NOTES, folders: this.LF });
+    return JSON.stringify({ app: 'flight-recall', v: 6, progress: { S: this.S, PE: this.PE }, packs: this.DATA.packs, titles: this.DATA.titles, notes: this.NOTES, folders: this.LF, my: this.MY, shaky: this.SH });
   }
   mergePacks(list?: LocalPack[]) {
     const ALL = this.DATA.packs.slice(), P = this.DATA.packs.slice(); let k = 0;
@@ -623,6 +703,13 @@ export class Engine {
   restoreBackup(text: string) {
     const o = JSON.parse(text); if (o.app !== 'flight-recall') throw new Error('bad');
     const msg = this.mergeData({ packs: o.packs, titles: o.titles, progress: o.progress });
+    if (o.shaky) { Object.keys(o.shaky).forEach(k => { this.SH[k] = 1; }); try { localStorage.setItem(K_SH, JSON.stringify(this.SH)); } catch { /* ignore */ } }
+    if (o.my) {
+      const ids = new Set(this.MY.cards.map(c => c.id));
+      (o.my.cards || []).forEach((c: Card) => { if (c && c.id && !ids.has(c.id)) this.MY.cards.push(c); });
+      Object.keys(o.my.edits || {}).forEach(k => { if (!this.MY.edits[k]) this.MY.edits[k] = o.my.edits[k]; });
+      this.saveMy(); this.rebuild();
+    }
     if (o.notes) { Object.keys(o.notes).forEach(k => { if (!this.NOTES[k]) this.NOTES[k] = o.notes[k]; }); this.saveNotes(); }
     if (o.folders) {
       const ids = new Set(this.LF.folders.map(f => f.id));

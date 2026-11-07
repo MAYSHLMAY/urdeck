@@ -54,11 +54,10 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
           <div className={'menu' + (menu ? ' on' : '')} id="cm">
             <button onClick={() => { setMenu(false); e.toggleFlag(cur.id, 'susp'); }}>Suspend this card</button>
             <button onClick={() => { setMenu(false); e.buryCard(cur.id); }}>Bury until tomorrow</button>
+            <button onClick={() => { setMenu(false); e.setShaky(cur.id, !e.isShaky(cur.id)); e.toast(e.isShaky(cur.id) ? 'Moved to your Shaky pile' : 'Moved back to Study'); }}><Ic n="flag" /> {e.isShaky(cur.id) ? 'Move back to Study' : 'Mark as unsure'}</button>
             <button onClick={() => { setMenu(false); onInfo(cur.id); }}>Card info</button>
-            {isOwner() && <>
-              <button onClick={() => { setMenu(false); if (ph !== 'q') { e.toast('Finish this card first, then edit it.'); return; } onCard('edit', cur.id, cur.s); }}><Ic n="pencil" /> Edit card</button>
-              <button onClick={() => { setMenu(false); onCard('add', '', cur.s); }}><Ic n="plus" /> Add a card to this set</button>
-            </>}
+            <button onClick={() => { setMenu(false); if (ph !== 'q') { e.toast('Finish this card first, then edit it.'); return; } onCard('edit', cur.id, cur.s); }}><Ic n="pencil" /> {isOwner() || e.isMine(cur.id) ? 'Edit card' : 'Edit card (only me)'}</button>
+            <button onClick={() => { setMenu(false); onCard('add', '', cur.s); }}><Ic n="plus" /> {isOwner() ? 'Add a card to this set' : 'Add my own card'}</button>
           </div>
         </span>
       </div>

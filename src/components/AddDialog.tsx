@@ -65,10 +65,10 @@ export function AddDialog({ open, onClose }: { open: boolean; onClose: () => voi
     setBusy(false); say(r.msg, r.ok ? 'ok' : 'err'); if (r.ok) setPaste('');
   }
 
-  const locked = !own;
+  const locked = false;   // everyone can add; non-owners add privately, on this device only
   return (
     <Sheet open={open} onClose={onClose} className="sheet addm">
-      <SheetFrame title={<>Add <Ic n={locked ? 'lock' : 'unlock'} /></>} onClose={onClose}>
+      <SheetFrame title={<>Add <Ic n={own ? 'unlock' : 'lock'} /></>} onClose={onClose}>
         <div className="sc">
           {locked ? (
             <div>
@@ -81,6 +81,7 @@ export function AddDialog({ open, onClose }: { open: boolean; onClose: () => voi
             </div>
           ) : (
             <div>
+              <p className="n">{own ? 'Owner: cards and folders you add are saved for everyone.' : 'Private: everything you add here stays on this device and is never uploaded. Only you can see it.'}</p>
               <div className="tabs2">
                 <button type="button" className={tab === 'F' ? 'on' : ''} onClick={() => setTab('F')}>New folder</button>
                 <button type="button" className={tab === 'C' ? 'on' : ''} onClick={() => setTab('C')}>Add cards</button>
@@ -117,9 +118,16 @@ export function AddDialog({ open, onClose }: { open: boolean; onClose: () => voi
                     <span><button type="button" className="ghost" onClick={() => { if (confirm('Remove "' + p.name + '" from this device?')) e.removeLocalPack(i); }}>Remove</button></span></div>
                 ))}
               </div>
-              <div className="row" style={{ marginTop: 12 }}>
+              {own ? <div className="row" style={{ marginTop: 12 }}>
                 <button className="ghost" type="button" onClick={() => { lock(); setOwn(false); e.emit(); }}>Lock</button>
-              </div>
+              </div> : (
+                <details className="mgbox" style={{ marginTop: 12 }}>
+                  <summary>I am the owner</summary>
+                  <input type="password" value={pw} onChange={ev => setPw(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter') doUnlock(); }} placeholder="Owner password" autoComplete="off" spellCheck={false} />
+                  <div className="row"><button className="solid" type="button" onClick={doUnlock}>Unlock</button></div>
+                  <p className="n" style={{ color: 'var(--bad)' }}>{pwm}</p>
+                </details>
+              )}
             </div>
           )}
         </div>

@@ -7,10 +7,11 @@ import { api, isOwner } from './api';
 import type { QCard } from './types';
 import { uuid } from './notes';
 import { getIndex, matchCard, type Passage } from './pdfindex';
+import { lpDel, lpGet, lpPut, lpSpace } from './localpdfs';
 
 export interface Hi { x: number; y: number; width: number; height: number }
 export interface Category { id: string; name: string; color_theme: string }
-export interface PdfDoc { id: string; title: string; file_path: string; file_size: number | null; created_at: string }
+export interface PdfDoc { id: string; title: string; file_path: string; file_size: number | null; created_at: string; local?: boolean }
 export interface Mapping { id: string; question_id: string; pdf_id: string; page_number: number; highlight_data: Hi | null }
 export interface Target { page: number; hi: Hi | null; rects?: Hi[]; nonce: number }
 /** Result of the background search for the card on screen. `mapped` = the owner saved an exact page for it. */
@@ -19,13 +20,15 @@ export interface Chooser { pdfs: PdfDoc[]; catId: string | null; maps: Mapping[]
 export interface ModelRow { id: string; name: string; sub: string | null; info: string | null; built?: boolean }
 export type View = 'viewer' | 'pools' | 'notes';
 
-const K_PICK = 'fr-ref-pick-v1', K_CACHE = 'fr-ref-cache-v1', K_OPEN = 'fr-ref-last-v1';
+const K_LOCAL = 'fr-local-pdfs-v1', K_PICK = 'fr-ref-pick-v1', K_CACHE = 'fr-ref-cache-v1', K_OPEN = 'fr-ref-last-v1';
 const lsGet = (k: string): any => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 const lsSet = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } };
 
 export const MAX_PDF_MB = 50;
 export const publicUploads = () => process.env.NEXT_PUBLIC_ALLOW_PUBLIC_PDF_UPLOADS === 'true';
 export const canUpload = () => isOwner() || publicUploads();
+/** Everyone can add PDFs that stay on their own device. */
+export const canAddLocal = () => typeof indexedDB !== 'undefined';
 
 export class RefStore {
   ver = 0;
@@ -41,6 +44,9 @@ export class RefStore {
   models: ModelRow[] = []; modelCat: Record<string, string> = {};
   loaded = false; loading = false; error = '';
   private maps = new Map<string, Mapping[]>();
+  /* PDFs kept only on this device (bytes in IndexedDB, description here). Never sent anywhere. */
+  localPdfs: PdfDoc[] = []; localCats: { category_id: string; pdf_id: string }[] = []; localSecs: { pdf_id: string; section: string }[] = [];
+  private blobUrls = new Map<string, string>(); private prepping = new Set<string>();
 
   /* drawer state: lives here, outside React, so the quiz and the viewer never reset each other */
   open = false; view: View = 'pools'; pdfId: string | null = null; catId: string | null = null;
@@ -50,6 +56,7 @@ export class RefStore {
 
   /* ---------- loading ---------- */
   async load(force = false) {
+    if (!this.localPdfs.length) this.loadLocal();
     if (this.loading || (this.loaded && !force)) return;
     this.loading = true; this.error = ''; this.emit();
     try {
@@ -79,14 +86,68 @@ export class RefStore {
   }
   private save() { lsSet(K_CACHE, { c: this.categories, p: this.pdfs, cp: this.catPdfs, cs: this.catSecs, m: this.models, mc: this.modelCat }); }
 
+  /* ---------- device-only PDFs ---------- */
+  loadLocal() {
+    const k = lsGet(K_LOCAL); if (!k) return;
+    this.localPdfs = k.p || []; this.localCats = k.c || []; this.localSecs = k.s || [];
+  }
+  private saveLocal() { lsSet(K_LOCAL, { p: this.localPdfs, c: this.localCats, s: this.localSecs }); }
+  /** Make the blob URL for a device PDF (async); the viewer re-renders when it is ready. */
+  async prepLocal(id: string): Promise<string | null> {
+    const hit = this.blobUrls.get(id); if (hit) return hit;
+    if (this.prepping.has(id)) return null;
+    this.prepping.add(id);
+    try {
+      const b = await lpGet(id); if (!b) return null;
+      const u = URL.createObjectURL(b); this.blobUrls.set(id, u); this.emit(); return u;
+    } catch { return null; } finally { this.prepping.delete(id); }
+  }
+  async addLocalPdf(file: File, title: string, categoryIds: string[]) {
+    if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) throw new Error('That is not a PDF file.');
+    const sp = await lpSpace();
+    if (sp.free != null && file.size > sp.free - 5 * 1048576) throw new Error('Not enough free space on this device for that file.');
+    const id = 'L-' + uuid();
+    try { await lpPut(id, file); } catch (e: any) { throw new Error(e.message || 'Could not save the file on this device.'); }
+    const d: PdfDoc = { id, title: title.trim() || file.name.replace(/\.pdf$/i, ''), file_path: 'local:' + id, file_size: file.size, created_at: new Date().toISOString(), local: true };
+    this.localPdfs = [...this.localPdfs, d].sort((a, b) => a.title.localeCompare(b.title));
+    this.localCats = [...this.localCats, ...categoryIds.map(c => ({ category_id: c, pdf_id: id }))];
+    this.saveLocal(); this.emit(); return d;
+  }
+  async deleteLocalPdf(id: string) {
+    try { await lpDel(id); } catch { /* the description is removed anyway */ }
+    const u = this.blobUrls.get(id); if (u) { URL.revokeObjectURL(u); this.blobUrls.delete(id); }
+    this.localPdfs = this.localPdfs.filter(p => p.id !== id);
+    this.localCats = this.localCats.filter(l => l.pdf_id !== id); this.localSecs = this.localSecs.filter(l => l.pdf_id !== id);
+    if (this.pdfId === id) { this.pdfId = null; this.target = null; this.view = 'pools'; }
+    this.saveLocal(); this.emit();
+  }
+  setLocalLink(catId: string, pdfId: string, on: boolean) {
+    const had = this.localCats.some(l => l.category_id === catId && l.pdf_id === pdfId); if (on === had) return;
+    this.localCats = on ? [...this.localCats, { category_id: catId, pdf_id: pdfId }] : this.localCats.filter(l => !(l.category_id === catId && l.pdf_id === pdfId));
+    this.saveLocal(); this.auto = null; this.emit(); if (this.lastQ) this.prepare(this.lastQ);
+  }
+  setLocalSection(pdfId: string, section: string, on: boolean) {
+    const had = this.localSecs.some(l => l.pdf_id === pdfId && l.section === section); if (on === had) return;
+    this.localSecs = on ? [...this.localSecs, { pdf_id: pdfId, section }] : this.localSecs.filter(l => !(l.pdf_id === pdfId && l.section === section));
+    this.saveLocal(); this.auto = null; this.emit(); if (this.lastQ) this.prepare(this.lastQ);
+  }
+  /** Every document that should open for a card set: the owner's pool PDFs plus the ones you linked yourself. */
+  docsForSection(s: string): PdfDoc[] {
+    const cat = this.catForSection(s), out: PdfDoc[] = cat ? this.pdfsOf(cat) : [];
+    this.localSecs.filter(l => l.section === s).forEach(l => { const p = this.pdf(l.pdf_id); if (p && !out.some(o => o.id === p.id)) out.push(p); });
+    return out;
+  }
+
   /* ---------- lookups ---------- */
-  pdf = (id: string | null) => (id ? this.pdfs.find(p => p.id === id) || null : null);
+  pdf = (id: string | null) => (id ? this.pdfs.find(p => p.id === id) || this.localPdfs.find(p => p.id === id) || null : null);
   category = (id: string | null) => (id ? this.categories.find(c => c.id === id) || null : null);
-  pdfsOf = (catId: string) => this.catPdfs.filter(l => l.category_id === catId).map(l => this.pdf(l.pdf_id)).filter(Boolean) as PdfDoc[];
-  catsOf = (pdfId: string) => this.catPdfs.filter(l => l.pdf_id === pdfId).map(l => l.category_id);
+  pdfsOf = (catId: string) => [...this.catPdfs, ...this.localCats].filter(l => l.category_id === catId).map(l => this.pdf(l.pdf_id)).filter(Boolean) as PdfDoc[];
+  catsOf = (pdfId: string) => [...this.catPdfs, ...this.localCats].filter(l => l.pdf_id === pdfId).map(l => l.category_id);
   sectionsOf = (catId: string) => this.catSecs.filter(l => l.category_id === catId).map(l => l.section);
   catForSection = (s: string) => { const l = this.catSecs.find(x => x.section === s); return l ? l.category_id : null; };
-  url(p: PdfDoc | null) { return p ? sb().storage.from('pdfs').getPublicUrl(p.file_path).data.publicUrl : null; }
+  url(p: PdfDoc | null) {
+    if (p && p.local) { const u = this.blobUrls.get(p.id); if (!u) this.prepLocal(p.id); return u || null; }
+    return p ? sb().storage.from('pdfs').getPublicUrl(p.file_path).data.publicUrl : null; }
   private picks(): Record<string, string> { return lsGet(K_PICK) || {}; }
 
   async mappingsFor(qid: string): Promise<Mapping[]> {
@@ -147,14 +208,14 @@ export class RefStore {
     const maps = (await this.mappingsFor(qid)).filter(m => this.pdf(m.pdf_id));
     if (seq !== this.prepSeq) return;
     if (maps.length) { this.auto = { qid, state: 'mapped', matches: [], idx: 0 }; this.emit(); return; }
-    const cat = this.catForSection(q.s), docs = cat ? this.pdfsOf(cat) : [];
+    const docs = this.docsForSection(q.s);
     if (!docs.length) { this.auto = { qid, state: 'none', matches: [], idx: 0 }; this.emit(); return; }
     this.auto = { qid, state: 'working', matches: [], idx: 0 }; this.emit();
     const ct = { title: q.t, question: q.q, correct: q.c, wrong: q.w || [] };
     const all: (Passage & { pdfId: string })[] = [];
     for (const d of docs) {
       try {
-        const ix = await getIndex(d.file_path, this.url(d)!);
+        const ix = await getIndex(d.file_path, (d.local ? await this.prepLocal(d.id) : this.url(d)) as string);
         if (seq !== this.prepSeq) return;
         matchCard(ix, ct).forEach(m => all.push({ ...m, pdfId: d.id }));
       } catch { /* an unreadable PDF just has no matches */ }
@@ -196,6 +257,8 @@ export class RefStore {
       if (m0) { this.openPdf(m0.pdf_id, m0.page_number, m0.highlight_data, catId); return; }
       this.catId = catId; this.chooser = { pdfs: ids.map(i => this.pdf(i)!), catId, maps, title: 'This question appears in several documents' }; this.view = 'viewer'; this.emit(); return;
     }
+    const sd = this.docsForSection(q.s);
+    if (!catId && sd.length && !(this.pdfId && sd.some(p => p.id === this.pdfId))) { this.openPdf(sd[0].id, 1, null, null); return; }
     if (catId && this.pdfsOf(catId).length) {
       if (this.pdfId && this.pdfsOf(catId).some(p => p.id === this.pdfId)) { this.catId = catId; this.view = 'viewer'; this.emit(); return; }
       this.selectCategory(catId); if (!this.chooser && this.pdfId) return;
@@ -220,6 +283,7 @@ export class RefStore {
   deleteCategory(id: string, password: string) {
     return this.run('Deleting…', async () => {
       await api('/api/refs', { action: 'deleteCategory', id, password });
+      this.localCats = this.localCats.filter(l => l.category_id !== id); this.saveLocal();
       Object.keys(this.modelCat).forEach(k => { if (this.modelCat[k] === id) delete this.modelCat[k]; });
       this.categories = this.categories.filter(c => c.id !== id);
       this.catPdfs = this.catPdfs.filter(l => l.category_id !== id); this.catSecs = this.catSecs.filter(l => l.category_id !== id);

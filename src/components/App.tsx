@@ -13,10 +13,11 @@ import { Settings } from './Settings';
 import { AddDialog } from './AddDialog';
 import { ModelsDialog } from './ModelsDialog';
 import { CardEditor, type EditorState } from './CardEditor';
+import { Browse } from './Browse';
 
 const PLANE = <svg viewBox="0 0 24 24" width="22" height="22"><path d="M2 12 22 3l-5 18-5-7z" fill="currentColor" /></svg>;
 
-type Dlg = '' | 'menu' | 'browse' | 'stats' | 'set' | 'add' | 'models' | 'info';
+type Dlg = '' | 'menu' | 'browse' | 'grid' | 'stats' | 'set' | 'add' | 'models' | 'info';
 
 export default function App() {
   const e = useEngine();
@@ -102,6 +103,7 @@ export default function App() {
         <div className="stats2"><b>{c.m}</b> mastered of {c.tot} · <b>{S.done}</b> answered today{S.done ? ' (' + Math.round(S.ok / S.done * 100) + '% right)' : ''}</div>
         <div className="pickrow">
           <button className="pick" onClick={() => { e.openMenu(); setDlg('menu'); }} aria-haspopup="dialog"><span className="pk">Studying</span><b>{e.selLabel()}</b><span aria-hidden="true"><Ic n="chevD" /></span></button>
+          <button className="plus alt" onClick={() => setDlg('grid')} aria-label="Browse many cards at once" title="Browse many cards at once"><Ic n="grid" /></button>
           <button className="plus" onClick={() => setDlg('add')} aria-label="Add folder or cards" title="Add folder or cards">+</button>
         </div>
         <div id="mode" className={e.cram ? 'on' : ''}><span>Practice: {e.deck.length} left · your schedule is not changed.</span><button className="ghost" onClick={() => e.exitPractice()}>Exit</button></div>
@@ -125,6 +127,7 @@ export default function App() {
           </div> : null;
         })()}
       </Sheet>
+      <Browse open={dlg === 'grid'} onClose={close} onPick={() => { e.openMenu(); setDlg('menu'); }} onEdit={id => setEditor({ mode: 'edit', id, section: e.qById(id)?.s })} />
       <CardEditor state={editor} onClose={() => setEditor(null)} />
       <HighlightTools />
       <AskHost />

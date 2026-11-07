@@ -93,7 +93,7 @@ class NotesStore {
     return [...this.all.values()].filter(n => !n.deleted && (!pdfId || n.pdf_id === pdfId))
       .sort((a, b) => (a.page_number || 0) - (b.page_number || 0) || a.created_at.localeCompare(b.created_at));
   }
-  get pending() { return [...this.all.values()].filter(n => !n.synced).length; }
+  get pending() { return [...this.all.values()].filter(n => !n.synced && !n.pdf_id.startsWith('L-')).length; }
 
   /* ----- writes (instant) ----- */
   add(p: { pdf_id: string; selected_text: string; page_number: number | null; rects: Rect[]; note_content?: string; color?: NoteColor; tags?: string[]; pin?: boolean; qid?: string }): LocalNote {
@@ -117,7 +117,7 @@ class NotesStore {
   }
   remove(id: string) {
     const n = this.all.get(id); if (!n) return;
-    if (!this.syncOn) { this.all.delete(id); n.deleted = 1; n.synced = 1; this.persist(n); }  // cloud backup is off: just forget it
+    if (!this.syncOn || n.pdf_id.startsWith('L-')) { this.all.delete(id); n.deleted = 1; n.synced = 1; this.persist(n); }  // cloud backup is off: just forget it
     else { n.deleted = 1; n.synced = 0; this.persist(n); }                                    // tombstone until the server confirms
     this.emit(); this.schedule(1500);
   }
@@ -130,7 +130,8 @@ class NotesStore {
   }
   async syncNow(): Promise<boolean> {
     if (this.busy || !this.syncOn) return false;
-    const todo = [...this.all.values()].filter(n => !n.synced);
+    // notes on device-only PDFs (ids start with L-) never leave the device
+    const todo = [...this.all.values()].filter(n => !n.synced && !n.pdf_id.startsWith('L-'));
     if (!todo.length) { if (this.status !== 'idle') { this.status = 'idle'; this.emit(); } return true; }
     if (typeof navigator !== 'undefined' && navigator.onLine === false) { this.status = 'offline'; this.emit(); return false; }
     this.busy = true; this.status = 'syncing'; this.emit();
@@ -147,7 +148,7 @@ class NotesStore {
       });
       this.fails = 0; this.status = 'idle'; this.lastError = '';
       this.busy = false; this.emit();
-      if ([...this.all.values()].some(n => !n.synced)) this.schedule(500);
+      if ([...this.all.values()].some(n => !n.synced && !n.pdf_id.startsWith('L-'))) this.schedule(500);
       return true;
     } catch (e: any) {
       this.fails++; this.status = 'error'; this.lastError = e.message || 'Could not reach the server.';

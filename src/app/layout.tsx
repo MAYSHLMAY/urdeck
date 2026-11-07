@@ -2,10 +2,11 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import './reference.css';
 import './home.css';
+import './browse.css';
 
 export const metadata: Metadata = {
   title: 'Flight Recall',
-  description: 'Flight Recall: spaced-repetition flashcards with a 3D lab.',
+  description: 'Spaced-repetition flashcards for aerodynamics, with a 3D lab.',
   manifest: '/manifest.webmanifest'
 };
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#CF5F27' };

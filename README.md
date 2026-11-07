@@ -60,6 +60,14 @@ Deleting a folder, a pool (category), a PDF or a 3D model always asks for the ow
 - **No database content is ever deleted by an update.** The SQL files only add tables, columns and functions (`if not exists`). Editing a card keeps its id; deleting a card keeps a hidden tombstone row.
 - **Fonts:** Inter (text), Manrope (headings) and Source Serif 4 (questions) load from Google Fonts, with system fallbacks. Icons are built-in SVG.
 
+## 4e. Private space, Browse and Study / Shaky piles (no SQL needed)
+
+**Private space (everyone who is not the owner).** The **+** button is open to everyone. Cards, folders, edits and removals made by a non-owner are saved **only on that device** (localStorage) and are never sent to Supabase. Any card can be edited or removed *for me only*: the shared card is untouched, a private copy is layered on top, and **Settings > Your private space > Restore originals** undoes it. Personal cards can be deleted for good. The owner's tools still save for everyone.
+
+**My PDFs (on the device).** In the reader, **Pools > My PDFs** stores a PDF in the browser's IndexedDB (it handles large files, unlike localStorage; works on phone and PC). Nothing is uploaded, notes on it stay local too, and auto-find / highlight / zoom / search all work on it. The app asks the browser to keep the storage persistent. Backups (Settings > Download backup) include personal cards and piles, not the PDF files themselves.
+
+**Browse.** The grid button next to **+** shows many cards at once: questions only, with answers, or with choices; Few / More / Most per screen; tap a card to reveal; "Reveal all" for rushing. **Study** and **Shaky** are two separate piles: tapping **Unsure** moves a card out of Study into Shaky (and **Got it** moves it back). Each set shows its own counts, and each pile (or single set) can be practised in one tap. Practice never changes your schedule.
+
 ## 5. Run / deploy
 ```bash
 npm run dev        # http://localhost:3000

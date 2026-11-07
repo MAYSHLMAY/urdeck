@@ -2,7 +2,8 @@
 import { useRef, useState } from 'react';
 import { DEF, steps, ymd } from '@/lib/srs';
 import { api, isOwner, lock, unlock } from '@/lib/api';
-import { dl, Sheet, SheetFrame, useEngine, Ic } from './ui';
+import { dl, Sheet, SheetFrame, useEngine, Ic, ask } from './ui';
+import { useRefs } from './refHooks';
 
 type F = [string, string, string, any?, any?, number?, string?, string?];
 const BASIC: [string, string, F[]][] = [
@@ -40,7 +41,7 @@ const ADVANCED: [string, F[]][] = [
 ];
 
 export function Settings({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const e = useEngine();
+  const e = useEngine(), R = useRefs();
   const [msg, setMsg] = useState<{ t: string; c: string }>({ t: '', c: '' });
   const bk = useRef<HTMLInputElement>(null);
   const [pw, setPw] = useState(''), [pwm, setPwm] = useState('');
@@ -108,6 +109,19 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
               </div>
               {pwm && <p className="n err">{pwm}</p>}
             </>}
+          </section>
+
+          <section className="scard"><h4><Ic n="lock" />Your private space</h4>
+            {(() => {
+              const my = e.myChanges();
+              return <>
+                <p className="n">Your own PDFs, cards, edits and removals are kept <b>only on this device</b>. They are never uploaded and nobody else sees them.</p>
+                <p className="n">{R.localPdfs.length} PDF{R.localPdfs.length === 1 ? '' : 's'} · {my.mine} own card{my.mine === 1 ? '' : 's'} · {my.edited} edited · {my.hidden} removed</p>
+                <div className="row">
+                  {my.hidden + my.edited > 0 && <button className="ghost" onClick={async () => { const r = await ask({ title: 'Bring back the originals?', msg: 'Your edits and removals are undone. Your own cards and PDFs stay.', acts: [{ k: 'ok', l: 'Restore originals' }] }); if (r && r.act) { e.myRestoreOriginals(); say('Originals restored.'); } }}>Restore originals</button>}
+                </div>
+              </>;
+            })()}
           </section>
 
           <section className="scard"><h4><Ic n="data" />Your data</h4>
