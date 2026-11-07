@@ -63,7 +63,7 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
               </select>
             </>}
           <label className="cl">Question</label>
-          <textarea value={q} onChange={ev => setQ(ev.target.value)} rows={3} maxLength={3900} placeholder="Type the question" />
+          <textarea className="cx" value={q} onChange={ev => setQ(ev.target.value)} rows={3} maxLength={3900} placeholder="Type the question" />
           <label className="cl">Correct answer</label>
           <input type="text" value={c} onChange={ev => setC(ev.target.value)} maxLength={3900} placeholder="The right choice" />
           <label className="cl">Wrong answers <small>({wrong.length} of 5)</small></label>
