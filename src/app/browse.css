@@ -40,3 +40,18 @@ dialog.sheet.browse{max-width:min(1100px,96vw);width:100%;height:92vh;max-height
 .plus.alt svg{width:22px;height:22px}
 .browse .bhead .n{font-size:.78rem;margin:4px 0 2px}
 @media(max-width:520px){.bgt small{display:none}.btabs button{padding:7px 6px}}
+.btabs.t3{grid-template-columns:repeat(3,1fr)}
+.btabs.t3 button{font-size:.85rem;gap:5px;padding:8px 4px}.btabs.t3 button svg{width:15px;height:15px}
+.btabs button.ms.on{color:var(--acc)}
+.bmiss{align-self:flex-start;background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad);font-weight:650;font-size:.7rem;padding:1px 8px;border-radius:20px}
+.bfoot{gap:8px}.bfoot .ghost{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.speedbar{display:none;align-items:center;gap:10px;margin:8px 0;padding:8px 12px;border:1.5px solid var(--acc);border-radius:14px;background:var(--card)}
+.speedbar.on{display:flex}
+.speedbar .tm{font:700 1.2rem Manrope,Inter,sans-serif;min-width:3.2ch;font-variant-numeric:tabular-nums}
+.speedbar .tr{flex:1;height:8px;border-radius:6px;background:var(--line);overflow:hidden}
+.speedbar .tr i{display:block;height:100%;background:var(--acc);transition:width .3s linear}
+.speedbar.low .tm{color:var(--bad)}.speedbar.low .tr i{background:var(--bad)}
+.speedbar small{color:var(--mute);white-space:nowrap}
+.sres{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.sres div{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center}
+.sres b{display:block;font:800 1.5rem Manrope,Inter,sans-serif}.sres small{color:var(--mute)}

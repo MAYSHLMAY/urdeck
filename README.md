@@ -70,6 +70,8 @@ Deleting a folder, a pool (category), a PDF or a 3D model always asks for the ow
 
 **Smoother PDF text selection.** The reader now uses the same technique as browser PDF readers (an invisible end-of-content block behind the text), so dragging through gaps or past the last line no longer jumps the selection to far-away text. Selection is a soft blue tint, double-click selects a word and triple-click selects just the line.
 
+**Mistakes list and Speed round.** Every wrong answer or "I don't know" (in normal study, practice and speed rounds) is logged on the device. Browse has a third tab, **Mistakes**, per set; a card leaves it after two right answers in a row (or tap Clear). **Speed round** (Browse footer) runs the cards of the open tab against a 1 / 2 / 5 / 10 minute clock, auto-advances after each answer, never reschedules anything, then shows answered / right / accuracy and offers to drill the ones you missed.
+
 ## 5. Run / deploy
 ```bash
 npm run dev        # http://localhost:3000

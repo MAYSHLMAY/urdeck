@@ -87,7 +87,16 @@ export function useNoteCapture(root: RefObject<HTMLElement>, pdfId: string | nul
     };
     const on = () => { clearTimeout(t); t = setTimeout(check, 120); };
     document.addEventListener('selectionchange', on);
-    return () => { clearTimeout(t); clearTimeout(clearT.current); clearTimeout(autoT.current); document.removeEventListener('selectionchange', on); };
+    // clicking or tapping the pages themselves is a deliberate "deselect": the preview mark goes away at once.
+    // (Tapping the note toolbar keeps it, so Highlight / Note still work; so does an open note editor.)
+    const down = (ev: Event) => {
+      const tg = ev.target as HTMLElement | null;
+      if (!pend.current || !tg || !tg.closest || !tg.closest('.pdf-scroll')) return;
+      if (document.querySelector('.vedit textarea')) return;
+      clearTimeout(clearT.current); clearTimeout(autoT.current); set(null);
+    };
+    document.addEventListener('pointerdown', down, true);
+    return () => { document.removeEventListener('pointerdown', down, true); clearTimeout(t); clearTimeout(clearT.current); clearTimeout(autoT.current); document.removeEventListener('selectionchange', on); };
   }, [enabled, pdfId, root]);
 
   const dismiss = useCallback(() => { clearTimeout(autoT.current); getSelection()?.removeAllRanges(); set(null); }, []);

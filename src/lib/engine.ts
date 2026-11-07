@@ -10,7 +10,7 @@ import { emptyMeta, fetchMeta, readCache, saveCards, syncCards, type Meta } from
 import { api, isOwner } from './api';
 import type { Card, FoldDB, LocalPack, Mut, QCard } from './types';
 
-const K_SH = 'fr-shaky-v1', K_MY = 'fr-my-v1', K_PROG = 'fr-progress-v1', K_MINE = 'fr-mine-v1', K_FOLD = 'fr-folders-local-v1', K_NOTES = 'fr-notes-v1';
+const K_MIS = 'fr-mistakes-v1', K_SH = 'fr-shaky-v1', K_MY = 'fr-my-v1', K_PROG = 'fr-progress-v1', K_MINE = 'fr-mine-v1', K_FOLD = 'fr-folders-local-v1', K_NOTES = 'fr-notes-v1';
 const WORD = ['all', 'book', 'hard', 'pe', 'penew', 'weak', 'marked', 'leech'];
 
 const rnd = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
@@ -43,6 +43,11 @@ export class Engine {
   extra: Card[] = [];
   /** Cards the learner marked "unsure" (the Shaky pile). Kept apart from the Study pile; this device only. */
   SH: Record<string, 1> = {};
+  /** Mistake log: how often each card was missed, and how many right answers since (two in a row clears it). Device only. */
+  MIS: Record<string, { w: number; r: number; t: number }> = {};
+  /** Speed round (timed practice). `speedResult` holds the last finished round for the summary screen. */
+  speed: { end: number; secs: number; right: number; wrong: number; n: number; missed: string[] } | null = null;
+  speedResult: { secs: number; right: number; wrong: number; n: number; missed: string[]; left: number; timeUp: boolean } | null = null;
   /** Private layer (this device only): personal cards, plus edits / removals applied on top of any card. */
   MY: { cards: Card[]; edits: Record<string, any> } = { cards: [], edits: {} };
   meta: Meta = emptyMeta();
@@ -71,6 +76,7 @@ export class Engine {
     const m = jget(K_MINE);
     if (m) { this.DATA.packs = m.packs || []; this.DATA.titles = m.titles || {}; }
     const sh = jget(K_SH); if (sh) this.SH = sh;
+    const mi = jget(K_MIS); if (mi) this.MIS = mi;
     const my = jget(K_MY); if (my) this.MY = { cards: my.cards || [], edits: my.edits || {} };
     const p = jget(K_PROG);
     if (p && p.S) Object.assign(this.S, p.S);
@@ -266,7 +272,7 @@ export class Engine {
     return WORD.includes(v) || (v.startsWith('c:') && (!this.poolsLoaded || this.catSets.has(v.slice(2)))) || (v.startsWith('f:') && this.FT.name.has(v.slice(2))) || (v.startsWith('g:') && this.Q.some(q => q.g === v.slice(2))) || this.Q.some(q => q.s === v);
   }
   setSel(v: string) {
-    this.S.sec = v; this.later = {}; this.last = null; this.cram = false; this.ahead = 0; this.save(); this.show();
+    this.S.sec = v; this.speed = null; this.later = {}; this.last = null; this.cram = false; this.ahead = 0; this.save(); this.show();
   }
 
   /* ---------- undo ---------- */
@@ -340,6 +346,7 @@ export class Engine {
   /* ---------- the study loop ---------- */
   show() {
     this.cur = this.pick(); this.showN++; this.chosen = null;
+    if (!this.cur && this.speed) { this.finishSpeed(false); return; }
     if (!this.cur) { this.phase = 'done'; this.curOpts = []; this.emit(); return; }
     this.phase = 'q';
     this.curOpts = shuf([{ t: this.cur.c, ok: 1 }, ...this.cur.w.map(t => ({ t, ok: 0 }))]);
@@ -364,6 +371,11 @@ export class Engine {
     if (this.phase !== 'q' || !this.cur) return;
     const good = i >= 0 && !!this.curOpts[i].ok, x = this.O, S = this.S, cur = this.cur;
     this.chosen = i;
+    this.noteResult(cur.id, good);
+    if (this.speed) {
+      const sp = this.speed; if (good) sp.right++; else { sp.wrong++; sp.missed.push(cur.id); }
+      setTimeout(() => { if (this.speed && this.phase === 'cr' && this.cur && this.cur.id === cur.id) this.show(); }, good ? 450 : 1400);
+    }
     if (!good && x.vib && typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(40);
     if (this.cram) { this.phase = 'cr'; this.emit(); return; }
     this.pend = this.snap(cur.id); this.phase = good ? 'ok' : 'bad';
@@ -390,6 +402,31 @@ export class Engine {
     try { localStorage.setItem(K_SH, JSON.stringify(this.SH)); } catch { /* storage full: still works this session */ }
     this.emit();
   }
+  /* ---------- mistake log ---------- */
+  noteResult(id: string, good: boolean) {
+    const m = this.MIS[id] || (this.MIS[id] = { w: 0, r: 0, t: 0 });
+    if (good) m.r++; else { m.w++; m.r = 0; }
+    m.t = Date.now();
+    if (m.w === 0) delete this.MIS[id];
+    try { localStorage.setItem(K_MIS, JSON.stringify(this.MIS)); } catch { /* ignore */ }
+  }
+  isMissed(id: string) { const m = this.MIS[id]; return !!m && m.w > 0 && m.r < 2; }
+  clearMissed(id: string) { delete this.MIS[id]; try { localStorage.setItem(K_MIS, JSON.stringify(this.MIS)); } catch { /* ignore */ } this.emit(); }
+  /* ---------- speed round ---------- */
+  startSpeed(ids: string[], secs: number) {
+    if (!ids.length) return;
+    this.speedResult = null; this.speed = null;
+    this.startPracticeIds(ids);
+    if (!this.cram) return;
+    this.speed = { end: Date.now() + secs * 1000, secs, right: 0, wrong: 0, n: ids.length, missed: [] };
+    this.emit();
+  }
+  finishSpeed(timeUp: boolean) {
+    const s = this.speed; if (!s) return;
+    this.speedResult = { secs: s.secs, right: s.right, wrong: s.wrong, n: s.n, missed: [...new Set(s.missed)], left: this.deck.length + (this.cur && this.phase === 'q' ? 1 : 0), timeUp };
+    this.speed = null; this.cram = false; this.deck = []; this.show();
+  }
+  closeSpeed() { this.speedResult = null; this.emit(); }
   /** Practice exactly these cards (random order). Nothing is rescheduled. */
   startPracticeIds(ids: string[]) {
     const a = ids.slice();
@@ -415,7 +452,7 @@ export class Engine {
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
     this.deck = ids; this.practiced = ids.length; this.cram = true; this.later = {}; this.last = null; this.show();
   }
-  exitPractice() { this.cram = false; this.deck = []; this.show(); }
+  exitPractice() { this.speed = null; this.cram = false; this.deck = []; this.show(); }
   learnMore() { this.S.limit = this.S.newToday + 10; this.save(); this.show(); }
   reviewAhead() { this.ahead = 1; this.show(); }
 
@@ -670,7 +707,7 @@ export class Engine {
 
   /* ---------- backup, restore, merge ---------- */
   backupJSON() {
-    return JSON.stringify({ app: 'flight-recall', v: 6, progress: { S: this.S, PE: this.PE }, packs: this.DATA.packs, titles: this.DATA.titles, notes: this.NOTES, folders: this.LF, my: this.MY, shaky: this.SH });
+    return JSON.stringify({ app: 'flight-recall', v: 6, progress: { S: this.S, PE: this.PE }, packs: this.DATA.packs, titles: this.DATA.titles, notes: this.NOTES, folders: this.LF, my: this.MY, shaky: this.SH, mistakes: this.MIS });
   }
   mergePacks(list?: LocalPack[]) {
     const ALL = this.DATA.packs.slice(), P = this.DATA.packs.slice(); let k = 0;
@@ -703,6 +740,7 @@ export class Engine {
   restoreBackup(text: string) {
     const o = JSON.parse(text); if (o.app !== 'flight-recall') throw new Error('bad');
     const msg = this.mergeData({ packs: o.packs, titles: o.titles, progress: o.progress });
+    if (o.mistakes) { Object.keys(o.mistakes).forEach(k => { if (!this.MIS[k]) this.MIS[k] = o.mistakes[k]; }); try { localStorage.setItem(K_MIS, JSON.stringify(this.MIS)); } catch { /* ignore */ } }
     if (o.shaky) { Object.keys(o.shaky).forEach(k => { this.SH[k] = 1; }); try { localStorage.setItem(K_SH, JSON.stringify(this.SH)); } catch { /* ignore */ } }
     if (o.my) {
       const ids = new Set(this.MY.cards.map(c => c.id));

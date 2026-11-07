@@ -14,6 +14,7 @@ import { AddDialog } from './AddDialog';
 import { ModelsDialog } from './ModelsDialog';
 import { CardEditor, type EditorState } from './CardEditor';
 import { Browse } from './Browse';
+import { SpeedBar, SpeedSummary } from './Speed';
 
 const PLANE = <svg viewBox="0 0 24 24" width="22" height="22"><path d="M2 12 22 3l-5 18-5-7z" fill="currentColor" /></svg>;
 
@@ -106,7 +107,8 @@ export default function App() {
           <button className="plus alt" onClick={() => setDlg('grid')} aria-label="Browse many cards at once" title="Browse many cards at once"><Ic n="grid" /></button>
           <button className="plus" onClick={() => setDlg('add')} aria-label="Add folder or cards" title="Add folder or cards">+</button>
         </div>
-        <div id="mode" className={e.cram ? 'on' : ''}><span>Practice: {e.deck.length} left · your schedule is not changed.</span><button className="ghost" onClick={() => e.exitPractice()}>Exit</button></div>
+        <SpeedBar />
+        <div id="mode" className={e.cram && !e.speed ? 'on' : ''}><span>Practice: {e.deck.length} left · your schedule is not changed.</span><button className="ghost" onClick={() => e.exitPractice()}>Exit</button></div>
         <QuizContainer onInfo={id => { setInfoId(id); setDlg('info'); }} onCard={(mode, id, section) => setEditor({ mode, id, section })} />
         <p className="hint">Keys: 1–4 answer · 1/2/3 Hard, Good, Easy · Enter continue · L later · D don’t know · Z undo · M mark · R reference PDF · / search</p>
       </div>
@@ -127,6 +129,7 @@ export default function App() {
           </div> : null;
         })()}
       </Sheet>
+      <SpeedSummary />
       <Browse open={dlg === 'grid'} onClose={close} onPick={() => { e.openMenu(); setDlg('menu'); }} onEdit={id => setEditor({ mode: 'edit', id, section: e.qById(id)?.s })} />
       <CardEditor state={editor} onClose={() => setEditor(null)} />
       <HighlightTools />
