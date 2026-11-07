@@ -6,7 +6,7 @@ import { BUILTIN, modelCode, validateModel, forgetModel, type ModelDef } from '@
 import { refs } from '@/lib/refs';
 import { isOwner } from '@/lib/api';
 import { useRefs } from './refHooks';
-import { askPassword, AskHost } from './ui';
+import { askPassword, AskHost, Ic } from './ui';
 
 const esc = (t: any) => String(t);
 
@@ -176,7 +176,7 @@ export default function Lab() {
     <div className="lab">
       <div className="wrap" style={{ maxWidth: 760 }}>
         <div className="top">
-          <Link href="/">← Back</Link>
+          <Link href="/" className="backln"><Ic n="arrowL" /> Back</Link>
           <select value={selId} aria-label="Model" onChange={ev => { setSelId(ev.target.value); location.hash = ev.target.value; openModel(ev.target.value); }}>
             {groups.map(g => <optgroup key={g} label={g}>{all.filter(m => catName(Rf.modelCat[m.id]) === g).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</optgroup>)}
           </select>
@@ -199,7 +199,7 @@ export default function Lab() {
         <div id="msg" className={msg.err ? 'err' : ''}>{msg.t}</div>
         <div id="cv" ref={cv}><div id="hud">Drag = orbit · pinch / wheel = zoom · tap a part</div></div>
         <div className="bar">
-          <button className={sweep ? 'on' : ''} onClick={toggleSweep}>{sweep ? '■ Stop sweep' : '▶ Auto sweep'}</button>
+          <button className={sweep ? 'on' : ''} onClick={toggleSweep}>{sweep ? <><Ic n="stop" /> Stop sweep</> : <><Ic n="play" /> Auto sweep</>}</button>
           <button className={wire ? 'on' : ''} onClick={toggleWire}>Wireframe</button>
           <button onClick={() => { if (R.current.sweep) { R.current.sweep = false; setSweep(false); } resetAll(); }}>Reset</button>
         </div>

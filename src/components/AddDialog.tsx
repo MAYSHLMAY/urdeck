@@ -5,7 +5,7 @@ import { parseRaw } from '@/lib/parse';
 import { splitPath } from '@/lib/engine';
 import { isOwner, lock, unlock } from '@/lib/api';
 import { sb } from '@/lib/library';
-import { Sheet, SheetFrame, useEngine } from './ui';
+import { Sheet, SheetFrame, useEngine, Ic } from './ui';
 
 export function AddDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const e = useEngine();
@@ -68,7 +68,7 @@ export function AddDialog({ open, onClose }: { open: boolean; onClose: () => voi
   const locked = !own;
   return (
     <Sheet open={open} onClose={onClose} className="sheet addm">
-      <SheetFrame title={<>Add <span>{locked ? '🔒' : '🔓'}</span></>} onClose={onClose}>
+      <SheetFrame title={<>Add <Ic n={locked ? 'lock' : 'unlock'} /></>} onClose={onClose}>
         <div className="sc">
           {locked ? (
             <div>
@@ -108,7 +108,7 @@ export function AddDialog({ open, onClose }: { open: boolean; onClose: () => voi
               )}
               <div id="imsg" className={msg.c}>{msg.t}</div>
               <div id="packs">
-                <p className="n" style={{ marginTop: 10 }}><b>Your library:</b> {e.Q.length} cards{e.syncingCloud ? ' · ☁ syncing…' : ''}.</p>
+                <p className="n" style={{ marginTop: 10 }}><b>Your library:</b> {e.Q.length} cards{e.syncingCloud ? ' · syncing…' : ''}.</p>
                 {packs.map(p => (
                   <div className="pk2" key={p.id}><span>{p.name}<br /><small className="gm">{p.card_count} cards · added {new Date(p.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · shared deck</small></span></div>
                 ))}

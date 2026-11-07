@@ -4,15 +4,6 @@
 .hh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .hh .brand{display:flex;align-items:center;gap:9px;font-size:1.15rem;letter-spacing:-.01em}.hh .brand svg{color:var(--acc)}
 .hh .tools{display:flex;align-items:center;gap:6px}
-.cx {width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    padding: 10px 12px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 14px;
-    resize: vertical;
-    min-height: 80px;}
 .own{font-size:.75rem;font-weight:700;padding:4px 9px;border-radius:99px;background:var(--okbg);color:var(--ok)}
 
 .hero{display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:22px;background:linear-gradient(135deg,var(--accbg),transparent 70%),var(--card);border:1.5px solid var(--line);box-shadow:var(--shadow)}

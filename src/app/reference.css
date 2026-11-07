@@ -1,8 +1,12 @@
 /* Reference PDF drawer, category pools, PDF viewer. Uses the app's theme variables. */
-:root{--refw:min(46vw,640px)}
+:root{--refw:min(46vw,640px);--refh:62dvh}
 body{transition:padding .28s ease}
 @media(min-width:900px){body.ref-open{padding-right:var(--refw)}}
-@media(max-width:899px){body.ref-open{padding-bottom:62vh}}
+@media(max-width:899px){body.ref-open{padding-bottom:var(--refh)}}
+body.ref-open.ref-full{padding:0!important}
+body.ref-drag{transition:none!important;user-select:none;-webkit-user-select:none;cursor:ew-resize}
+body.ref-drag .refd{transition:none!important}
+body.ref-open .wrap{min-width:0}
 
 .refrow{margin-top:4px}
 .refbtn.on{border-color:var(--acc);color:var(--acc);background:var(--accbg)}
@@ -11,7 +15,7 @@ body{transition:padding .28s ease}
  visibility:hidden;transition:transform .28s ease,visibility 0s linear .28s}
 .refd.on{visibility:visible;transform:none!important;transition:transform .28s ease,visibility 0s}
 @media(min-width:900px){.refd{top:0;right:0;bottom:0;width:var(--refw);border-radius:0;border-width:0 0 0 1.5px;transform:translateX(102%)}}
-@media(max-width:899px){.refd{left:0;right:0;bottom:0;height:62vh;border-radius:18px 18px 0 0;border-width:1.5px 0 0;transform:translateY(102%);padding-bottom:env(safe-area-inset-bottom)}}
+@media(max-width:899px){.refd{left:0;right:0;bottom:0;height:var(--refh);max-height:100dvh;border-radius:18px 18px 0 0;border-width:1.5px 0 0;transform:translateY(102%);padding-bottom:env(safe-area-inset-bottom)}}
 .refh{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1.5px solid var(--line);flex:none}
 .reft{display:flex;gap:4px}
 .reft button{font:inherit;font-size:.8rem;font-weight:650;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer}
@@ -104,9 +108,7 @@ button.pdfrow{padding:9px 10px;border:1.5px solid var(--line);border-radius:12px
 .findbar input{flex:1;min-width:0;font:inherit;font-size:.9rem;padding:8px 10px;border-radius:11px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
 .findbar .fc{font-size:.75rem;color:var(--mute);min-width:40px;text-align:center}
 .chipx.soft{background:var(--bg);color:var(--mute);border:1px solid var(--line)}
-.refd.full{border-radius:0}
-@media(max-width:899px){.refd.full{height:100dvh;top:0}}
-@media(min-width:900px){.refd.full{width:min(920px,86vw)}}
+aside.refd.full{top:0;left:0;right:0;bottom:0;width:auto;height:auto;max-height:none;border-radius:0;border-width:0}
 
 /* ---- note colours ---- */
 .dots{display:inline-flex;align-items:center;gap:7px}
@@ -138,3 +140,40 @@ button.pdfrow{padding:9px 10px;border:1.5px solid var(--line);border-radius:12px
 .chip.sm{padding:3px 9px;font-size:.74rem}
 .ntags .tagin{width:84px;padding:4px 9px;font-size:.78rem}
 .refready{margin-left:6px;font-size:.74rem;font-weight:700;color:var(--acc);background:var(--accbg);border-radius:99px;padding:2px 8px}.refready.soft{color:var(--mute);background:transparent}
+
+/* ---- resize grip ---- */
+.refgrip{position:absolute;z-index:8;display:flex;align-items:center;justify-content:center;touch-action:none;-webkit-tap-highlight-color:transparent}
+.refgrip i{display:block;border-radius:99px;background:var(--line);transition:background .15s,transform .15s}
+.refgrip:hover i,.refgrip:focus-visible i,body.ref-drag .refgrip i{background:var(--acc)}
+.refgrip:focus-visible{outline:none}
+@media(min-width:900px){.refgrip{left:-7px;top:0;bottom:0;width:14px;cursor:ew-resize}.refgrip i{width:4px;height:46px}.refgrip:hover i{transform:scaleX(1.4)}}
+@media(max-width:899px){.refgrip{left:0;right:0;top:-8px;height:22px;cursor:ns-resize}.refgrip i{width:44px;height:5px}}
+aside.refd.full .refgrip{display:none}
+
+/* ---- docked note tools (never over the pages) ---- */
+.refv>.pdf-scroll{flex:1;min-height:0}
+.pdf-scroll:focus{outline:none}.pdf-page{contain:layout paint}
+.vdock{flex:none;border-top:1.5px solid var(--line);background:var(--card);padding-bottom:env(safe-area-inset-bottom)}
+.vrail{display:flex;align-items:center;gap:8px;padding:6px 10px;min-height:48px;box-sizing:border-box}
+.vrail .vtext{flex:1;min-width:0;font-size:.78rem;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vrail.hot .vtext{color:var(--ink)}.vrail .vtext.bad{color:var(--bad)}
+.vrail kbd{font:inherit;font-size:.7rem;font-weight:700;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--bg);color:var(--ink)}
+.vrail .h-tc{display:none}
+@media(pointer:coarse){.vrail .h-kb{display:none}.vrail .h-tc{display:inline}}
+.vact{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:11px;background:var(--accbg);color:var(--acc);font-weight:700;font-size:.82rem;cursor:pointer;flex:none;-webkit-tap-highlight-color:transparent}
+.vact:hover:not(:disabled){filter:brightness(.97);box-shadow:inset 0 0 0 1.5px var(--acc)}.vact:active:not(:disabled){transform:scale(.96)}
+.vact:disabled{opacity:.38;cursor:default}.vact.icon{padding:0 10px}.vact:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+@media(max-width:560px){.vact span{display:none}.vact{padding:0 11px}.vrail .dots{gap:5px}.vrail .cdot{width:22px;height:22px}}
+.vedit{padding:8px 10px;border-bottom:1.5px solid var(--line);animation:barin .14s ease-out}
+.vedit textarea{width:100%;box-sizing:border-box;min-height:64px;max-height:30vh;font:inherit;font-size:.9rem;padding:8px;border-radius:11px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:8px;resize:vertical}
+.vedit .selq{margin:0 0 6px}
+
+/* ---- the tools bar and findbar stay compact in the full-page reader ---- */
+aside.refd.full .vbar{justify-content:center}
+aside.refd.full .pdf-scroll{padding:14px 8px}
+.refp .go svg.i,.nmeta svg.i{vertical-align:-.2em}
+.chipx svg.i{width:1em;height:1em}.chipx button{display:inline-flex;margin:0 2px}
+.reft button{min-height:34px}
+.vrail .vtext{display:block;line-height:1.25}.vrail .vtext>span{white-space:nowrap}
+.vrail kbd{display:inline-block!important;line-height:1.3;vertical-align:baseline;margin:0 1px}
+.vrail kbd{width:auto!important;height:auto!important;border-radius:5px!important;padding:0 6px;font:700 .7rem Inter,system-ui,sans-serif!important;color:var(--ink)!important}

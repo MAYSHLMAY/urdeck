@@ -2,17 +2,17 @@
 import { useRef, useState } from 'react';
 import { DEF, steps, ymd } from '@/lib/srs';
 import { api, isOwner, lock, unlock } from '@/lib/api';
-import { dl, Sheet, SheetFrame, useEngine } from './ui';
+import { dl, Sheet, SheetFrame, useEngine, Ic } from './ui';
 
 type F = [string, string, string, any?, any?, number?, string?, string?];
 const BASIC: [string, string, F[]][] = [
-  ['Studying', '🎯', [
+  ['Studying', 'target', [
     ['limit', 'New cards per day', 'num', 1, 500, 1, 'S'],
     ['maxRev', 'Maximum reviews per day', 'num', 0, 2000, 10, '', '0 means no limit'],
     ['newOrder', 'New card order', 'sel', [['seq', 'In order'], ['rand', 'Random']]],
     ['mix', 'Show new cards', 'sel', [['after', 'After reviews'], ['mixed', 'Mixed with reviews'], ['first', 'Before reviews']]],
     ['exam', 'Exam date', 'date', 0, 0, 0, '', 'Shows a countdown and a daily pace']]],
-  ['Look', '🎨', [
+  ['Look', 'palette', [
     ['theme', 'Theme', 'sel', [['auto', 'Match device'], ['light', 'Light'], ['dark', 'Dark']]],
     ['size', 'Text size', 'sel', [['s', 'Small'], ['m', 'Medium'], ['l', 'Large'], ['xl', 'Extra large']]],
     ['vib', 'Vibrate on a wrong answer', 'chk']]]
@@ -93,10 +93,10 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
       <SheetFrame title="Settings" onClose={onClose}>
         <div className="sc setp">
           {BASIC.map(([g, ic, fs]) => (
-            <section className="scard" key={g}><h4><span>{ic}</span>{g}</h4>{fs.map(field)}</section>
+            <section className="scard" key={g}><h4><Ic n={ic} />{g}</h4>{fs.map(field)}</section>
           ))}
 
-          <section className="scard"><h4><span>🔑</span>Owner</h4>
+          <section className="scard"><h4><Ic n="key" />Owner</h4>
             {owner ? <>
               <p className="n">Owner tools are <b>unlocked</b> on this device: you can add cards, folders, PDFs and 3D models. Deleting always asks for the password again.</p>
               <div className="row"><button className="ghost" onClick={() => { lock(); e.emit(); say('Locked.'); }}>Lock owner tools</button></div>
@@ -110,7 +110,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
             </>}
           </section>
 
-          <section className="scard"><h4><span>💾</span>Your data</h4>
+          <section className="scard"><h4><Ic n="data" />Your data</h4>
             <p className="n">Your progress is saved <b>automatically on this device</b>. Cards, folders, PDFs and models live in the shared database.</p>
             <div className="row">
               <button className="solid" onClick={() => { dl('Flight-Recall-backup-' + ymd(new Date()) + '.json', e.backupJSON()); say('Backup downloaded.'); }}>Download backup</button>
@@ -125,7 +125,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
             <p className={'n ' + msg.c} id="smsg">{msg.t}</p>
           </section>
 
-          <details className="scard adv"><summary><span>⚙️</span>Advanced</summary>
+          <details className="scard adv"><summary><Ic n="sliders" />Advanced</summary>
             {ADVANCED.map(([g, fs]) => <div key={g}><h5>{g}</h5>{fs.map(field)}</div>)}
             <h5>Section titles</h5>
             <p className="n">Titles come from your upload headers (for example <b>#2.4 Steady State Flights &amp; Performance</b>). Renames are saved on this device.</p>

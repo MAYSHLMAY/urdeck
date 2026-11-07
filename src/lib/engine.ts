@@ -244,7 +244,7 @@ export class Engine {
     const v = this.S.sec, Q = this.Q;
     const W: Record<string, string> = { all: 'All cards (' + Q.length + ')', book: 'Study-book cards', hard: 'Hard questions', pe: 'Past exam questions', penew: 'Past exam: unseen only', weak: 'Weak spots', marked: 'Marked cards', leech: 'Leeches' };
     if (W[v]) return W[v];
-    if (v.startsWith('c:')) return '🗂 ' + (this.catNames.get(v.slice(2)) || 'Pool');
+    if (v.startsWith('c:')) return 'Pool: ' + (this.catNames.get(v.slice(2)) || 'Pool');
     if (v.startsWith('f:')) return fpath(this.FT, v.slice(2)).join(' › ') || 'Library';
     if (v.startsWith('g:')) { const k = v.slice(2); return (this.gkey(k) + ' ' + this.gname(k)).trim() || k; }
     const q = Q.find(x => x.s === v);
@@ -280,7 +280,10 @@ export class Engine {
     }
     const P = this.pool().filter(q => this.live(q, now)), okc = (q: QCard) => !(this.later[q.id] > this.counter);
     const from = (a: QCard[]) => { const b = a.filter(q => q.id !== this.last); return rnd(b.length ? b : a); };
-    if (this.cram) { const a = P.filter(okc); return a.length ? from(a) : (P.length ? from(P) : null); }
+    if (this.cram) { // practice: bring the chosen cards back once each, in random order; nothing is rescheduled
+      while (this.deck.length) { const id = this.deck.shift()!, q = P.find(z => z.id === id); if (q) return q; }
+      return null;
+    }
     const L = P.filter(q => this.isLrn(S.cards[q.id]));
     let a = L.filter(q => S.cards[q.id].due <= now && okc(q)); if (a.length) return from(a);
     const lim = addDays(this.dayStart(now), 1 + this.ahead);
@@ -368,8 +371,25 @@ export class Engine {
     if (this.phase !== 'ok' || !this.cur) return;
     this.phase = 'graded'; this.commit(this.cur.id, g); this.show();
   }
-  startPractice() { this.cram = true; this.show(); }
-  exitPractice() { this.cram = false; this.show(); }
+  /** Practice deck: the cards of the current selection that match `kind`, shuffled. Progress and schedule are never touched. */
+  deck: string[] = []; practiced = 0;
+  practiceCounts() {
+    const now = Date.now(), P = this.pool().filter(q => this.live(q, now)), S = this.S;
+    return {
+      all: P.length,
+      fresh: P.filter(q => this.isNew(S.cards[q.id])).length,
+      weak: P.filter(q => { const c = S.cards[q.id]; return !!c && (this.isLrn(c) || (c.lapses || 0) > 0); }).length,
+      marked: P.filter(q => { const c = S.cards[q.id]; return !!c && !!c.mark; }).length
+    };
+  }
+  startPractice(kind: 'all' | 'fresh' | 'weak' | 'marked' = 'all') {
+    const now = Date.now(), S = this.S;
+    const ok = (q: QCard) => { const c = S.cards[q.id]; return kind === 'all' ? true : kind === 'fresh' ? this.isNew(c) : kind === 'weak' ? !!c && (this.isLrn(c) || (c.lapses || 0) > 0) : !!c && !!c.mark; };
+    const ids = this.pool().filter(q => this.live(q, now) && ok(q)).map(q => q.id);
+    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+    this.deck = ids; this.practiced = ids.length; this.cram = true; this.later = {}; this.last = null; this.show();
+  }
+  exitPractice() { this.cram = false; this.deck = []; this.show(); }
   learnMore() { this.S.limit = this.S.newToday + 10; this.save(); this.show(); }
   reviewAhead() { this.ahead = 1; this.show(); }
 
@@ -400,7 +420,7 @@ export class Engine {
       const d = c.due - Date.now();
       o.push(c.t === 'review' ? `Due ${new Date(c.due).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : (d > 0 ? `Next step in ${Math.max(1, Math.round(d / M))} min` : 'Due now'));
     }
-    if (c && c.mark) o.push('Marked ★'); if (c && c.susp) o.push('Suspended'); if (c && c.by > Date.now()) o.push('Buried until tomorrow');
+    if (c && c.mark) o.push('Marked'); if (c && c.susp) o.push('Suspended'); if (c && c.by > Date.now()) o.push('Buried until tomorrow');
     return o.join(' · ');
   }
   qById(id: string) { return this.Q.find(z => String(z.id) === String(id)); }

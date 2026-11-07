@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react';
 import { isOwner } from '@/lib/api';
 import { canUpload, MAX_PDF_MB, type Category, type PdfDoc } from '@/lib/refs';
-import { Sheet, askPassword } from './ui';
+import { Sheet, askPassword, Ic } from './ui';
 import { useRefs } from './refHooks';
 
 const mb = (n: number | null) => (n ? (n / 1048576 >= 1 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB') : '');
@@ -45,7 +45,7 @@ export function PdfChooserModal() {
             const m = c.maps.find(x => x.pdf_id === p.id);
             return (
               <button key={p.id} className="pdfrow" onClick={() => R.choose(p.id, remember)}>
-                <span className="ic">📄</span>
+                <span className="ic"><Ic n="file" /></span>
                 <span className="tx"><b>{p.title}</b><small>{[mb(p.file_size), m ? 'opens at page ' + m.page_number : ''].filter(Boolean).join(' · ')}</small></span>
               </button>
             );
@@ -108,10 +108,10 @@ export function CategoryPool({ section }: { section: string | null }) {
           {docs.map(p => (
             <div className="pdfrow" key={p.id}>
               <button className="pdfopen" onClick={() => R.openPdf(p.id, 1, null, sel.id)}>
-                <span className="ic">📄</span><span className="tx"><b>{p.title}</b><small>{mb(p.file_size)}{R.catsOf(p.id).length > 1 ? ` · in ${R.catsOf(p.id).length} pools` : ''}</small></span>
+                <span className="ic"><Ic n="file" /></span><span className="tx"><b>{p.title}</b><small>{mb(p.file_size)}{R.catsOf(p.id).length > 1 ? ` · in ${R.catsOf(p.id).length} pools` : ''}</small></span>
               </button>
-              {own && <button className="go mgr" aria-label="Pools for this PDF" title="Pools for this PDF" onClick={() => setPicker({ kind: 'pdfCats', pdf: p })}>🗂</button>}
-              {own && <button className="go mgr" aria-label="Delete PDF" title="Delete PDF" onClick={async () => { const pw = await askPassword(`Delete “${p.title}”?`, 'This removes the PDF for everyone. Enter the owner password.'); if (pw) act(() => R.deletePdf(p.id, pw), 'PDF deleted.'); }}>🗑</button>}
+              {own && <button className="go mgr" aria-label="Pools for this PDF" title="Pools for this PDF" onClick={() => setPicker({ kind: 'pdfCats', pdf: p })}><Ic n="layers" /></button>}
+              {own && <button className="go mgr" aria-label="Delete PDF" title="Delete PDF" onClick={async () => { const pw = await askPassword(`Delete “${p.title}”?`, 'This removes the PDF for everyone. Enter the owner password.'); if (pw) act(() => R.deletePdf(p.id, pw), 'PDF deleted.'); }}><Ic n="trash" /></button>}
             </div>
           ))}
           {!docs.length && <p className="info">No PDFs in this pool yet.</p>}

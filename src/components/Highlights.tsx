@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { useEngine } from './ui';
+import { useEngine, Ic } from './ui';
 
 export const PINSVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M14.5 2.5l7 7-2.2.9-3.6 3.6.6 4.2-1.6 1.6-4-4-5.8 5.8-1.2-1.2 5.8-5.8-4-4 1.6-1.6 4.2.6 3.6-3.6z"/></svg>';
 
@@ -105,7 +105,7 @@ export function HighlightTools() {
       <div className={'hbar' + (bar ? ' on' : '')} id="hbar" style={bar ? { top: bar.top, left: bar.left } : undefined}
         onPointerDown={ev => ev.preventDefault()} onMouseDown={ev => ev.preventDefault()}>
         {['y', 'g', 'p', 'b'].map(c => <button key={c} className={c} data-c={c} aria-label={c} onClick={() => addHl(c, false)} />)}
-        <button className="pn" aria-label="Add note" onClick={() => addHl('y', true)}>📌</button>
+        <button className="pn" aria-label="Add note" onClick={() => addHl('y', true)}><Ic n="note" /></button>
       </div>
       <div className={'pop2' + (note ? ' on' : '')} id="npop" style={note ? { top: note.top, left: note.left } : undefined}>
         <div className="cl">

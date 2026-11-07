@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { foldList, gOrder2 } from '@/lib/tree';
 import { isOwner } from '@/lib/api';
 import { splitPath } from '@/lib/engine';
-import { ask, askPassword, esc, Sheet, SheetFrame, useEngine } from './ui';
+import { ask, askPassword, esc, Sheet, SheetFrame, useEngine, Ic } from './ui';
 
 export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const e = useEngine();
@@ -66,7 +66,7 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
 
   async function folderMenu(id: string) {
     const nm = e.FT.name.get(id)!, V = e.FT.virt.has(id);
-    const r = await ask({ title: '📁 ' + nm, acts: [{ k: 'ren', l: 'Rename' }, { k: 'mov', l: 'Move to another folder' }].concat(V ? [] : [{ k: 'del', l: 'Delete folder (keeps its contents)' }]) });
+    const r = await ask({ title: nm, acts: [{ k: 'ren', l: 'Rename' }, { k: 'mov', l: 'Move to another folder' }].concat(V ? [] : [{ k: 'del', l: 'Delete folder (keeps its contents)' }]) });
     if (!r) return;
     if (r.act === 'ren') {
       const x = await ask({ title: 'Rename folder', text: nm, ok: 'Save' });
@@ -89,7 +89,7 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
   }
   async function setMenu(s: string) {
     const inf = e.FT.secInfo.get(s) || { t: s, n: '' };
-    const r = await ask({ title: '📄 ' + inf.t, acts: [{ k: 'mov', l: 'Move to another folder' }, { k: 'tag', l: 'Edit tags' }] });
+    const r = await ask({ title: inf.t, acts: [{ k: 'mov', l: 'Move to another folder' }, { k: 'tag', l: 'Edit tags' }] });
     if (!r) return;
     if (r.act === 'mov') {
       const x = await ask({ title: 'Move “' + inf.t + '” to', sel: foldList(e.FT), selv: e.FT.secOf.get(s) || 'root', ok: 'Move' });
@@ -102,9 +102,9 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
 
   const header = (
     <span style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-      <button className="ico" disabled={!e.BH.length} onClick={() => e.navBack()} aria-label="Back" title="Back">←</button>
-      <button className="ico" disabled={!e.BW.length} onClick={() => e.navFwd()} aria-label="Forward" title="Forward">→</button>
-      <button className="ico" disabled={BR === 'root'} onClick={() => e.navUp()} aria-label="Up one folder" title="Up one folder">↑</button>
+      <button className="ico" disabled={!e.BH.length} onClick={() => e.navBack()} aria-label="Back" title="Back"><Ic n="arrowL" /></button>
+      <button className="ico" disabled={!e.BW.length} onClick={() => e.navFwd()} aria-label="Forward" title="Forward"><Ic n="arrowR" /></button>
+      <button className="ico" disabled={BR === 'root'} onClick={() => e.navUp()} aria-label="Up one folder" title="Up one folder"><Ic n="arrowU" /></button>
       <h3 style={{ marginLeft: 6 }}>Library</h3>
     </span>
   );
@@ -125,11 +125,11 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
             {nPE ? <Chip v="pe" l="Past exam" n={nPE} /> : null}
             {nNew ? <Chip v="penew" l="Unseen exam" n={nNew} /> : null}
             {cnt.weak ? <Chip v="weak" l="Weak spots" n={cnt.weak} /> : null}
-            {cnt.marked ? <Chip v="marked" l="Marked ★" n={cnt.marked} /> : null}
+            {cnt.marked ? <Chip v="marked" l="Marked" n={cnt.marked} /> : null}
             {cnt.leech ? <Chip v="leech" l="Leeches" n={cnt.leech} /> : null}
           </div>
           <div className="crumbs">
-            {trail.map((id, i) => <span key={id} style={{ display: 'contents' }}>{i ? <span>›</span> : null}<button onClick={() => { e.navTo(id); }}>{i ? (FT.name.get(id) || '?') : '📚 Library'}</button></span>)}
+            {trail.map((id, i) => <span key={id} style={{ display: 'contents' }}>{i ? <span>›</span> : null}<button onClick={() => { e.navTo(id); }}>{i ? (FT.name.get(id) || '?') : 'Library'}</button></span>)}
           </div>
           <div className="pathbar">
             <input type="text" value={gop} list="paths" onChange={ev => setGop(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter') { ev.preventDefault(); go(); } }}
@@ -139,7 +139,7 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
           </div>
           {BR !== 'root' && (() => { const s = sum(BR); return (
             <button className={'frow' + (S.sec === 'f:' + BR ? ' on' : '')} onClick={() => study('f:' + BR)}>
-              <span className="ic">▶</span><span className="tx"><b>Study this whole folder</b><small>{s.c} cards{s.d ? ' · ' + s.d + ' due' : ''}</small></span>
+              <span className="ic"><Ic n="play" /></span><span className="tx"><b>Study this whole folder</b><small>{s.c} cards{s.d ? ' · ' + s.d + ' due' : ''}</small></span>
             </button>); })()}
           {kids.map(id => {
             const s = sum(id), nk = (FT.kids.get(id) || []).length, ns = (FT.direct.get(id) || []).length;
@@ -147,11 +147,11 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
               <div key={id} className={'frow' + (S.sec === 'f:' + id ? ' on' : '')} role="button" tabIndex={0}
                 onClick={() => { e.navTo(id); const b = document.getElementById('mbody'); if (b) b.scrollTop = 0; }}
                 onKeyDown={ev => { if (ev.key === 'Enter') e.navTo(id); }}>
-                <span className="ic">📁</span>
+                <span className="ic"><Ic n="folder" /></span>
                 <span className="tx"><b>{FT.name.get(id) || '?'}</b>
                   <small>{nk ? nk + ' folder' + (nk > 1 ? 's' : '') + ' · ' : ''}{ns ? ns + ' set' + (ns > 1 ? 's' : '') + ' · ' : ''}{s.c} cards{s.d ? <> · <span style={{ color: 'var(--warm)' }}>{s.d} due</span></> : null}</small></span>
                 <button className="go" onClick={ev => { ev.stopPropagation(); study('f:' + id); }}>Study</button>
-                {own && <button className="go mgr" aria-label="Folder options" onClick={ev => { ev.stopPropagation(); folderMenu(id); }}>⋯</button>}
+                {own && <button className="go mgr" aria-label="Folder options" onClick={ev => { ev.stopPropagation(); folderMenu(id); }}><Ic n="dots" /></button>}
               </div>
             );
           })}
@@ -159,11 +159,11 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
             const u = U.get(s) || { c: 0, d: 0 }, inf = FT.secInfo.get(s) || { t: s, n: '' };
             return (
               <div key={s} className={'frow' + (S.sec === s ? ' on' : '')} role="button" tabIndex={0} onClick={() => study(s)} onKeyDown={ev => { if (ev.key === 'Enter') study(s); }}>
-                <span className="ic">📄</span>
+                <span className="ic"><Ic n="file" /></span>
                 <span className="tx"><b>{(inf.n ? inf.n + ' · ' : '') + inf.t}</b>
                   <small>{u.c} cards{u.d ? <> · <span style={{ color: 'var(--warm)' }}>{u.d} due</span></> : null}</small>
                   {(FT.tags.get(s) || []).map(t => <span className="tg" key={t}>#{t}</span>)}</span>
-                {own && <button className="go mgr" aria-label="Set options" onClick={ev => { ev.stopPropagation(); setMenu(s); }}>⋯</button>}
+                {own && <button className="go mgr" aria-label="Set options" onClick={ev => { ev.stopPropagation(); setMenu(s); }}><Ic n="dots" /></button>}
               </div>
             );
           })}

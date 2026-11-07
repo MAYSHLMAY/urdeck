@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { askPassword, Sheet, SheetFrame, useEngine } from './ui';
+import { askPassword, Sheet, SheetFrame, useEngine, Ic } from './ui';
 
 export type EditorState = { mode: 'edit' | 'add'; id?: string; section?: string } | null;
 
@@ -63,21 +63,21 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
               </select>
             </>}
           <label className="cl">Question</label>
-          <textarea className="cx" value={q} onChange={ev => setQ(ev.target.value)} rows={3} maxLength={3900} placeholder="Type the question" />
+          <textarea value={q} onChange={ev => setQ(ev.target.value)} rows={3} maxLength={3900} placeholder="Type the question" />
           <label className="cl">Correct answer</label>
           <input type="text" value={c} onChange={ev => setC(ev.target.value)} maxLength={3900} placeholder="The right choice" />
           <label className="cl">Wrong answers <small>({wrong.length} of 5)</small></label>
           {w.map((x, i) => (
             <div className="wrow" key={i}>
               <input type="text" value={x} maxLength={3900} placeholder={'Wrong choice ' + (i + 1)} onChange={ev => setW(w.map((y, k) => (k === i ? ev.target.value : y)))} />
-              {w.length > 1 && <button type="button" className="ghost" aria-label="Remove this choice" onClick={() => setW(w.filter((_, k) => k !== i))}>✕</button>}
+              {w.length > 1 && <button type="button" className="ghost" aria-label="Remove this choice" onClick={() => setW(w.filter((_, k) => k !== i))}><Ic n="close" /></button>}
             </div>
           ))}
-          {w.length < 5 && <button type="button" className="ghost" onClick={() => setW([...w, ''])}>＋ Add a wrong choice</button>}
+          {w.length < 5 && <button type="button" className="ghost" onClick={() => setW([...w, ''])}><Ic n="plus" /> Add a wrong choice</button>}
           <label className="pickr" style={{ marginTop: 10 }}><input type="checkbox" checked={p} onChange={ev => setP(ev.target.checked)} /><span>Past exam question</span></label>
           {err && <p className="n err" role="alert">{err}</p>}
           <div className="row" style={{ marginTop: 12 }}>
-            {edit && <button type="button" className="ghost danger" disabled={busy} onClick={remove}>🗑 Delete card</button>}
+            {edit && <button type="button" className="ghost danger" disabled={busy} onClick={remove}><Ic n="trash" /> Delete card</button>}
             <button type="button" className="ghost" onClick={onClose}>Cancel</button>
             <button type="button" className="solid" disabled={!ok || busy} onClick={save}>{busy ? 'Saving…' : edit ? 'Save changes' : 'Add card'}</button>
           </div>

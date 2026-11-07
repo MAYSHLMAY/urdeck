@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Sheet, SheetFrame } from './ui';
+import { Sheet, SheetFrame, Ic } from './ui';
 import { BUILTIN } from '@/lib/models';
 import { useRefs } from './refHooks';
 
@@ -30,7 +30,7 @@ export function ModelsDialog({ open, onClose }: { open: boolean; onClose: () => 
                     {xs.map(x => (
                       <div className="frow" key={x.id} role="button" tabIndex={0} onClick={() => router.push('/lab#' + encodeURIComponent(x.id))}
                         onKeyDown={ev => { if (ev.key === 'Enter') router.push('/lab#' + encodeURIComponent(x.id)); }}>
-                        <span className="ic">🧊</span>
+                        <span className="ic"><Ic n="cube" /></span>
                         <span className="tx"><b>{x.name}<span className="mtag">MODEL</span></b><small>{(x.sub ? x.sub + ' · ' : '') + String(x.info || '').slice(0, 80)}</small></span>
                       </div>
                     ))}

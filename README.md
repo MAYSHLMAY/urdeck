@@ -53,6 +53,13 @@ Deleting a folder, a pool (category), a PDF or a 3D model always asks for the ow
 - **Viewer:** zoom buttons, pinch zoom, ctrl+wheel, fit width, page jump, search inside the PDF, night mode, full-screen toggle.
 - **Notes:** select text, then **Highlight** or **＋ Note** in the bar at the bottom (5 colours). The 🖍 marker saves anything you select automatically. Tap a highlight to edit it. The Notes tab has search, filters, tags, pins, page notes and export.
 
+## 4d. Reader, practice and fonts
+- **Reader:** drag the grip on its left edge (or the top handle on a phone) to resize it; the cards re-flow beside it and never sit under it. Double-click the grip to reset. The expand button (or `F`) makes it fill the whole page; `Esc` steps back.
+- **Commands:** select text, then `H` highlights and `N` writes a note (`Ctrl+Enter` saves). `Ctrl +`, `Ctrl -`, `Ctrl 0` zoom; `Ctrl F` searches the PDF. Note tools live in a rail under the pages, so they never cover the text.
+- **Check again:** on the finished screen it shows a warning and lets people bring back all cards, weak cards, unstudied cards or marked cards once each, as extra practice. Their schedule and progress are never changed.
+- **No database content is ever deleted by an update.** The SQL files only add tables, columns and functions (`if not exists`). Editing a card keeps its id; deleting a card keeps a hidden tombstone row.
+- **Fonts:** Inter (text), Manrope (headings) and Source Serif 4 (questions) load from Google Fonts, with system fallbacks. Icons are built-in SVG.
+
 ## 5. Run / deploy
 ```bash
 npm run dev        # http://localhost:3000

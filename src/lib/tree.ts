@@ -99,7 +99,7 @@ export function foldList(FT: Tree, skip?: string) {
   const walk = (id: string, d: number) => {
     (FT.kids.get(id) || []).slice().sort(cmp).forEach(k => {
       if (skip && isDesc(FT, k, skip)) return;
-      o.push({ id: k, label: '  '.repeat(d) + '📁 ' + (FT.name.get(k) || '?') });
+      o.push({ id: k, label: '  '.repeat(d) + (d ? '› ' : '') + (FT.name.get(k) || '?') });
       walk(k, d + 1);
     });
   };

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useEngine, Icon, Sheet, SheetFrame, AskHost, Toast } from './ui';
+import { useEngine, Icon, Ic, Sheet, SheetFrame, AskHost, Toast } from './ui';
 import { QuizContainer } from './QuizContainer';
 import Link from 'next/link';
 import { refs } from '@/lib/refs';
@@ -73,9 +73,9 @@ export default function App() {
 
   const c = e.counts(), S = e.S, now = Date.now();
   const live2 = S.last === e.dayKey(now) || S.last === e.dayKey(e.addDays(e.dayStart(now), -1));
-  let sub = '🔥 ' + (live2 ? S.streak : 0) + ' day streak';
+  let sub = (live2 ? S.streak : 0) + ' day streak';
   const ex = e.examInfo(); if (ex) sub += ' · ' + ex;
-  if (e.syncingCloud) sub += ' · ☁ syncing…';
+  if (e.syncingCloud) sub += ' · syncing…';
   else if (e.syncing && e.ready) sub += ' · checking for updates…';
   const p = c.tot ? c.r / c.tot * 100 : 0;
 
@@ -92,7 +92,7 @@ export default function App() {
             <button className="ico" onClick={() => setDlg('set')} aria-label="Settings"><Icon n="set" /></button>
           </div>
         </div>
-        <p className="sub1">{sub}</p>
+        <p className="sub1"><Ic n="fire" className="fireic" /> {sub}</p>
         <div className="path"><div className="track" /><i id="fill" style={{ width: p + '%' }} /><span id="plane" style={{ left: Math.max(2, Math.min(98, p)) + '%' }}>{PLANE}</span></div>
         <div className="counts">
           <div className="cn n"><b>{c.nToday}</b><small>New</small></div>
@@ -101,10 +101,10 @@ export default function App() {
         </div>
         <div className="stats2"><b>{c.m}</b> mastered of {c.tot} · <b>{S.done}</b> answered today{S.done ? ' (' + Math.round(S.ok / S.done * 100) + '% right)' : ''}</div>
         <div className="pickrow">
-          <button className="pick" onClick={() => { e.openMenu(); setDlg('menu'); }} aria-haspopup="dialog"><span className="pk">Studying</span><b>{e.selLabel()}</b><span aria-hidden="true">▾</span></button>
+          <button className="pick" onClick={() => { e.openMenu(); setDlg('menu'); }} aria-haspopup="dialog"><span className="pk">Studying</span><b>{e.selLabel()}</b><span aria-hidden="true"><Ic n="chevD" /></span></button>
           <button className="plus" onClick={() => setDlg('add')} aria-label="Add folder or cards" title="Add folder or cards">+</button>
         </div>
-        <div id="mode" className={e.cram ? 'on' : ''}><span>Practice mode: your schedule is not changed.</span><button className="ghost" onClick={() => e.exitPractice()}>Exit</button></div>
+        <div id="mode" className={e.cram ? 'on' : ''}><span>Practice: {e.deck.length} left · your schedule is not changed.</span><button className="ghost" onClick={() => e.exitPractice()}>Exit</button></div>
         <QuizContainer onInfo={id => { setInfoId(id); setDlg('info'); }} onCard={(mode, id, section) => setEditor({ mode, id, section })} />
         <p className="hint">Keys: 1–4 answer · 1/2/3 Hard, Good, Easy · Enter continue · L later · D don’t know · Z undo · M mark · R reference PDF · / search</p>
       </div>

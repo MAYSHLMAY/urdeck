@@ -107,7 +107,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
         if (dead || tok !== s.token) { doc.destroy(); return; }
         const p1 = await doc.getPage(1), v = p1.getViewport({ scale: 1 });
         s.doc = doc; s.ratio = v.height / v.width; s.sizes.set(1, [v.width, v.height]);
-        s.base = Math.max(200, (scroller.current?.clientWidth || 360) - 16); s.width = s.base * s.zoom;
+        s.base = Math.min(1100, Math.max(200, (scroller.current?.clientWidth || 360) - 16)); s.width = s.base * s.zoom;
         setState({ s: 'ready', n: doc.numPages, err: '' });
       } catch (e: any) {
         if (!dead) setState({ s: 'error', n: 0, err: e?.message || 'Could not open this PDF.' });
@@ -132,14 +132,14 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
   useEffect(() => {
     if (state.s !== 'ready') return;
     const s = st.current, root = scroller.current!, box = inner.current!;
-    s.base = Math.max(200, root.clientWidth - 16); s.width = s.base * s.zoom; applySizes();
+    s.base = Math.min(1100, Math.max(200, root.clientWidth - 16)); s.width = s.base * s.zoom; applySizes();
     onZoomRef.current?.(s.zoom);
     const io = new IntersectionObserver(es => {
       es.forEach(e => {
         const n = +(e.target as HTMLElement).dataset.page!;
         if (e.isIntersecting) { s.vis.add(n); render(n); } else { s.vis.delete(n); unrender(n); }
       });
-    }, { root, rootMargin: '120% 0px' });
+    }, { root, rootMargin: '220% 0px' });
     pages.current.forEach((el, i) => { if (el && i > 0) io.observe(el); });
 
     let raf = 0;
@@ -155,7 +155,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
     root.addEventListener('scroll', onScroll, { passive: true });
     let rt: any;
     const ro = new ResizeObserver(() => {
-      const w = Math.max(200, root.clientWidth - 16);
+      const w = Math.min(1100, Math.max(200, root.clientWidth - 16));
       if (w < 100 || Math.abs(w - s.base) < 4) return;
       clearTimeout(rt);
       rt = setTimeout(() => {
@@ -257,7 +257,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
   }, [notes, target, finds, findIdx, pending]);
 
   return (
-    <div className={'pdf-scroll' + (night ? ' night' : '')} ref={scroller}>
+    <div className={'pdf-scroll' + (night ? ' night' : '')} ref={scroller} tabIndex={0} aria-label="PDF pages">
       {state.s === 'loading' && <p className="pdf-msg">Opening PDF…</p>}
       {state.s === 'error' && <div className="pdf-msg"><p>{state.err}</p><button className="ghost" onClick={() => setTryN(x => x + 1)}>Try again</button></div>}
       {state.s === 'idle' && <p className="pdf-msg">Choose a document to read.</p>}

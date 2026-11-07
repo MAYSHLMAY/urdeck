@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { plain } from '@/lib/engine';
 import { fpath } from '@/lib/tree';
 import type { QCard } from '@/lib/types';
-import { Sheet, SheetFrame, esc, useEngine } from './ui';
+import { Sheet, SheetFrame, esc, useEngine, Ic } from './ui';
 
 const BF: [string, string][] = [['all', 'All'], ['new', 'New'], ['learn', 'Learning'], ['due', 'Due'], ['mature', 'Mastered'], ['susp', 'Suspended'], ['mark', 'Marked'], ['leech', 'Leech']];
 const HAY = new WeakMap<QCard, string>();
@@ -69,13 +69,13 @@ export function Search({ open, onClose, onStudy, onOpenFolder }: { open: boolean
             <div className="sres"><div className="sh">Folders, sets and tags</div>
               {fo.slice(0, 6).map(id => (
                 <div key={id} className="frow" role="button" tabIndex={0} onClick={() => { e.BR = id; e.BH = []; e.BW = []; onOpenFolder(); }}>
-                  <span className="ic">📁</span><span className="tx"><b>{FT.name.get(id)}</b><small>{fpath(FT, FT.parent.get(id) || 'root').join(' › ') || 'Library'}</small></span>
+                  <span className="ic"><Ic n="folder" /></span><span className="tx"><b>{FT.name.get(id)}</b><small>{fpath(FT, FT.parent.get(id) || 'root').join(' › ') || 'Library'}</small></span>
                 </div>))}
               {se.slice(0, 6).map(s => {
                 const inf = FT.secInfo.get(s) || { t: s, n: '' };
                 return (
                   <div key={s} className="frow" role="button" tabIndex={0} onClick={() => { e.setSel(s); onStudy(); }}>
-                    <span className="ic">📄</span><span className="tx"><b>{(inf.n ? inf.n + ' · ' : '') + inf.t}</b><small>{pathText(s)}</small>
+                    <span className="ic"><Ic n="file" /></span><span className="tx"><b>{(inf.n ? inf.n + ' · ' : '') + inf.t}</b><small>{pathText(s)}</small>
                       {(FT.tags.get(s) || []).map(t => <span className="tg" key={t}>#{t}</span>)}</span>
                   </div>);
               })}
@@ -93,11 +93,11 @@ export function Search({ open, onClose, onStudy, onOpenFolder }: { open: boolean
                   <span className={'st st-' + s}>{sl}</span>
                 </button>
                 {o && <div className="rd">
-                  <ul><li className="c" dangerouslySetInnerHTML={{ __html: '✓ ' + hl(q.c, ht) }} />{q.w.map((w, k) => <li key={k} dangerouslySetInnerHTML={{ __html: hl(w, ht) }} />)}</ul>
+                  <ul><li className="c" dangerouslySetInnerHTML={{ __html: hl(q.c, ht) }} />{q.w.map((w, k) => <li key={k} dangerouslySetInnerHTML={{ __html: hl(w, ht) }} />)}</ul>
                   <div className="info">{q.t}<br />{e.infoText(q)}</div>
                   <div className="row">
                     <button className="solid" onClick={() => { e.forced = String(q.id); e.cram = false; onStudy(); e.show(); }}>Study now</button>
-                    <button className="ghost" onClick={() => e.toggleFlag(q.id, 'mark')}>{c && c.mark ? '★ Unmark' : '☆ Mark'}</button>
+                    <button className="ghost" onClick={() => e.toggleFlag(q.id, 'mark')}><><Ic n="star" fill={!!(c && c.mark)} /> {c && c.mark ? 'Unmark' : 'Mark'}</></button>
                     <button className="ghost" onClick={() => e.toggleFlag(q.id, 'susp')}>{c && c.susp ? 'Unsuspend' : 'Suspend'}</button>
                     {c && !e.isNew(c) ? <button className="ghost" onClick={() => { if (confirm('Reset this card to new?')) e.resetCard(q.id); }}>Reset card</button> : null}
                   </div>
