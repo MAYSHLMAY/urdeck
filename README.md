@@ -68,6 +68,8 @@ Deleting a folder, a pool (category), a PDF or a 3D model always asks for the ow
 
 **Browse.** The grid button next to **+** shows many cards at once: questions only, with answers, or with choices; Few / More / Most per screen; tap a card to reveal; "Reveal all" for rushing. **Study** and **Shaky** are two separate piles: tapping **Unsure** moves a card out of Study into Shaky (and **Got it** moves it back). Each set shows its own counts, and each pile (or single set) can be practised in one tap. Practice never changes your schedule.
 
+**Smoother PDF text selection.** The reader now uses the same technique as browser PDF readers (an invisible end-of-content block behind the text), so dragging through gaps or past the last line no longer jumps the selection to far-away text. Selection is a soft blue tint, double-click selects a word and triple-click selects just the line.
+
 ## 5. Run / deploy
 ```bash
 npm run dev        # http://localhost:3000

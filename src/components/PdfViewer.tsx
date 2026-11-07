@@ -34,6 +34,33 @@ const clampZ = (z: number) => Math.min(MAX_Z, Math.max(MIN_Z, z));
  * Zoom: buttons, ctrl+wheel and two-finger pinch (live preview, sharp re-render on release, focus point kept).
  * It stays mounted while the drawer is hidden, so the scroll position survives toggling.
  */
+/**
+ * Smooth text selection (same technique as the browsers' PDF readers): an invisible "end of content" block sits behind the text
+ * and is stretched over the whole page while the pointer is down, so dragging through gaps or past the last line never jumps the
+ * selection to far-away text. Triple-click selects just the line instead of the whole block.
+ */
+let selBound = false;
+function bindSelection() {
+  if (selBound || typeof document === 'undefined') return; selBound = true;
+  const done = () => document.querySelectorAll('.textLayer.selecting').forEach(t => t.classList.remove('selecting'));
+  ['pointerup', 'pointercancel', 'dragend'].forEach(k => addEventListener(k, done, true));
+  addEventListener('blur', done); addEventListener('keyup', done);
+}
+function wireTextLayer(tl: HTMLElement) {
+  const eoc = document.createElement('div'); eoc.className = 'endOfContent'; tl.appendChild(eoc);
+  tl.addEventListener('pointerdown', ev => {
+    tl.classList.add('selecting');
+    if ((ev as MouseEvent).detail !== 3) return;
+    const t = (ev.target as HTMLElement).closest('span') as HTMLElement | null; if (!t || t.parentElement !== tl && !t.closest('.textLayer')) return;
+    const r = t.getBoundingClientRect(), mid = (r.top + r.bottom) / 2;
+    const line = [...tl.querySelectorAll('span')].filter(s => { if (s.querySelector('span')) return false; const b = s.getBoundingClientRect(); return b.height > 0 && mid > b.top && mid < b.bottom; });
+    if (!line.length) return;
+    ev.preventDefault();
+    const g = getSelection(), rg = document.createRange(); rg.setStartBefore(line[0]); rg.setEndAfter(line[line.length - 1]);
+    g?.removeAllRanges(); g?.addRange(rg);
+  });
+}
+
 export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({ url, target, notes, pending, finds, findIdx = -1, night, onPage, onZoom, onNote }, ref) {
   const scroller = useRef<HTMLDivElement>(null), inner = useRef<HTMLDivElement>(null);
   const pages = useRef<(HTMLDivElement | null)[]>([]);
@@ -81,11 +108,13 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
       s.tasks.delete(n);
       if (tok !== s.token || !s.vis.has(n) || String(Math.round(s.width)) !== key) { s.rendered.delete(n); return; }
       const tl = document.createElement('div');
-      tl.className = 'textLayer'; tl.style.setProperty('--scale-factor', String(vp.scale));
+      tl.className = 'textLayer'; tl.style.setProperty('--scale-factor', String(vp.scale)); bindSelection();
       host.textContent = ''; host.appendChild(canvas); host.appendChild(tl);
       const tc = await page.getTextContent();
       if (tok !== s.token || !s.vis.has(n)) return;
       await s.pdfjs.renderTextLayer({ textContentSource: tc, container: tl, viewport: vp, textDivs: [] }).promise;
+      if (tok !== s.token) return;
+      wireTextLayer(tl);
     } catch (e: any) {
       if (e && e.name === 'RenderingCancelledException') return;
       s.rendered.delete(n);

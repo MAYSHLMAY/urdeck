@@ -42,12 +42,19 @@ body.ref-open .wrap{min-width:0}
 .pdf-page .textLayer{position:absolute;inset:0;overflow:hidden;opacity:1;line-height:1;text-align:initial;text-size-adjust:none;forced-color-adjust:none;transform-origin:0 0}
 .pdf-page .textLayer span,.pdf-page .textLayer br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0 0}
 .pdf-page .textLayer .markedContent{display:contents}
-.pdf-page .textLayer ::selection{background:rgba(207,95,39,.35)}
+.pdf-page .textLayer ::selection{background:rgba(0,108,220,.30)}
+.pdf-page .textLayer span::selection{color:transparent}
+.pdf-page .textLayer span{line-height:1;margin:0;padding:0;border:0}
+.pdf-page .textLayer .endOfContent{display:block;position:absolute;inset:0;top:100%;z-index:-1;cursor:default;user-select:none;-webkit-user-select:none}
+.pdf-page .textLayer.selecting .endOfContent{top:0}
+.pdf-page .textLayer{z-index:2;cursor:text}
+.pdf-host canvas{user-select:none;-webkit-user-select:none;pointer-events:none}
+.pdf-hl{user-select:none;-webkit-user-select:none}
 .pdf-hl{position:absolute;pointer-events:none;border-radius:3px;mix-blend-mode:multiply}
 .pdf-note{background:rgba(255,214,10,.42)}
 .pdf-note.c-yellow{background:rgba(255,214,10,.42)}.pdf-note.c-green{background:rgba(52,199,89,.38)}.pdf-note.c-blue{background:rgba(10,132,255,.32)}.pdf-note.c-pink{background:rgba(255,45,120,.30)}.pdf-note.c-orange{background:rgba(255,149,0,.40)}
 .pdf-find{background:rgba(255,214,10,.35)}
-.pdf-pending{background:rgba(10,132,255,.22);outline:1.5px dashed rgba(10,132,255,.8)}
+.pdf-pending{background:rgba(0,108,220,.30);border-radius:2px;mix-blend-mode:multiply}
 .pdf-target{background:rgba(207,95,39,.30);outline:2px solid var(--acc);animation:pdfpulse 1.6s ease-out 2}
 @keyframes pdfpulse{0%{box-shadow:0 0 0 0 rgba(207,95,39,.6)}100%{box-shadow:0 0 0 18px rgba(207,95,39,0)}}
 .pdf-msg{padding:24px 16px;text-align:center;color:var(--mute);font-size:.9rem}
