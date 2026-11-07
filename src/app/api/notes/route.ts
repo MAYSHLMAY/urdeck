@@ -26,7 +26,12 @@ export async function POST(req: Request) {
         selected_text: n.selected_text, note_content: typeof n.note_content === 'string' ? n.note_content.slice(0, 4000) : null,
         page_number: Number.isInteger(n.page_number) && n.page_number > 0 ? n.page_number : null, rects,
         created_at: typeof n.created_at === 'string' && !isNaN(Date.parse(n.created_at)) ? n.created_at : new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        meta: {
+          color: typeof n.color === 'string' ? n.color.slice(0, 12) : null,
+          tags: Array.isArray(n.tags) ? n.tags.filter((t: any) => typeof t === 'string').slice(0, 8).map((t: string) => t.slice(0, 30)) : [],
+          pin: n.pin ? 1 : 0, qid: typeof n.qid === 'string' ? n.qid.slice(0, 80) : null
+        }
       });
     }
     const db = admin();
@@ -41,6 +46,9 @@ export async function POST(req: Request) {
     let saved: string[] = [];
     if (mine.length) {
       let r = await db.from('user_notes').upsert(mine, { onConflict: 'id' }).select('id');
+      if (r.error && (r.error.code === '42703' || /meta/.test(r.error.message || ''))) { // notes-v2.sql not run yet: save without the extras
+        r = await db.from('user_notes').upsert(mine.map(({ meta, ...m }) => m), { onConflict: 'id' }).select('id');
+      }
       if (r.error && r.error.code === '23503') { // the PDF was deleted meanwhile: keep the note without it
         r = await db.from('user_notes').upsert(mine.map(m => ({ ...m, pdf_id: null })), { onConflict: 'id' }).select('id');
       }

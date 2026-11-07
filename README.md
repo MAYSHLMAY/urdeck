@@ -46,6 +46,13 @@ How it works (tap **Open Reference PDF** under any quiz card, or press **R**):
 ## 4b. Password-protected deletes
 Deleting a folder, a pool (category), a PDF or a 3D model always asks for the owner password again (on top of being unlocked). The password is checked on the server; 8 wrong tries in 15 minutes are blocked. Nothing is deleted without it.
 
+## 4c. PDF reader upgrades, notes and card editing (run these two SQL files too)
+- `supabase/notes-v2.sql`: lets note colours, tags and pins back up to the cloud (notes work on the device without it).
+- `supabase/cards-edit.sql`: needed for the owner's **Edit card / Delete card / Add a card** (card menu **⋯** on the study screen; owner only, delete asks for the password).
+- **Auto-find:** when a card belongs to a card set linked to a pool with PDFs, the app indexes those PDFs in the background (once per device) and the Reference button shows `✨ p. N`. One tap opens the PDF at that page with the passage highlighted. Cards with no linked PDF are skipped. Scanned (image-only) PDFs have no text to search.
+- **Viewer:** zoom buttons, pinch zoom, ctrl+wheel, fit width, page jump, search inside the PDF, night mode, full-screen toggle.
+- **Notes:** select text, then **Highlight** or **＋ Note** in the bar at the bottom (5 colours). The 🖍 marker saves anything you select automatically. Tap a highlight to edit it. The Notes tab has search, filters, tags, pins, page notes and export.
+
 ## 5. Run / deploy
 ```bash
 npm run dev        # http://localhost:3000

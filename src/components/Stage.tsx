@@ -4,18 +4,21 @@ import { M, D } from '@/lib/srs';
 import { useEngine, esc } from './ui';
 import { useRefs } from './refHooks';
 import { renderQuestion } from './Highlights';
+import { isOwner } from '@/lib/api';
 
-export function Stage({ onInfo }: { onInfo: (id: string) => void }) {
+export type CardAct = (mode: 'edit' | 'add', id: string, section: string) => void;
+
+export function Stage({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: CardAct }) {
   const e = useEngine();
   if (e.loadErr && !e.Q.length)
     return <section id="stage"><div className="card"><div className="q">Could not load the cards</div>
       <p className="info">{e.loadErr}</p><div className="row"><button className="solid" onClick={() => e.init()}>Try again</button></div></div></section>;
   if (!e.ready) return <section id="stage"><p className="info">Loading cards…</p></section>;
   if (!e.cur) return <section id="stage">{e.phase === 'done' ? <Done /> : <p className="info">Loading cards…</p>}</section>;
-  return <section id="stage"><Question onInfo={onInfo} /></section>;
+  return <section id="stage"><Question onInfo={onInfo} onCard={onCard} /></section>;
 }
 
-function Question({ onInfo }: { onInfo: (id: string) => void }) {
+function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: CardAct }) {
   const e = useEngine(), R = useRefs(), cur = e.cur!, c = e.get(cur.id), x = e.O, ph = e.phase, i = e.chosen;
   const [menu, setMenu] = useState(false);
   const qRef = useRef<HTMLHeadingElement>(null), fbRef = useRef<HTMLDivElement>(null);
@@ -52,6 +55,10 @@ function Question({ onInfo }: { onInfo: (id: string) => void }) {
             <button onClick={() => { setMenu(false); e.toggleFlag(cur.id, 'susp'); }}>Suspend this card</button>
             <button onClick={() => { setMenu(false); e.buryCard(cur.id); }}>Bury until tomorrow</button>
             <button onClick={() => { setMenu(false); onInfo(cur.id); }}>Card info</button>
+            {isOwner() && <>
+              <button onClick={() => { setMenu(false); if (ph !== 'q') { e.toast('Finish this card first, then edit it.'); return; } onCard('edit', cur.id, cur.s); }}>✏️ Edit card</button>
+              <button onClick={() => { setMenu(false); onCard('add', '', cur.s); }}>＋ Add a card to this set</button>
+            </>}
           </div>
         </span>
       </div>
@@ -66,6 +73,8 @@ function Question({ onInfo }: { onInfo: (id: string) => void }) {
       <div className="row refrow">
         <button className={'ghost refbtn' + (R.open ? ' on' : '')} onClick={() => R.toggle(cur)} aria-expanded={R.open} title="Reference PDF (R)">
           📎 {R.open ? 'Hide Reference PDF' : 'Open Reference PDF'}
+          {!R.open && R.auto && R.auto.qid === String(cur.id) && R.auto.state === 'ready' && R.auto.matches.length > 0 && <span className="refready"> ✨ p. {R.auto.matches[0].page}</span>}
+          {!R.open && R.auto && R.auto.qid === String(cur.id) && R.auto.state === 'working' && <span className="refready soft"> …</span>}
         </button>
       </div>
       {!answered && <div className="row"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button><button className="ghost" onClick={() => e.answer(-1)}>I don’t know</button></div>}
@@ -115,7 +124,10 @@ function Done() {
         {info.c.n && S.newToday >= S.limit ? <button className="ghost" onClick={() => e.learnMore()}>Learn 10 more new cards</button> : null}
         {info.tomorrow ? <button className="ghost" onClick={() => e.reviewAhead()}>Review {info.tomorrow} card{info.tomorrow > 1 ? 's' : ''} due tomorrow</button> : null}
         {info.P && !e.cram ? <button className="ghost" onClick={() => e.startPractice()}>Practice mode</button> : null}
-        <button className="ghost" onClick={() => e.show()}>Check again</button>
+        <button className="ghost" onClick={() => {
+          e.show();   // re-check what is due right now
+          if (!e.cur) e.toast(first ? 'Nothing is due yet. Next card in ' + (Math.max(0, first - Date.now()) >= 60000 ? Math.ceil((first - Date.now()) / 60000) + ' min' : 'under a minute') + '.' : 'Nothing is due right now.');
+        }}>Check again</button>
       </div>
     </div>
   );

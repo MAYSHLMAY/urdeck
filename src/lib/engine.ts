@@ -6,7 +6,7 @@ import { fnv } from './fnv';
 import { parsePack, parseRaw, ready } from './parse';
 import { DEF, M, D, addDays, dayStart, fmtIv, lab as labFn, nxt, steps, ymd, type CS, type Opts } from './srs';
 import { applyMut, buildTree, emptyTree, fpath, type Tree } from './tree';
-import { emptyMeta, fetchMeta, readCache, syncCards, type Meta } from './library';
+import { emptyMeta, fetchMeta, readCache, saveCards, syncCards, type Meta } from './library';
 import { api, isOwner } from './api';
 import type { Card, FoldDB, LocalPack, Mut, QCard } from './types';
 
@@ -478,6 +478,43 @@ export class Engine {
     if (this.cloudQ.length) this.flushCloud(); else this.emit();
   }
   get syncingCloud() { return this.cloudBusy || this.cloudQ.length > 0 || this.cardsBusy > 0; }
+
+  /* ---------- owner: edit, remove, add one card ---------- */
+  private afterCardChange(showNow: boolean) { saveCards(this.server); this.rebuild(); this.later = {}; if (showNow) this.show(); else this.emit(); }
+  /** Change the question / answers of one card. The id stays the same, so progress, notes and PDF links are kept. */
+  async editCard(id: string, f: { q: string; c: string; w: string[]; p?: boolean }): Promise<string | null> {
+    if (!isOwner()) return 'Locked. Unlock with the owner password first.';
+    try {
+      const r = await api<{ card: Card }>('/api/cards', { action: 'edit', id, q: f.q, c: f.c, w: f.w, p: f.p });
+      const i = this.server.findIndex(c => c.id === id);
+      if (i >= 0) this.server[i] = { ...r.card, ord: this.server[i].ord }; else this.server.push(r.card);
+      const isCur = !!this.cur && String(this.cur.id) === String(id);
+      if (isCur) this.forced = id;
+      this.afterCardChange(isCur);
+      return null;
+    } catch (x: any) { return x.message || 'Could not save the card.'; }
+  }
+  async removeCard(id: string, password: string): Promise<string | null> {
+    if (!isOwner()) return 'Locked. Unlock with the owner password first.';
+    try {
+      await api('/api/cards', { action: 'delete', id, password });
+      const isCur = !!this.cur && String(this.cur.id) === String(id);
+      this.server = this.server.filter(c => c.id !== id); this.extra = this.extra.filter(c => c.id !== id);
+      if (isCur) this.pend = null;
+      this.afterCardChange(isCur);
+      return null;
+    } catch (x: any) { return x.message || 'Could not delete the card.'; }
+  }
+  /** Add one card to an existing card set. */
+  async addOneCard(f: { s: string; q: string; c: string; w: string[]; p?: boolean }): Promise<string | null> {
+    if (!isOwner()) return 'Locked. Unlock with the owner password first.';
+    try {
+      const r = await api<{ card: Card }>('/api/cards', { action: 'add', ...f });
+      this.server.push({ ...r.card, ord: (this.server.length ? (this.server[this.server.length - 1].ord || 0) : 0) + 0.5 });
+      this.afterCardChange(this.phase === 'done' || !this.cur);
+      return null;
+    } catch (x: any) { return x.message || 'Could not add the card.'; }
+  }
 
   /* ---------- adding cards ---------- */
   async addPack(name: string, text: string, where: string, tags: string): Promise<{ ok: boolean; msg: string }> {

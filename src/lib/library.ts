@@ -46,8 +46,10 @@ async function kvSet(k: string, v: unknown) {
 
 interface CardCache { last: number; cards: Card[] }
 
+let _last = 0;
 export async function readCache(): Promise<{ cards: Card[]; meta: Meta | null }> {
   const [c, m] = await Promise.all([kvGet<CardCache>('cards'), kvGet<Meta>('meta')]);
+  _last = c?.last || 0;
   return { cards: c?.cards || [], meta: m };
 }
 
@@ -93,20 +95,34 @@ export async function fetchMeta(): Promise<Meta> {
   return m;
 }
 
-/** Download only the cards added since `have` (already in memory) and merge them in. */
+/** Save the card list (after an owner edit) so the next start shows it at once. */
+export function saveCards(cards: Card[]) { kvSet('cards', { last: Math.max(_last, ...cards.map(c => c.ord || 0)), cards } as CardCache); }
+export function bumpLast(ord: number) { if (ord > _last) _last = ord; }
+
+/**
+ * Download only the rows changed since last time and merge them in:
+ * new cards are added, edited cards (same id, new `ord`) replace the old copy in place, removed cards (del = true) disappear.
+ */
 export async function syncCards(have: Card[]): Promise<{ cards: Card[]; added: number }> {
-  const last = have.length ? (have[have.length - 1].ord || 0) : 0;
-  const rows = await pages<any>('cards', 'ord,id,s,q,c,w,p', 'ord', last ? ['ord', last] : undefined);
+  const last = Math.max(_last, ...have.map(c => c.ord || 0), 0);
+  const after: [string, number] | undefined = last ? ['ord', last] : undefined;
+  let rows: any[];
+  try { rows = await pages<any>('cards', 'ord,id,s,q,c,w,p,del', 'ord', after); }
+  catch { rows = await pages<any>('cards', 'ord,id,s,q,c,w,p', 'ord', after); } // cards-edit.sql not run yet
   if (!rows.length) return { cards: have, added: 0 };
-  const known = new Set(have.map(c => c.id));
-  const cards = have.slice();
+  const cards = have.slice(), at = new Map<string, number>(); cards.forEach((c, i) => at.set(c.id, i));
+  const gone = new Set<string>(); let top = last;
   for (const r of rows) {
-    if (known.has(r.id)) continue;
-    known.add(r.id);
+    top = Math.max(top, r.ord || 0);
+    if (r.del) { gone.add(r.id); continue; }
+    gone.delete(r.id);
     const c: Card = { ord: r.ord, id: r.id, s: r.s, q: r.q, c: r.c, w: r.w || [] };
     if (r.p) c.p = 1;
-    cards.push(c);
+    const i = at.get(r.id);
+    if (i !== undefined) { c.ord = cards[i].ord; cards[i] = c; } else { at.set(r.id, cards.length); cards.push(c); }
   }
-  kvSet('cards', { last: cards.length ? cards[cards.length - 1].ord || 0 : 0, cards } as CardCache);
-  return { cards, added: rows.length };
+  const out = gone.size ? cards.filter(c => !gone.has(c.id)) : cards;
+  _last = top;
+  kvSet('cards', { last: top, cards: out } as CardCache);
+  return { cards: out, added: rows.length };
 }

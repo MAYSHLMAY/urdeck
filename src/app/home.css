@@ -46,3 +46,10 @@ a.frow{text-decoration:none;color:inherit}
 .scard .f input[type=number],.scard .f input[type=date],.scard .f select{width:auto;max-width:48%;min-width:90px}
 .pwrow{display:flex;gap:8px;align-items:center}.pwrow input{flex:1}
 .n.err{color:var(--bad)}
+
+/* card editor */
+.cedit .sc{display:flex;flex-direction:column;gap:6px}
+.cedit .cl{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin-top:8px;font-weight:800}
+.cedit textarea,.cedit input[type=text],.cedit select{width:100%;box-sizing:border-box;font:inherit;padding:9px 10px;border-radius:11px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)}
+.cedit .wrow{display:flex;gap:6px}.cedit .wrow input{flex:1;min-width:0}
+.cedit .ghost.danger{margin-right:auto;color:var(--bad);border-color:var(--bad)}

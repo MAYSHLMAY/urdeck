@@ -12,6 +12,7 @@ import { Stats } from './Stats';
 import { Settings } from './Settings';
 import { AddDialog } from './AddDialog';
 import { ModelsDialog } from './ModelsDialog';
+import { CardEditor, type EditorState } from './CardEditor';
 
 const PLANE = <svg viewBox="0 0 24 24" width="22" height="22"><path d="M2 12 22 3l-5 18-5-7z" fill="currentColor" /></svg>;
 
@@ -23,6 +24,7 @@ export default function App() {
   const [mounted, setMounted] = useState(false);
   const [dlg, setDlg] = useState<Dlg>('');
   const [infoId, setInfoId] = useState<string | null>(null);
+  const [editor, setEditor] = useState<EditorState>(null);
   const close = () => setDlg('');
 
   useEffect(() => {
@@ -103,7 +105,7 @@ export default function App() {
           <button className="plus" onClick={() => setDlg('add')} aria-label="Add folder or cards" title="Add folder or cards">+</button>
         </div>
         <div id="mode" className={e.cram ? 'on' : ''}><span>Practice mode: your schedule is not changed.</span><button className="ghost" onClick={() => e.exitPractice()}>Exit</button></div>
-        <QuizContainer onInfo={id => { setInfoId(id); setDlg('info'); }} />
+        <QuizContainer onInfo={id => { setInfoId(id); setDlg('info'); }} onCard={(mode, id, section) => setEditor({ mode, id, section })} />
         <p className="hint">Keys: 1–4 answer · 1/2/3 Hard, Good, Easy · Enter continue · L later · D don’t know · Z undo · M mark · R reference PDF · / search</p>
       </div>
 
@@ -123,6 +125,7 @@ export default function App() {
           </div> : null;
         })()}
       </Sheet>
+      <CardEditor state={editor} onClose={() => setEditor(null)} />
       <HighlightTools />
       <AskHost />
       <Toast />

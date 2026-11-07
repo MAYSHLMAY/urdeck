@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { requireOwner } from '@/lib/server/auth';
+import { requireOwner, guardDelete } from '@/lib/server/auth';
 import { admin } from '@/lib/server/supabase';
 import { cook } from '@/lib/parse';
+const TXT = (x: any, max = 4000) => typeof x === 'string' && x.trim().length > 0 && x.length < max;
 import type { RawCard } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,7 @@ export async function POST(req: Request) {
   if (!requireOwner(req)) return NextResponse.json({ error: 'Locked. Unlock with the owner password.' }, { status: 401 });
   try {
     const body = await req.json();
+    if (body.action) return await single(req, body);
     const name = String(body.name || 'upload.txt').slice(0, 200);
     const raw: RawCard[] = Array.isArray(body.cards) ? body.cards : [];
     if (!raw.length) return NextResponse.json({ error: 'No cards sent.' }, { status: 400 });
@@ -44,4 +46,46 @@ export async function POST(req: Request) {
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'Server error' }, { status: 500 });
   }
+}
+
+const NEEDS_SQL = 'Card editing is not set up yet. Run supabase/cards-edit.sql in the Supabase SQL editor.';
+const bad = (m: string, s = 400) => NextResponse.json({ error: m }, { status: s });
+
+/** Owner-only single-card actions: {action:'edit'|'delete'|'add', ...}. Uses the edit_card() function so every device gets the change. */
+async function single(req: Request, b: any) {
+  const db = admin();
+  const rpc = async (row: { id: string; s: string; q: string; c: string; w: string[]; p: boolean }, del: boolean) => {
+    const r = await db.rpc('edit_card', { p_id: row.id, p_s: row.s, p_q: row.q, p_c: row.c, p_w: row.w, p_p: row.p, p_del: del });
+    if (r.error) { if (/edit_card|function|schema cache/i.test(r.error.message)) throw new Error(NEEDS_SQL); throw r.error; }
+  };
+  const fetchOne = async (id: string) => {
+    const r = await db.from('cards').select('id,s,q,c,w,p').eq('id', id).maybeSingle();
+    if (r.error) throw r.error;
+    return r.data as any;
+  };
+  if (b.action === 'delete') {
+    const g = guardDelete(req, b.password); if (g) return bad(g, 403);
+    if (!TXT(b.id, 300)) return bad('Bad card id.');
+    const cur = await fetchOne(b.id); if (!cur) return bad('That card no longer exists.', 404);
+    await rpc({ id: cur.id, s: cur.s, q: cur.q, c: cur.c, w: cur.w || [], p: !!cur.p }, true);
+    return NextResponse.json({ ok: true });
+  }
+  if (b.action === 'edit' || b.action === 'add') {
+    const w = Array.isArray(b.w) ? b.w.map((x: any) => (typeof x === 'string' ? x.trim() : '')).filter(Boolean) : [];
+    if (!TXT(b.q) || !TXT(b.c)) return bad('The question and the correct answer cannot be empty.');
+    if (w.length < 1 || w.length > 5 || !w.every((x: string) => TXT(x))) return bad('Give between 1 and 5 wrong answers.');
+    if (b.action === 'edit') {
+      if (!TXT(b.id, 300)) return bad('Bad card id.');
+      const cur = await fetchOne(b.id); if (!cur) return bad('That card no longer exists.', 404);
+      const c = cook({ s: cur.s, q: b.q.trim(), c: b.c.trim(), w, p: (b.p === undefined ? !!cur.p : !!b.p) ? 1 : undefined });
+      await rpc({ id: cur.id, s: cur.s, q: c.q, c: c.c, w: c.w, p: !!c.p }, false);   // keeps the id, so progress and PDF links stay
+      return NextResponse.json({ card: { id: cur.id, s: cur.s, q: c.q, c: c.c, w: c.w, p: c.p ? 1 : 0 } });
+    }
+    if (!TXT(b.s, 300)) return bad('Choose the card set to add it to.');
+    const c = cook({ s: b.s.trim(), q: b.q.trim(), c: b.c.trim(), w, p: b.p ? 1 : undefined });
+    const ex = await fetchOne(c.id); if (ex) return bad('A card with this exact question already exists.', 409);
+    await rpc({ id: c.id, s: c.s, q: c.q, c: c.c, w: c.w, p: !!c.p }, false);
+    return NextResponse.json({ card: { id: c.id, s: c.s, q: c.q, c: c.c, w: c.w, p: c.p ? 1 : 0 } });
+  }
+  return bad('Unknown action.');
 }

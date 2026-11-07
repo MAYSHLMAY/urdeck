@@ -6,12 +6,15 @@ import { sb } from './library';
 import { api, isOwner } from './api';
 import type { QCard } from './types';
 import { uuid } from './notes';
+import { getIndex, matchCard, type Passage } from './pdfindex';
 
 export interface Hi { x: number; y: number; width: number; height: number }
 export interface Category { id: string; name: string; color_theme: string }
 export interface PdfDoc { id: string; title: string; file_path: string; file_size: number | null; created_at: string }
 export interface Mapping { id: string; question_id: string; pdf_id: string; page_number: number; highlight_data: Hi | null }
-export interface Target { page: number; hi: Hi | null; nonce: number }
+export interface Target { page: number; hi: Hi | null; rects?: Hi[]; nonce: number }
+/** Result of the background search for the card on screen. `mapped` = the owner saved an exact page for it. */
+export interface Auto { qid: string; state: 'none' | 'mapped' | 'working' | 'ready' | 'nomatch'; matches: (Passage & { pdfId: string })[]; idx: number }
 export interface Chooser { pdfs: PdfDoc[]; catId: string | null; maps: Mapping[]; title: string }
 export interface ModelRow { id: string; name: string; sub: string | null; info: string | null; built?: boolean }
 export type View = 'viewer' | 'pools' | 'notes';
@@ -42,7 +45,8 @@ export class RefStore {
   /* drawer state: lives here, outside React, so the quiz and the viewer never reset each other */
   open = false; view: View = 'pools'; pdfId: string | null = null; catId: string | null = null;
   target: Target | null = null; chooser: Chooser | null = null; busy = '';
-  private nonce = 0; private resolveSeq = 0;
+  auto: Auto | null = null;
+  private nonce = 0; private resolveSeq = 0; private prepSeq = 0; private wantAuto = '';
 
   /* ---------- loading ---------- */
   async load(force = false) {
@@ -102,9 +106,9 @@ export class RefStore {
   close() { if (!this.open) return; this.open = false; this.emit(); }
   setView(v: View) { this.view = v; this.emit(); }
 
-  openPdf(pdfId: string, page = 1, hi: Hi | null = null, catId: string | null = this.catId) {
+  openPdf(pdfId: string, page = 1, hi: Hi | null = null, catId: string | null = this.catId, rects?: Hi[]) {
     this.pdfId = pdfId; this.catId = catId; this.view = 'viewer'; this.chooser = null;
-    this.target = { page, hi, nonce: ++this.nonce };
+    this.target = { page, hi, rects, nonce: ++this.nonce };
     lsSet(K_OPEN, pdfId); this.emit();
   }
   /** The user picked one document out of several. */
@@ -127,14 +131,61 @@ export class RefStore {
       else { this.chooser = { pdfs: docs, catId, maps: [], title: this.category(catId)?.name || 'Choose a document' }; this.emit(); }
     }
   }
+  /**
+   * Runs in the background whenever the card changes (drawer open or not): if the card is connected to PDFs, build/reuse their
+   * text index and find where the card's idea is explained. Cards with no connected PDF are skipped.
+   */
+  private lastQ: QCard | null = null;
+  async prepare(q: QCard | null) {
+    const seq = ++this.prepSeq; this.lastQ = q;
+    if (!q) { this.auto = null; this.emit(); return; }
+    const qid = String(q.id);
+    if (this.auto && this.auto.qid === qid && (this.auto.state === 'ready' || this.auto.state === 'working')) return;
+    this.auto = { qid, state: 'none', matches: [], idx: 0 }; this.emit();
+    await this.load();
+    if (seq !== this.prepSeq) return;
+    const maps = (await this.mappingsFor(qid)).filter(m => this.pdf(m.pdf_id));
+    if (seq !== this.prepSeq) return;
+    if (maps.length) { this.auto = { qid, state: 'mapped', matches: [], idx: 0 }; this.emit(); return; }
+    const cat = this.catForSection(q.s), docs = cat ? this.pdfsOf(cat) : [];
+    if (!docs.length) { this.auto = { qid, state: 'none', matches: [], idx: 0 }; this.emit(); return; }
+    this.auto = { qid, state: 'working', matches: [], idx: 0 }; this.emit();
+    const ct = { title: q.t, question: q.q, correct: q.c, wrong: q.w || [] };
+    const all: (Passage & { pdfId: string })[] = [];
+    for (const d of docs) {
+      try {
+        const ix = await getIndex(d.file_path, this.url(d)!);
+        if (seq !== this.prepSeq) return;
+        matchCard(ix, ct).forEach(m => all.push({ ...m, pdfId: d.id }));
+      } catch { /* an unreadable PDF just has no matches */ }
+    }
+    if (seq !== this.prepSeq) return;
+    all.sort((a, b) => b.score - a.score);
+    this.auto = { qid, state: all.length ? 'ready' : 'nomatch', matches: all.slice(0, 6), idx: 0 };
+    if (all.length && this.open && this.wantAuto === qid) { this.wantAuto = ''; this.showMatch(0); return; }
+    this.emit();
+  }
+  /** Jump to one of the automatic matches (also used by the previous/next buttons). */
+  showMatch(i: number) {
+    const a = this.auto; if (!a || !a.matches.length) return;
+    const k = (i + a.matches.length) % a.matches.length, m = a.matches[k]; a.idx = k;
+    this.openPdf(m.pdfId, m.page, m.box, this.catForSection(this.curSection) || this.catId, m.rects);
+  }
+  curSection = '';
+
   /** The card on screen changed (or the drawer just opened): find the best document and page. */
   async resolve(q: QCard | null) {
     if (!this.open) return;
-    const seq = ++this.resolveSeq;
+    const seq = ++this.resolveSeq; this.curSection = q ? q.s : '';
     if (!q) { this.view = this.pdfId ? 'viewer' : 'pools'; this.emit(); return; }
     const maps = (await this.mappingsFor(String(q.id))).filter(m => this.pdf(m.pdf_id));
     if (seq !== this.resolveSeq) return;
     const catId = this.catForSection(q.s) || this.catId;
+    if (!maps.length) {
+      const a = this.auto;
+      if (a && a.qid === String(q.id) && a.state === 'ready' && a.matches.length) { this.showMatch(a.idx); return; }
+      if (!a || a.qid !== String(q.id) || a.state === 'working') this.wantAuto = String(q.id); // open the best match as soon as it is ready
+    }
     if (maps.length) {
       const ids = [...new Set(maps.map(m => m.pdf_id))];
       if (ids.length === 1 || (this.pdfId && ids.includes(this.pdfId))) {
@@ -181,7 +232,8 @@ export class RefStore {
     const before = this.catPdfs;   // optimistic, rolled back if the server refuses
     this.catPdfs = on ? [...before, { category_id: catId, pdf_id: pdfId }] : before.filter(l => !(l.category_id === catId && l.pdf_id === pdfId));
     this.emit();
-    try { await api('/api/refs', { action: on ? 'link' : 'unlink', categoryId: catId, pdfId }); this.save(); }
+    this.auto = null;
+    try { await api('/api/refs', { action: on ? 'link' : 'unlink', categoryId: catId, pdfId }); this.save(); this.auto = null; if (this.lastQ) this.prepare(this.lastQ); }
     catch (e) { this.catPdfs = before; this.emit(); throw e; }
   }
   async setSectionLink(catId: string, section: string, on: boolean) {
@@ -190,7 +242,8 @@ export class RefStore {
     if (on === had) return;
     this.catSecs = on ? [...before, { category_id: catId, section }] : before.filter(l => !(l.category_id === catId && l.section === section));
     this.emit();
-    try { await api('/api/refs', { action: on ? 'linkSection' : 'unlinkSection', categoryId: catId, section }); this.save(); }
+    this.auto = null;
+    try { await api('/api/refs', { action: on ? 'linkSection' : 'unlinkSection', categoryId: catId, section }); this.save(); this.auto = null; if (this.lastQ) this.prepare(this.lastQ); }
     catch (e) { this.catSecs = before; this.emit(); throw e; }
   }
   uploadPdf(file: File, title: string, categoryIds: string[]) {
