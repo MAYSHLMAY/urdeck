@@ -104,6 +104,7 @@ export function useNoteCapture(root: RefObject<HTMLElement>, pdfId: string | nul
     // (Tapping the note toolbar keeps it, so Highlight / Note still work; so does an open note editor.)
     const down = (ev: Event) => {
       const tg = ev.target as HTMLElement | null;
+      if ((ev as PointerEvent).button > 0) return;   // right-click keeps the selection (it opens the menu)
       if (!pend.current || !tg || !tg.closest || !tg.closest('.pdf-scroll')) return;
       if (document.querySelector('.vedit textarea')) return;
       clearTimeout(clearT.current); clearTimeout(autoT.current); set(null);

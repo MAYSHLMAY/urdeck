@@ -7,10 +7,13 @@ import { usePoolSync } from './refHooks';
 import { Settings } from './Settings';
 import { BUILTIN } from '@/lib/models';
 import { isOwner } from '@/lib/api';
+import { watchLobby } from '@/lib/game/player';
 
 /** The landing page: every category (pool) is a card with its card sets, PDFs and 3D models in one place. */
 export default function Home() {
   const e = useEngine(), R = usePoolSync(), router = useRouter();
+  const [liveG, setLive] = useState<any[]>([]);
+  useEffect(() => watchLobby(g => setLive(g)), []);
   const [mounted, setMounted] = useState(false), [set, setSet] = useState(false), [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => { setMounted(true); e.init(); }, []); // eslint-disable-line
@@ -72,10 +75,13 @@ export default function Home() {
           <p className="info">No categories yet. As the owner, open the study screen, press <b>R</b> and use the <b>Pools</b> tab to create one, then link PDFs and card sets. 3D models are linked when you upload them in the 3D lab.</p>
         )}
 
+        {liveG.length > 0 && liveG.slice(0, 2).map((g: any) => <Link key={g.pin} className="gbanner" href={'/play?pin=' + g.pin}><Ic n="play" /><b>Live now: {g.title}</b><span>Join</span></Link>)}
         <h2 className="hsec">Tools</h2>
         <div className="tgrid">
           <button className="tcard" onClick={() => go('all')}><span><Ic n="book" /></span><b>Whole library</b><small>{e.Q.length} cards</small></button>
           <Link className="tcard" href="/study"><span><Ic n="cap" /></span><b>Study screen</b><small>Quiz, folders, search</small></Link>
+          <Link className="tcard" href="/play"><span><Ic n="play" /></span><b>Live quiz</b><small>Join a game · leaderboard</small></Link>
+          {mounted && isOwner() && <Link className="tcard" href="/host"><span><Ic n="star" /></span><b>Host a quiz</b><small>Start a live game</small></Link>}
           <Link className="tcard" href="/lab"><span><Ic n="cube" /></span><b>3D lab</b><small>{allModels.length} model{allModels.length === 1 ? '' : 's'}</small></Link>
         </div>
         {looseModels.length > 0 && R.categories.length > 0 && <p className="hnote">{looseModels.length} 3D model{looseModels.length === 1 ? ' has' : 's have'} no category yet.</p>}

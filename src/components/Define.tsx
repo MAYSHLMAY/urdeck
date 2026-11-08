@@ -38,12 +38,13 @@ export function selectionReq(text: string, page: number): DefReq | null {
 }
 
 export function DefineCard({ req, hint, onClose }: { req: DefReq | null; hint: string; onClose: () => void }) {
-  const [res, setRes] = useState<DefResult | null>(null), [err, setErr] = useState(''), [busy, setBusy] = useState(false), [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [res, setRes] = useState<DefResult | null>(null), [err, setErr] = useState(''), [busy, setBusy] = useState(false), [slow, setSlow] = useState(false), [tries, setTries] = useState(0), [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   useEffect(() => {
-    if (!req) return; let dead = false; setRes(null); setErr(''); setBusy(true);
-    define(req.word, req.before, req.after, hint).then(r => { if (!dead) setRes(r); }, e => { if (!dead) setErr(e instanceof DictError ? e.message : 'Could not look that up.'); }).finally(() => { if (!dead) setBusy(false); });
-    return () => { dead = true; };
-  }, [req, hint]);
+    if (!req) return; let dead = false; setRes(null); setErr(''); setBusy(true); setSlow(false);
+    const st = setTimeout(() => { if (!dead) setSlow(true); }, 3500);
+    define(req.word, req.before, req.after, hint).then(r => { if (!dead) setRes(r); }, e => { if (!dead) setErr(e instanceof DictError ? e.message : 'Could not look that up.'); }).finally(() => { clearTimeout(st); if (!dead) setBusy(false); });
+    return () => { dead = true; clearTimeout(st); };
+  }, [req, hint, tries]);
   useEffect(() => {
     if (!req) return;
     const w = Math.min(340, innerWidth * 0.94), r = req.rect;
@@ -65,8 +66,8 @@ export function DefineCard({ req, hint, onClose }: { req: DefReq | null; hint: s
       <button className="x" onClick={onClose} aria-label="Close"><Ic n="close" /></button>
       <h4>{res ? res.word : req.word}{res?.phonetic && <span className="ph">{res.phonetic}</span>}
         {res?.audio && <button className="ghost" style={{ padding: '2px 8px' }} onClick={() => new Audio(res.audio).play().catch(() => { })} aria-label="Hear it"><Ic n="play" /></button>}</h4>
-      {busy && <p className="ex">Looking it up…</p>}
-      {err && <p className="ex">{err}</p>}
+      {busy && <p className="ex">{slow ? 'Slow connection, still trying…' : 'Looking it up…'}</p>}
+      {err && <p className="ex">{err} <button className="ghost" style={{ padding: '2px 10px' }} onClick={() => setTries(n => n + 1)}>Try again</button></p>}
       {best && <>
         <span className="bf">Best fit here</span>
         <p><span className="pos">{best.pos}</span> {best.def}</p>
@@ -75,7 +76,7 @@ export function DefineCard({ req, hint, onClose }: { req: DefReq | null; hint: s
           {more.map((s, i) => <p key={i}><span className="pos">{s.pos}</span> {s.def}</p>)}</details>}
         {res!.word !== res!.asked && <p className="ex">Showing “{res!.word}” for “{res!.asked}”.</p>}
       </>}
-      <div className="ft">Online dictionary. Only the word is sent, never your text.</div>
+      <div className="ft">Wiktionary / online dictionary. Only the word is sent, never your text. Words you have looked up work offline afterwards.</div>
     </div>
   );
 }

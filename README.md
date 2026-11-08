@@ -100,3 +100,14 @@ Deploy on Vercel: import the repo, add the same env vars. No other server is nee
 ## Security notes
 - Everyone can read the library; only the API (service key) can write, after an owner login. Tokens are signed and last 30 days.
 - Change `OWNER_PASSWORD` and `AUTH_SECRET` before going public.
+
+## 4f. PDF selection and dictionary fixes
+Selection no longer spills into neighbouring text, right-click inside a selection keeps it, and the dictionary races two sources with a 20 s patience, a "Try again" button and an offline cache of words already looked up.
+
+## 5. Live quiz (Kahoot-style)
+- **Setup:** run `supabase/games.sql` once (adds `game_sessions` and `game_players`; nothing existing is touched). In Supabase, Realtime must be enabled (broadcast and presence on public channels; topics start with `fr-`).
+- **Host:** the owner opens `/host` (Home → "Host a quiz"), picks sets, sets questions / seconds / points mode (standard, double, none) / streak bonus / teams (2–4) / shuffle / late joiners / auto-advance / sound, and gets a PIN, link and QR code. The host's browser runs the game (no server, no database while playing). Refreshing the host page resumes the game.
+- **Players:** anyone opens `/play`, creates a player once (random or typed nickname, stick-figure builder or free DiceBear avatars). The identity is stored in localStorage, IndexedDB and a cookie, repaired from whichever survives, with persistent storage requested and a recovery code for moving devices. Players can enter a PIN, tap an open game, or scan the QR code.
+- **Game:** coloured-shape answer buttons, faster answers score more (500–1000), streak bonus, live answer counts, histogram, top-5 board between questions, podium with confetti, pause / +10 s / skip / end, kick, lock, CSV download, play again.
+- **Database:** only the finished results (scores, ranks, accuracy, streaks) are written, by the owner's browser, to feed the all-time and recent-games leaderboards at `/play`.
+- Testing without Supabase: add `?t=local` to every tab URL to run over a same-browser channel.

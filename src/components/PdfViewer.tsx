@@ -44,10 +44,25 @@ function bindSelection() {
   if (selBound || typeof document === 'undefined') return; selBound = true;
   // keep the "selecting" state for as long as a selection touches a page: on phones the browser takes over after a long-press
   // (pointercancel), and dragging the selection handles must stay as steady as a mouse drag.
+  let prev: Range | null = null;
   const sync = () => {
     const g = getSelection(), has = !!g && !g.isCollapsed && g.rangeCount > 0;
-    document.querySelectorAll('.textLayer').forEach(tl => tl.classList.toggle('selecting', has && g!.getRangeAt(0).intersectsNode(tl)));
+    const layers = Array.from(document.querySelectorAll<HTMLElement>('.textLayer'));
+    layers.forEach(tl => tl.classList.toggle('selecting', has && g!.getRangeAt(0).intersectsNode(tl)));
     document.querySelectorAll('.pdf-scroll').forEach(s => s.classList.toggle('has-sel', has));
+    if (!has) { prev = null; layers.forEach(tl => { const e = tl.querySelector('.endOfContent'); if (e && e !== tl.lastElementChild) tl.appendChild(e); }); return; }
+    // keep the end-of-content block right next to the end being dragged: the gap under the pointer then belongs to the
+    // selection's own edge, so letting go in white space can never swallow the rest of the page
+    const range = g!.getRangeAt(0);
+    const modifyStart = !!prev && (range.compareBoundaryPoints(Range.END_TO_END, prev) === 0 || range.compareBoundaryPoints(Range.START_TO_END, prev) === 0);
+    let anchor: Node = modifyStart ? range.startContainer : range.endContainer;
+    if (anchor.nodeType === 3) anchor = anchor.parentNode as Node;
+    const el = anchor as HTMLElement, tl = el.closest ? el.closest('.textLayer') : null;
+    if (tl && el !== tl && el.parentElement) {
+      const e = tl.querySelector('.endOfContent') as HTMLElement | null;
+      if (e) el.parentElement.insertBefore(e, modifyStart ? el : el.nextSibling);
+    }
+    prev = range.cloneRange();
   };
   document.addEventListener('selectionchange', sync);
   const done = () => { const g = getSelection(); if (!g || g.isCollapsed) document.querySelectorAll('.textLayer.selecting').forEach(t => t.classList.remove('selecting')); };
@@ -56,6 +71,8 @@ function bindSelection() {
 }
 function wireTextLayer(tl: HTMLElement) {
   const eoc = document.createElement('div'); eoc.className = 'endOfContent'; tl.appendChild(eoc);
+  // pressing on empty page space just clears the selection; it must never drop a caret into the invisible end block
+  tl.addEventListener('mousedown', ev => { const t = ev.target as HTMLElement; if (ev.button === 0 && (t === tl || t === eoc)) { ev.preventDefault(); getSelection()?.removeAllRanges(); } });
   tl.addEventListener('pointerdown', ev => {
     tl.classList.add('selecting');
     if ((ev as MouseEvent).detail !== 3) return;

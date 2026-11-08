@@ -120,18 +120,29 @@ export function ReferenceDrawer({ q }: { q: QCard | null }) {
   }, [selKey, coarse, marker]);
   useEffect(() => {
     const el = body.current; if (!el) return;
+    // remember the selection at the moment of the right mouse-down, and stop the browser from re-selecting the word under it
+    let saved: Range | null = null;
+    const md = (ev: MouseEvent) => {
+      if (ev.button !== 2) return;
+      const t = ev.target as HTMLElement; if (!t.closest || !t.closest('.pdf-scroll .textLayer')) return;
+      const g = getSelection(); saved = g && !g.isCollapsed && g.rangeCount > 0 ? g.getRangeAt(0).cloneRange() : null;
+      ev.preventDefault();
+    };
     const ctx = (ev: MouseEvent) => {
       const t = ev.target as HTMLElement;
       if (!t.closest || t.closest('.selmenu') || !t.closest('.pdf-scroll .textLayer')) return;
       ev.preventDefault();
-      const g = getSelection(), inside = !!g && !g.isCollapsed && g.rangeCount > 0 && Array.from(g.getRangeAt(0).getClientRects()).some(r => ev.clientX >= r.left - 2 && ev.clientX <= r.right + 2 && ev.clientY >= r.top - 2 && ev.clientY <= r.bottom + 2);
-      if (inside && cmd.current.cap.recent()) { setMenu(true); return; }
+      const g = getSelection(), cur = saved || (g && !g.isCollapsed && g.rangeCount > 0 ? g.getRangeAt(0) : null), ps = cur ? Array.from(cur.getClientRects()).filter(r => r.width > 1) : [];
+      // anywhere inside the selected area counts (including the gaps between its lines), not only exactly on a word
+      const inside = ps.length > 0 && (ps.some(r => ev.clientX >= r.left - 3 && ev.clientX <= r.right + 3 && ev.clientY >= r.top - 3 && ev.clientY <= r.bottom + 3) || (ev.clientX >= Math.min(...ps.map(r => r.left)) - 3 && ev.clientX <= Math.max(...ps.map(r => r.right)) + 3 && ev.clientY >= Math.min(...ps.map(r => r.top)) - 3 && ev.clientY <= Math.max(...ps.map(r => r.bottom)) + 3));
+      if (inside && cur && cmd.current.cap.recent()) { if (g && (g.isCollapsed || g.toString() !== cur.toString())) { g.removeAllRanges(); g.addRange(cur); } saved = null; setMenu(true); return; }
+      saved = null;
       const d: any = document, r = d.caretRangeFromPoint ? d.caretRangeFromPoint(ev.clientX, ev.clientY) : null; if (!r || !g) return;
       ctxWant.current = true; g.removeAllRanges(); g.addRange(r); (g as any).modify?.('move', 'backward', 'word'); (g as any).modify?.('extend', 'forward', 'word');
     };
     const away = (ev: Event) => { if (!(ev.target as HTMLElement)?.closest?.('.selmenu')) setMenu(false); };
-    el.addEventListener('contextmenu', ctx); document.addEventListener('pointerdown', away, true);
-    return () => { el.removeEventListener('contextmenu', ctx); document.removeEventListener('pointerdown', away, true); };
+    el.addEventListener('mousedown', md, true); el.addEventListener('contextmenu', ctx); document.addEventListener('pointerdown', away, true);
+    return () => { el.removeEventListener('mousedown', md, true); el.removeEventListener('contextmenu', ctx); document.removeEventListener('pointerdown', away, true); };
   }, [mounted]);
   /* dictionary mode: click or tap a word */
   useEffect(() => {

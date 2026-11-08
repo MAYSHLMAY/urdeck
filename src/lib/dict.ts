@@ -15,15 +15,50 @@ const DET = new Set(['the', 'a', 'an', 'this', 'that', 'these', 'those', 'its', 
 const AUX = new Set(['to', 'will', 'would', 'can', 'could', 'must', 'should', 'may', 'might', 'shall', 'not', 'does', 'did', 'do']);
 const ADV = new Set(['very', 'more', 'most', 'too', 'so', 'quite', 'less', 'highly', 'rather']);
 
-const cache = new Map<string, any>();
+const K_C = 'fr-dict-cache-v1';
+const mem = new Map<string, any>();
+const lsCache = (): Record<string, any> => { try { return JSON.parse(localStorage.getItem(K_C) || '{}'); } catch { return {}; } };
+const remember = (w: string, v: any) => {
+  mem.set(w, v);
+  try { const c = lsCache(); c[w] = v; const k = Object.keys(c); if (k.length > 400) k.slice(0, k.length - 400).forEach(x => delete c[x]); localStorage.setItem(K_C, JSON.stringify(c)); } catch { /* ignore */ }
+};
+async function getJson(url: string, ms = 20000): Promise<any | null> {
+  const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
+  try {
+    const r = await fetch(url, { signal: ac.signal });
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error('http ' + r.status);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+const plain = (h: string) => { try { return (new DOMParser().parseFromString(h, 'text/html').body.textContent || '').replace(/\s+/g, ' ').trim(); } catch { return h.replace(/<[^>]+>/g, ''); } };
+/* source 1: Wiktionary's own REST API (small, cached on Wikimedia's CDN, fast on poor networks) */
+async function fromWiktionary(w: string): Promise<any[] | null> {
+  const j = await getJson('https://en.wiktionary.org/api/rest_v1/page/definition/' + encodeURIComponent(w)); if (!j) return null;
+  const en: any[] = j.en || []; if (!en.length) return null;
+  return [{ word: w, phonetic: '', phonetics: [], meanings: en.map(m => ({
+    partOfSpeech: (m.partOfSpeech || '').toLowerCase(),
+    definitions: (m.definitions || []).slice(0, 8).map((d: any) => ({ definition: plain(d.definition || ''), example: d.parsedExamples?.[0]?.example ? plain(d.parsedExamples[0].example) : d.examples?.[0] ? plain(d.examples[0]) : undefined })).filter((d: any) => d.definition)
+  })).filter((m: any) => m.definitions.length) }];
+}
+/* source 2: dictionaryapi.dev (has pronunciation text and audio) */
+const fromApi = (w: string) => getJson('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(w)).then(j => (Array.isArray(j) ? j : null));
+/** First source that has the word wins. "Not found" only counts when every source says so; all failing means offline. */
+function firstAnswer(ps: Promise<any[] | null>[]): Promise<any[] | null> {
+  return new Promise((res, rej) => {
+    let left = ps.length, none = 0, done = false;
+    const end = () => { if (--left === 0 && !done) { done = true; none ? res(null) : rej(new DictError('offline', 'The dictionary could not be reached. Check the connection and try again.')); } };
+    ps.forEach(p => p.then(v => { if (v && v.length && !done) { done = true; res(v); } else { if (!v) none++; end(); } }, () => end()));
+  });
+}
 async function fetchWord(w: string): Promise<any[] | null> {
-  if (cache.has(w)) return cache.get(w);
-  let r: Response;
-  try { r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(w)); }
-  catch { throw new DictError('offline', 'You need an internet connection for the dictionary.'); }
-  if (r.status === 404) { cache.set(w, null); return null; }
-  if (!r.ok) throw new DictError('offline', 'The dictionary is not answering right now.');
-  const j = await r.json(); cache.set(w, j); return j;
+  if (mem.has(w)) return mem.get(w);
+  const c = lsCache()[w]; if (c) { mem.set(w, c); return c; }
+  let v: any[] | null;
+  try { v = await firstAnswer([fromWiktionary(w), fromApi(w)]); }
+  catch (e) { throw e instanceof DictError ? e : new DictError('offline', 'The dictionary could not be reached.'); }
+  if (v) remember(w, v); else mem.set(w, null);
+  return v;
 }
 const forms = (w: string) => {
   const a = [w];
