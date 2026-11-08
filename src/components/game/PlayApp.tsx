@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Avatar, AvatarPicker, randomKid } from './Avatar';
+import { Tibeb } from '../SiteChrome';
 import { SHAPES, Confetti, Leaderboards, Ring, useStore, useTick } from './shared';
 import { loadIdentity, saveIdentity, recoveryCode, importCode, type Identity } from '@/lib/game/identity';
 import { randomName, cleanName, badName } from '@/lib/game/names';
@@ -22,7 +23,7 @@ export default function PlayApp() {
   if (me === undefined) return <div className="gm"><div className="gwrap"><p>Loading…</p></div></div>;
   if (me === null || view === 'edit') return <Profile me={me} first={me === null} onDone={i => { setMe(i); setView(auto ? 'game' : 'home'); if (auto) setPin(auto); }} onCancel={() => setView('home')} />;
   if (view === 'game' && pin) return <Game me={me} pin={pin} onExit={() => { setPin(''); setAuto(''); setView('home'); history.replaceState(null, '', '/play'); }} onEdit={() => setView('edit')} />;
-  if (view === 'board') return <div className="gm"><div className="gtop"><button className="gbtn sm ghost" onClick={() => setView('home')}>← Back</button><b>Leaderboard</b></div><div className="gwrap top"><Leaderboards /></div></div>;
+  if (view === 'board') return <div className="gm"><div className="gtop"><button className="gbtn sm ghost" onClick={() => setView('home')}>← Back</button><b>Leaderboard</b></div><div className="gwrap start"><Leaderboards /></div></div>;
   return <Home me={me} auto={auto} go={p => { setPin(p); setView('game'); }} setView={setView} />;
 }
 
@@ -34,8 +35,8 @@ function Profile({ me, first, onDone, onCancel }: { me: Identity | null; first: 
   };
   const imp = () => { const i = importCode(code); if (!i) return setErr('That recovery code is not valid.'); onDone(i); };
   return (
-    <div className="gm"><div className="gwrap top">
-      <h1 className="gh">{first ? 'Create your player' : 'Your player'}</h1>
+    <div className="gm"><div className="gwrap start">
+      <h1 className="gtitle">{first ? 'Create your player' : 'Your player'}</h1>
       <div className="gcard">
         <AvatarPicker value={av} onChange={setAv} />
         <label>Nickname<div style={{ display: 'flex', gap: 6 }}><input value={name} maxLength={20} onChange={e => { setName(e.target.value); setErr(''); }} /><button type="button" className="gbtn ghost sm" onClick={() => setName(randomName())}>🎲</button></div></label>
@@ -51,21 +52,23 @@ function Profile({ me, first, onDone, onCancel }: { me: Identity | null; first: 
 }
 
 function Home({ me, auto, go, setView }: { me: Identity; auto: string; go: (p: string) => void; setView: (v: View) => void }) {
-  const [pin, setPin] = useState(auto), [games, setGames] = useState<any[]>([]);
+  const [pin, setPin] = useState(auto), [games, setGames] = useState<any[]>([]), [top, setTop] = useState<any[]>([]);
   useEffect(() => { if (auto.length === 6) go(auto); }, [auto]); // eslint-disable-line
   useEffect(() => watchLobby(g => setGames(g)), []);
+  useEffect(() => { fetch('/api/games?view=alltime', { cache: 'no-store' }).then(r => r.json()).then(j => setTop((j.players || []).slice(0, 3))).catch(() => {}); }, []);
   return (
-    <div className="gm"><div className="gtop"><Link href="/" className="gbtn sm ghost">← Home</Link><b>Live quiz</b></div>
-      <div className="gwrap">
-        <h1 className="gh">Ready to play?</h1>
-        <button className="me-chip" onClick={() => setView('edit')}><Avatar av={me.av} size={44} /><b>{me.name}</b><small>edit</small></button>
-        <div className="gcard">
-          <h2>Join a game</h2>
-          <input className="pinin" inputMode="numeric" placeholder="PIN" value={pin} maxLength={6} onChange={e => setPin(e.target.value.replace(/\D/g, ''))} onKeyDown={e => e.key === 'Enter' && pin.length === 6 && go(pin)} />
-          <button className="gbtn go xl" disabled={pin.length !== 6} onClick={() => go(pin)}>Join</button>
+    <div className="gm"><div className="gtop"><Link href="/" className="gbtn sm ghost">← Home</Link><b>Live quiz</b><button className="me-chip sm" onClick={() => setView('edit')} aria-label="Edit your player"><Avatar av={me.av} size={30} /><b>{me.name}</b></button></div>
+      <div className="gwrap start">
+        <div className="phero"><p className="kick">Flight Recall · Live</p><h1 className="gtitle">Join a live quiz</h1><p className="note">Enter the 6-digit PIN shown on the host's screen.</p></div>
+        <div className="gcard pincard">
+          <input className="pinin" inputMode="numeric" placeholder="······" aria-label="Game PIN" value={pin} maxLength={6} onChange={e => setPin(e.target.value.replace(/\D/g, ''))} onKeyDown={e => e.key === 'Enter' && pin.length === 6 && go(pin)} />
+          <button className="gbtn go xl" disabled={pin.length !== 6} onClick={() => go(pin)}>Join game</button>
         </div>
         {games.length > 0 && <div className="live"><b>Open games right now</b>{games.map((g: any) => <button key={g.pin} onClick={() => go(g.pin)}>{g.title}<span>{g.phase === 'lobby' ? `${g.n} waiting` : g.late ? 'in progress · join late' : 'in progress'}</span></button>)}</div>}
-        <button className="gbtn ghost" onClick={() => setView('board')}>🏆 Leaderboard</button>
+        <Tibeb />
+        <div className="steps3"><div><i>1</i><b>Enter the PIN</b><span>Or scan the QR code on the screen.</span></div><div><i>2</i><b>Pick your look</b><span>A nickname and a stick-figure avatar.</span></div><div><i>3</i><b>Answer fast</b><span>Quicker correct answers score more.</span></div></div>
+        {top.length > 0 && <div className="topthree"><h3>All-time top players</h3><div className="board">{top.map((p: any, i: number) => <div className="brow" key={p.player_id}><span className="r">{i + 1}</span><Avatar av={p.avatar} size={34} /><span className="n">{p.nickname}</span><span>{p.score.toLocaleString()}</span></div>)}</div></div>}
+        <button className="gbtn ghost" onClick={() => setView('board')}>🏆 Full leaderboard</button>
       </div></div>
   );
 }
@@ -84,7 +87,7 @@ function Game({ me, pin, onExit, onEdit }: { me: Identity; pin: string; onExit: 
   if (!s) return <Shell top={Top}><h2>Joining…</h2><p className="note">{c.link === 'open' ? 'Waiting for the host' : 'Connecting…'}</p></Shell>;
   const teamCol = me2?.team != null ? TEAM_COLORS[me2.team] : undefined;
   if (s.paused) return <Shell top={Top}><h2>Paused</h2><p>The host paused the game.</p></Shell>;
-  if (s.phase === 'lobby') return <Shell top={Top}><h1 className="gh">You're in!</h1><Avatar av={me.av} size={110} ring={teamCol} /><div className="rankbig">{me.name}</div>{me2?.team != null && <b style={{ background: teamCol, padding: '4px 14px', borderRadius: 99 }}>Team {TEAM_NAMES[me2.team]}</b>}<p>{s.players.length} player{s.players.length === 1 ? '' : 's'} in "{s.title}". Waiting for the host to start…</p><button className="gbtn ghost sm" onClick={onEdit}>Change look</button></Shell>;
+  if (s.phase === 'lobby') return <Shell top={Top}><h1 className="gtitle">You're in!</h1><Avatar av={me.av} size={110} ring={teamCol} /><div className="rankbig">{me.name}</div>{me2?.team != null && <b style={{ background: teamCol, padding: '4px 14px', borderRadius: 99 }}>Team {TEAM_NAMES[me2.team]}</b>}<p>{s.players.length} player{s.players.length === 1 ? '' : 's'} in "{s.title}". Waiting for the host to start…</p><button className="gbtn ghost sm" onClick={onEdit}>Change look</button></Shell>;
   if (s.phase === 'countdown') return <Shell top={Top}><p>Question {s.idx + 2 > s.total ? s.total : s.idx + 2} of {s.total}</p><div className="cd">{Math.max(1, Math.ceil(c.left() / 1000))}</div></Shell>;
   if (s.phase === 'question' && s.q) {
     const left = c.left(), done = c.myAnswer != null;
@@ -105,7 +108,7 @@ function Game({ me, pin, onExit, onEdit }: { me: Identity; pin: string; onExit: 
   }
   if (s.phase === 'podium') {
     const rank = sc?.r || 0;
-    return <Shell top={Top}>{rank === 1 && <Confetti />}<h1 className="gh">{rank === 1 ? '🏆 You won!' : rank <= 3 ? '🎉 On the podium!' : 'Game over'}</h1><Avatar av={me.av} size={100} /><div className="rankbig">#{rank} · {sc?.t ?? 0} points</div><p>{sc?.ok ?? 0} of {s.total} correct</p><MiniBoard s={s} me={me.id} /><Link className="gbtn ghost" href="/play" onClick={onExit}>Done</Link></Shell>;
+    return <Shell top={Top}>{rank === 1 && <Confetti />}<h1 className="gtitle">{rank === 1 ? '🏆 You won!' : rank <= 3 ? '🎉 On the podium!' : 'Game over'}</h1><Avatar av={me.av} size={100} /><div className="rankbig">#{rank} · {sc?.t ?? 0} points</div><p>{sc?.ok ?? 0} of {s.total} correct</p><MiniBoard s={s} me={me.id} /><Link className="gbtn ghost" href="/play" onClick={onExit}>Done</Link></Shell>;
   }
   return <Shell top={Top}><p>…</p></Shell>;
 }

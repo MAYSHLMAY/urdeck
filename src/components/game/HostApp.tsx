@@ -40,8 +40,8 @@ function Setup({ resume, onResume, onDiscard, onStart }: { resume: any; onResume
   const maxQ = Math.max(3, Math.min(50, usable.length || 10));
   return (
     <div className="gm"><div className="gtop"><Link href="/" className="gbtn sm ghost">← Home</Link><b>Host a quiz</b></div>
-      <div className="gwrap top">
-        <h1 className="gh">Host a live quiz</h1>
+      <div className="gwrap start">
+        <h1 className="gtitle">Host a live quiz</h1>
         {resume && <div className="gcard"><h2>Game in progress</h2><p className="note">"{resume.title}" (PIN {resume.pin}) was still running on this device.</p><button className="gbtn go" onClick={onResume}>Resume it</button><button className="gbtn ghost" onClick={onDiscard}>Discard</button></div>}
         <div className="setup">
           <div className="gcard wide">
@@ -81,7 +81,7 @@ function Live({ host, onExit }: { host: Host; onExit: () => void }) {
     {p !== 'lobby' && p !== 'podium' && <button className="gbtn sm red" onClick={() => confirm('End the game now and show the podium?') && host.end()}>End game</button>}
   </div>;
   if (p === 'lobby') return (
-    <div className="gm">{Top}<div className="gwrap top"><div className="lobby">
+    <div className="gm">{Top}<div className="gwrap start"><div className="lobby">
       <section className="joinp">
         <span className="url">Join at <b>{typeof location !== 'undefined' ? location.host : ''}/play</b> with PIN</span>
         <div className="pinbox">{host.pin}</div>
@@ -90,13 +90,13 @@ function Live({ host, onExit }: { host: Host; onExit: () => void }) {
       </section>
       <section className="roster">
         <h2>Players <span>{host.players.size}</span></h2>
-        <div className="pgrid">{[...host.players.values()].map(x => <span key={x.id} className={'pchip' + (host.online.has(x.id) ? '' : ' off')} style={x.team != null ? { boxShadow: '0 0 0 3px ' + TEAM_COLORS[x.team] } : undefined}><Avatar av={x.av} size={38} />{x.name}<button title="Remove" onClick={() => host.kick(x.id)}>×</button></span>)}{!host.players.size && <div className="gempty">Waiting for players to join…<br /><small>Scan the QR code or enter the PIN</small></div>}</div>
+        <div className="rgrid">{[...host.players.values()].map(x => <span key={x.id} className={'pchip' + (host.online.has(x.id) ? '' : ' off')} style={x.team != null ? { boxShadow: '0 0 0 3px ' + TEAM_COLORS[x.team] } : undefined}><Avatar av={x.av} size={38} />{x.name}<button title="Remove" onClick={() => host.kick(x.id)}>×</button></span>)}{!host.players.size && <div className="gempty">Waiting for players to join…<br /><small>Scan the QR code or enter the PIN</small></div>}</div>
         <div className="startbar"><span>{host.qs.length} questions · {host.S.secs}s each{host.S.teams ? ` · ${host.S.teams} teams` : ''}</span><button className="gbtn go xl" disabled={!host.players.size} onClick={() => host.start()}>Start</button></div>
       </section>
     </div></div></div>);
   if (p === 'countdown') return <div className="gm">{Top}<div className="gwrap"><p>Question {host.idx + 2} of {host.qs.length}</p><div className="cd">{host.paused ? '⏸' : Math.max(1, Math.ceil((host.phaseEnd - Date.now()) / 1000))}</div>{ctl}</div></div>;
   if (p === 'question' && q) return (
-    <div className="gm" style={{ minHeight: '100dvh' }}>{Top}<div className="gwrap top" style={{ maxWidth: 1280, justifyContent: 'flex-start', flex: 1 }}>
+    <div className="gm" style={{ minHeight: '100dvh' }}>{Top}<div className="gwrap start" style={{ maxWidth: 1280, justifyContent: 'flex-start', flex: 1 }}>
       <div className="qstat"><span className="qn">{host.idx + 1}<small>/{host.qs.length}</small></span><span className="grow" /><span className="cnt-pill">{host.ans.size}/{host.players.size} answered</span><Ring left={left} total={host.S.secs * 1000} size={72} /></div>
       <div className="qcard xl">{q.text}</div>
       <div className={'ans full' + (q.choices.length < 3 ? ' one' : '')} style={{ minHeight: 260 }}>{q.choices.map((c, i) => <div key={i} className={'abtn c' + i}>{SHAPES[i % 4]}<span>{c}</span></div>)}</div>
@@ -104,7 +104,7 @@ function Live({ host, onExit }: { host: Host; onExit: () => void }) {
     </div></div>);
   if ((p === 'reveal' || p === 'board') && q) {
     const mx = Math.max(1, ...host.counts), rows = host.rows();
-    return <div className="gm">{Top}<div className="gwrap top">
+    return <div className="gm">{Top}<div className="gwrap start">
       {p === 'reveal' ? <><div className="qcard xl">{q.text}</div>
         <div className="hist">{q.choices.map((c, i) => <div key={i}><b>{host.counts[i] || 0}</b><i className={'c' + i} style={{ height: ((host.counts[i] || 0) / mx) * 100 + '%', background: ['#e21b3c', '#1368ce', '#d89e00', '#26890c'][i % 4], opacity: i === q.correct ? 1 : .5 }} /><span style={{ fontWeight: i === q.correct ? 900 : 500 }}>{i === q.correct ? '✔ ' : ''}{c}</span></div>)}</div></>
         : <><h2>Leaderboard</h2>{host.S.teams > 0 && <div className="ctl">{host.teamScores().map((t, i) => <span key={i} className="gpill" style={{ background: TEAM_COLORS[i], color: '#fff' }}>{TEAM_NAMES[i]} {t}</span>)}</div>}</>}
@@ -115,7 +115,7 @@ function Live({ host, onExit }: { host: Host; onExit: () => void }) {
   if (p === 'podium') {
     const rows = host.rows(), top = rows.slice(0, 3), order = [top[1], top[0], top[2]].filter(Boolean), h = (r: number) => ({ 1: 190, 2: 140, 3: 100 } as any)[r];
     const dl = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([host.csv()], { type: 'text/csv' })); a.download = `quiz-${host.pin}.csv`; a.click(); };
-    return <div className="gm">{Top}<Confetti /><div className="gwrap top"><h1 className="gh">🏆 Podium</h1>
+    return <div className="gm">{Top}<Confetti /><div className="gwrap start"><h1 className="gtitle">🏆 Podium</h1>
       <div className="podium">{order.map(r => <div className="pst" key={r.id}><Avatar av={r.av} size={70} /><b>{r.name}</b><span>{r.score}</span><div className="pblk" style={{ height: h(r.rank), background: ['', '#d89e00', '#8a8a8a', '#a0603a'][r.rank] }}>{r.rank}</div></div>)}</div>
       <table className="lbl"><thead><tr><th>#</th><th>Player</th><th>Score</th><th>Right</th><th>Streak</th></tr></thead><tbody>{rows.map(r => <tr key={r.id}><td>{r.rank}</td><td>{r.name}</td><td>{r.score}</td><td>{r.correct}/{host.qs.length}</td><td>{r.bestStreak}</td></tr>)}</tbody></table>
       {host.history.length > 0 && <details style={{ width: '100%' }}><summary>Hardest questions</summary>{[...host.history].sort((a, b) => a.rate - b.rate).slice(0, 5).map((x, i) => <div className="brow" key={i}><span className="n">{x.text}</span><b>{Math.round(x.rate * 100)}%</b></div>)}</details>}

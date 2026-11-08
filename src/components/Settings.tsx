@@ -4,6 +4,7 @@ import { DEF, steps, ymd } from '@/lib/srs';
 import { api, isOwner, lock, unlock } from '@/lib/api';
 import { dl, Sheet, SheetFrame, useEngine, Ic, ask } from './ui';
 import { useRefs } from './refHooks';
+import { SyncPanel } from './SyncPanel';
 
 type F = [string, string, string, any?, any?, number?, string?, string?];
 const BASIC: [string, string, F[]][] = [
@@ -110,6 +111,8 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
               {pwm && <p className="n err">{pwm}</p>}
             </>}
           </section>
+
+          <SyncPanel />
 
           <section className="scard"><h4><Ic n="lock" />Your private space</h4>
             {(() => {

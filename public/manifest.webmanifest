@@ -1,9 +1,23 @@
 {
   "name": "Flight Recall",
   "short_name": "Flight Recall",
-  "start_url": "/",
+  "description": "Spaced-repetition flashcards, 3D lab and live quiz.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#FAF4EA",
   "theme_color": "#CF5F27",
-  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Study", "url": "/study", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Join live quiz", "url": "/play", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "3D lab", "url": "/lab", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
 }

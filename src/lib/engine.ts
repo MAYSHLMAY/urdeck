@@ -167,6 +167,41 @@ export class Engine {
     if (!this.validSel(this.S.sec)) this.S.sec = 'all';
     this.emit();
   }
+
+  /* ---------- device sync hooks (see lib/sync.ts) ---------- */
+  /** Every piece of progress/private data as separate records, so only what changed is sent and merged. */
+  syncCollect(m: Map<string, { v: any; ts?: number }>) {
+    const S = this.S;
+    for (const id in S.cards) m.set('c:' + id, { v: S.cards[id], ts: S.cards[id]?.a || 0 });
+    for (const id in this.SH) m.set('sh:' + id, { v: 1 });
+    for (const id in this.MIS) m.set('mi:' + id, { v: this.MIS[id], ts: this.MIS[id].t });
+    this.MY.cards.forEach(c => m.set('my:' + c.id, { v: c }));
+    for (const id in this.MY.edits) m.set('me:' + id, { v: this.MY.edits[id] });
+    this.LF.folders.forEach(f => m.set('fo:' + f.id, { v: f }));
+    for (const id in this.LF.place) m.set('pl:' + id, { v: this.LF.place[id] });
+    for (const d in S.log || {}) m.set('lg:' + d, { v: S.log[d] });
+    for (const id in (this.PE.seen || {})) m.set('pe:' + id, { v: this.PE.seen[id] });
+  }
+  /** Apply records received from another device. */
+  syncApply(ch: [string, any][]) {
+    const S = this.S; let cards = false;
+    for (const [k, v] of ch) {
+      const i = k.indexOf(':'), t = k.slice(0, i), id = k.slice(i + 1), del = v == null;
+      if (t === 'c') { if (del) delete S.cards[id]; else S.cards[id] = v; cards = true; }
+      else if (t === 'sh') { if (del) delete this.SH[id]; else this.SH[id] = 1; }
+      else if (t === 'mi') { if (del) delete this.MIS[id]; else this.MIS[id] = v; }
+      else if (t === 'my') { this.MY.cards = this.MY.cards.filter(c => c.id !== id); if (!del) this.MY.cards.push(v); cards = true; }
+      else if (t === 'me') { if (del) delete this.MY.edits[id]; else this.MY.edits[id] = v; cards = true; }
+      else if (t === 'fo') { this.LF.folders = this.LF.folders.filter(f => f.id !== id); if (!del) this.LF.folders.push(v); cards = true; }
+      else if (t === 'pl') { if (del) delete this.LF.place[id]; else this.LF.place[id] = v; cards = true; }
+      else if (t === 'lg') { S.log = S.log || {}; if (del) delete S.log[id]; else S.log[id] = v; }
+      else if (t === 'pe') { this.PE.seen = this.PE.seen || {}; if (del) delete this.PE.seen[id]; else this.PE.seen[id] = v; }
+    }
+    this.flushSave(); this.saveMy(); this.saveLF();
+    try { localStorage.setItem(K_SH, JSON.stringify(this.SH)); localStorage.setItem(K_MIS, JSON.stringify(this.MIS)); } catch { /* ignore */ }
+    if (cards && this.ready) this.buildQ();
+    this.emit();
+  }
   buildQ() {
     const ids = new Set<string>(), all: Card[] = [];
     const ed = this.MY.edits;

@@ -111,3 +111,16 @@ Selection no longer spills into neighbouring text, right-click inside a selectio
 - **Game:** coloured-shape answer buttons, faster answers score more (500–1000), streak bonus, live answer counts, histogram, top-5 board between questions, podium with confetti, pause / +10 s / skip / end, kick, lock, CSV download, play again.
 - **Database:** only the finished results (scores, ranks, accuracy, streaks) are written, by the owner's browser, to feed the all-time and recent-games leaderboards at `/play`.
 - Testing without Supabase: add `?t=local` to every tab URL to run over a same-browser channel.
+
+## 6. Device sync (no accounts)
+- Run `supabase/sync.sql` once (adds `sync_ops` and the `sync_put` function; nothing existing is touched).
+- Settings → **Sync your devices** → "Start syncing on this device" gives a 20-character code (also a QR code and link). Enter it on another device (or open the link) to join the same private space.
+- What syncs: card progress, shaky and mistake piles, your own cards and edits, folders, notes on shared PDFs, daily history. What does not: PDF files added on a device, display settings, the live-quiz player.
+- How it stays collision-free: every record has its own hybrid logical clock stamp; when two devices change the same record the newer stamp wins on both, deletes are stamped tombstones, and records changed on only one device always arrive. The server keeps only the newest version of each record.
+- Privacy: everything is encrypted in the browser (AES-GCM) with a key made from the code; the server only sees opaque blobs under a hash of the code. Anyone who has the code can read and change that space, so keep it to your own devices.
+
+## 7. Design
+`app/theme.css` holds the shared design layer (fonts incl. Noto Sans/Serif Ethiopic for Ge'ez text, baseline form controls, top bar, home page, footer, tibeb band). `app/game.css` styles the live quiz using the same colour variables, so light and dark follow the site.
+
+
+Note (design): there is no footer. On phones a fixed bottom tab bar (Home, Study, Quiz, 3D lab) gives an app feel; wider screens use the top bar.

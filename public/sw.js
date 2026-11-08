@@ -1,7 +1,10 @@
 /* Offline support. App shell and static files are cached; Supabase data is cached by the app itself (IndexedDB). */
-const V = 'fr-shell-v2';
+const V = 'fr-shell-v3';
 
-self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/play', '/icon-192.png', '/manifest.webmanifest'].map(u => c.add(u).catch(() => {})))));
+});
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
     for (const k of await caches.keys()) if (k !== V) await caches.delete(k);

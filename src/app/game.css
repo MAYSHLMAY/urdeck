@@ -7,7 +7,7 @@
 .gtop b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
 .gpill{background:var(--accbg);color:var(--acc);border-radius:99px;padding:4px 14px;font-weight:800;font-variant-numeric:tabular-nums;border:1.5px solid var(--acc)}
 .gwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px 16px 32px;text-align:center;width:100%;max-width:1040px;margin:0 auto}
-.gwrap.top{justify-content:flex-start}
+.gwrap.start{justify-content:flex-start}
 .gcard{background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:20px;padding:18px;width:100%;max-width:460px;box-shadow:var(--shadow);text-align:left;display:flex;flex-direction:column;gap:12px}
 .gcard.wide{max-width:none}
 .gcard h2{font-size:1.1rem;font-weight:800;display:flex;align-items:center;gap:8px}
@@ -71,7 +71,7 @@ button.abtn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.28)}
 .cd{font-size:clamp(7rem,32vw,15rem);font-weight:800;line-height:1;color:var(--acc);animation:cdp 1s ease-in-out infinite}
 @keyframes cdp{0%{transform:scale(1.3);opacity:0}30%{opacity:1}100%{transform:scale(.95)}}
 /* roster & boards */
-.pgrid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;width:100%}
+.rgrid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;width:100%}
 .pchip{background:var(--card);border:1.5px solid var(--line);color:var(--ink);border-radius:99px;padding:5px 14px 5px 5px;display:flex;align-items:center;gap:10px;font-weight:700;position:relative;animation:join .35s cubic-bezier(.2,1.4,.4,1) both}
 @keyframes join{from{transform:scale(.4);opacity:0}}
 .pchip.off{opacity:.45}.pchip button{border:0;background:var(--bad);color:#fff;border-radius:50%;width:22px;height:22px;line-height:20px;cursor:pointer;font-size:.9rem;padding:0;opacity:0}.pchip:hover button,.pchip:focus-within button{opacity:1}
@@ -86,7 +86,7 @@ button.abtn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.28)}
 .podium .pst{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;max-width:210px;font-weight:800}
 .podium .pblk{width:100%;border-radius:14px 14px 0 0;display:flex;justify-content:center;font-size:2.2rem;font-weight:800;padding-top:10px;color:#fff;animation:rise 1s cubic-bezier(.2,1,.3,1) both}
 @keyframes rise{from{height:0!important;opacity:0}}
-.tabs{display:flex;gap:4px;justify-content:center;background:var(--accbg);border-radius:99px;padding:4px;align-self:center}.tabs button{font:inherit;font-weight:650;border:0;background:transparent;color:var(--mute);border-radius:99px;padding:7px 18px;cursor:pointer}.tabs .on{background:var(--card);color:var(--acc);box-shadow:var(--shadow)}
+.gtabs{display:flex;gap:4px;justify-content:center;background:var(--accbg);border-radius:99px;padding:4px;align-self:center}.gtabs button{font:inherit;font-weight:650;border:0;background:transparent;color:var(--mute);border-radius:99px;padding:7px 18px;cursor:pointer}.gtabs .on{background:var(--card);color:var(--acc);box-shadow:var(--shadow)}
 .ctl{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .lbl{border-collapse:collapse;width:100%;max-width:760px;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:16px;overflow:hidden}.lbl th,.lbl td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}.lbl th{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
 .conf{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:20}.conf i{position:absolute;top:-20px;width:10px;height:16px;animation:fall 3.5s linear infinite;border-radius:2px}
@@ -97,7 +97,7 @@ button.abtn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.28)}
 .joinp .url{font-size:.9rem;color:var(--mute)}.pinbox{font-size:clamp(2.6rem,9vw,4.2rem);font-weight:800;letter-spacing:.1em;color:var(--acc);line-height:1}
 .joinp img{border-radius:14px;border:1.5px solid var(--line);background:#fff}
 .roster{display:flex;flex-direction:column;gap:14px;min-height:280px}.roster h2{display:flex;align-items:center;gap:10px}.roster h2 span{background:var(--accbg);color:var(--acc);border-radius:99px;padding:2px 12px;font-size:1rem}
-.roster .pgrid{justify-content:flex-start;align-content:flex-start;flex:1}
+.roster .rgrid{justify-content:flex-start;align-content:flex-start;flex:1}
 .gempty{color:var(--mute);padding:28px;border:2px dashed var(--line);border-radius:18px;width:100%;text-align:center}
 .startbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:12px 16px;color:var(--mute)}
 /* host setup */
@@ -116,3 +116,22 @@ button.abtn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.28)}
 @media(max-width:560px){.gwrap{padding:14px 12px 24px}.ans{gap:10px}.abtn{min-height:76px;padding:12px;border-radius:16px}.swgrid{grid-template-columns:1fr}.gcard{padding:15px}}
 @media(max-height:560px) and (orientation:landscape){.pq .ans.full{min-height:0}.abtn{min-height:54px;padding:8px 12px}.cd{font-size:30vh}}
 @media(prefers-reduced-motion:reduce){.gm *{animation:none!important;transition:none!important}}
+/* ---- polish pass ---- */
+.gm h1,.gm h2,.gm h3{font-family:var(--serif)}
+.gtitle{font-size:clamp(1.8rem,5vw,2.6rem)!important;font-weight:700;color:var(--ink)}
+.phero{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;padding-top:8px}.phero .kick{margin:0;font-size:.8rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--acc)}
+.pincard{max-width:420px;padding:22px;gap:14px;border-radius:24px}
+.pinin{font-size:2.2rem!important;letter-spacing:.45em!important;padding:16px 10px!important;border-radius:16px!important}
+.me-chip.sm{padding:3px 12px 3px 3px;font-size:.85rem;max-width:46vw}.me-chip.sm b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.steps3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:760px;text-align:left}
+.steps3>div{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:4px}
+.steps3 i{font-style:normal;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.85rem;margin-bottom:4px}
+.steps3 span{color:var(--mute);font-size:.85rem}
+.topthree{width:100%;max-width:620px;display:flex;flex-direction:column;gap:10px;align-items:stretch}.topthree h3{text-align:left;font-size:1.1rem}
+.gm .tibeb{width:100%;max-width:760px;margin:6px 0}
+.gtop .gbtn.ghost{background:var(--bg)}
+.gwrap{justify-content:flex-start}
+.gwrap.mid,.gwrap:has(>.cd),.gwrap:has(>.fb){justify-content:center}
+@media(max-width:560px){.steps3{grid-template-columns:1fr}}
+/* pool tiles in the reference panel: calm level fill instead of spinning blobs */
+.fb.right,.fb.wrong,.abtn.right,.abtn.wrong{animation:none}

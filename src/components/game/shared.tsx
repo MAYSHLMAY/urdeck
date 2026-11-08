@@ -26,7 +26,7 @@ export function Leaderboards({ dark = true }: { dark?: boolean }) {
   void dark;
   return (
     <div className="board">
-      <div className="tabs"><button className={tab === 'alltime' ? 'on' : ''} onClick={() => setTab('alltime')}>All-time</button><button className={tab === 'recent' ? 'on' : ''} onClick={() => setTab('recent')}>Recent games</button></div>
+      <div className="gtabs"><button className={tab === 'alltime' ? 'on' : ''} onClick={() => setTab('alltime')}>All-time</button><button className={tab === 'recent' ? 'on' : ''} onClick={() => setTab('recent')}>Recent games</button></div>
       {err && <p className="note">{err}</p>}
       {!d && !err && <p className="note">Loading…</p>}
       {d?.players && (d.players.length ? d.players.map((p: any, i: number) => <div className="brow" key={p.player_id}><span className="r">{i + 1}</span><Avatar av={p.avatar} size={34} /><span className="n">{p.nickname}</span><span className="d">{p.wins} win{p.wins === 1 ? '' : 's'} · {p.games} game{p.games === 1 ? '' : 's'}</span><span>{p.score.toLocaleString()}</span></div>) : <p className="note">No finished games yet.</p>)}

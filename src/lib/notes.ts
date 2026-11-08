@@ -36,15 +36,16 @@ class NotesStore {
 
   private all = new Map<string, LocalNote>();
   private db: IDBDatabase | null = null;
-  private started = false;
+  private started = false; private loadedP: Promise<void> | null = null;
   private timer: any = 0; private fails = 0; private busy = false;
   status: 'idle' | 'syncing' | 'offline' | 'error' = 'idle'; lastError = '';
 
   /* ----- setup ----- */
   async start() {
-    if (this.started || typeof window === 'undefined') return;
-    this.started = true;
-    await this.load();
+    if (typeof window === 'undefined') return;
+    if (this.started) { await this.loadedP; return; }
+    this.started = true; let done!: () => void; this.loadedP = new Promise<void>(r => (done = r));
+    await this.load(); done();
     this.emit();
     addEventListener('online', () => this.schedule(300));
     document.addEventListener('visibilitychange', () => { if (document.hidden) this.syncNow(); });
@@ -106,6 +107,19 @@ class NotesStore {
     if (p.color) n.color = p.color; if (p.tags && p.tags.length) n.tags = p.tags.slice(0, 8); if (p.pin) n.pin = 1; if (p.qid) n.qid = String(p.qid).slice(0, 80); if (p.style) n.style = p.style;
     this.all.set(n.id, n); this.persist(n); this.emit(); this.schedule(1500);
     return n;
+  }
+
+  /* ----- device sync hooks (see lib/sync.ts) ----- */
+  syncCollect(m: Map<string, { v: any; ts?: number }>) {
+    this.all.forEach(n => { if (n.deleted || n.pdf_id.startsWith('L-')) return; const { synced, deleted, ...rest } = n; void synced; void deleted; m.set('no:' + n.id, { v: rest, ts: Date.parse(n.updated_at) || 0 }); });
+  }
+  syncApply(ch: [string, any][]) {
+    for (const [k, v] of ch) {
+      const id = k.slice(3), old = this.all.get(id);
+      if (v == null) { if (old) { old.deleted = 1; old.synced = 1; this.all.delete(id); this.persist(old); } }
+      else { const n: LocalNote = { ...v, synced: 0 }; this.all.set(id, n); this.persist(n); }
+    }
+    this.emit(); this.schedule(2000);
   }
   get(id: string) { const n = this.all.get(id); return n && !n.deleted ? n : null; }
   update(id: string, patch: { note_content?: string; color?: NoteColor; tags?: string[]; pin?: boolean }) {
