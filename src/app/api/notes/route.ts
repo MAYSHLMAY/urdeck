@@ -30,7 +30,7 @@ export async function POST(req: Request) {
         meta: {
           color: typeof n.color === 'string' ? n.color.slice(0, 12) : null,
           tags: Array.isArray(n.tags) ? n.tags.filter((t: any) => typeof t === 'string').slice(0, 8).map((t: string) => t.slice(0, 30)) : [],
-          pin: n.pin ? 1 : 0, qid: typeof n.qid === 'string' ? n.qid.slice(0, 80) : null
+          style: n.style === 'ul' || n.style === 'st' ? n.style : null, pin: n.pin ? 1 : 0, qid: typeof n.qid === 'string' ? n.qid.slice(0, 80) : null
         }
       });
     }

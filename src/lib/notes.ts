@@ -15,6 +15,8 @@ export interface LocalNote {
   created_at: string; updated_at: string; synced: 0 | 1; deleted?: 1;
   /* v2 extras (optional, so notes saved by the older version still load) */
   color?: NoteColor; tags?: string[]; pin?: 1; qid?: string;
+  /** how the passage is marked: highlight (default), underline or strike-through */
+  style?: 'ul' | 'st';
 }
 
 const DB = 'fr-notes-v2', ST = 'notes', LS = 'fr-notes-fallback-v2', K_DEV = 'fr-device-id', K_SYNC = 'fr-notes-sync';
@@ -96,12 +98,12 @@ class NotesStore {
   get pending() { return [...this.all.values()].filter(n => !n.synced && !n.pdf_id.startsWith('L-')).length; }
 
   /* ----- writes (instant) ----- */
-  add(p: { pdf_id: string; selected_text: string; page_number: number | null; rects: Rect[]; note_content?: string; color?: NoteColor; tags?: string[]; pin?: boolean; qid?: string }): LocalNote {
+  add(p: { pdf_id: string; selected_text: string; page_number: number | null; rects: Rect[]; note_content?: string; color?: NoteColor; tags?: string[]; pin?: boolean; qid?: string; style?: 'ul' | 'st' }): LocalNote {
     const text = p.selected_text.replace(/\s+/g, ' ').trim().slice(0, 4000);
     if (!text) throw new Error('Nothing is selected.');
     const now = new Date().toISOString();
     const n: LocalNote = { id: uuid(), pdf_id: p.pdf_id, selected_text: text, note_content: (p.note_content || '').slice(0, 4000), page_number: p.page_number, rects: p.rects.slice(0, 80), created_at: now, updated_at: now, synced: 0 };
-    if (p.color) n.color = p.color; if (p.tags && p.tags.length) n.tags = p.tags.slice(0, 8); if (p.pin) n.pin = 1; if (p.qid) n.qid = String(p.qid).slice(0, 80);
+    if (p.color) n.color = p.color; if (p.tags && p.tags.length) n.tags = p.tags.slice(0, 8); if (p.pin) n.pin = 1; if (p.qid) n.qid = String(p.qid).slice(0, 80); if (p.style) n.style = p.style;
     this.all.set(n.id, n); this.persist(n); this.emit(); this.schedule(1500);
     return n;
   }

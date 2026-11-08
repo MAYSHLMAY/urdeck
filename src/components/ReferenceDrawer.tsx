@@ -1,6 +1,9 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { isOwner } from '@/lib/api';
+import { SelMenu } from './SelMenu';
+import { DefineCard, wordAt, selectionReq, type DefReq } from './Define';
 import { notes as notesStore, NOTE_COLORS, NOTE_TAGS, type LocalNote, type NoteColor } from '@/lib/notes';
 import { findPhrase, getIndex, indexProgress, type Hit } from '@/lib/pdfindex';
 import type { QCard } from '@/lib/types';
@@ -46,6 +49,12 @@ export function ReferenceDrawer({ q }: { q: QCard | null }) {
   /* notes tab filters */
   const [scope, setScope] = useState<'pdf' | 'all' | 'card'>('pdf'), [nq, setNq] = useState(''), [nColor, setNColor] = useState<NoteColor | ''>(''), [onlyPin, setOnlyPin] = useState(false);
   const own = isOwner();
+  /* floating selection menu + dictionary */
+  const [menu, setMenu] = useState(false), [defReq, setDefReq] = useState<DefReq | null>(null);
+  const [dictOn, setDictOn] = useState(false), [coarse, setCoarse] = useState(false);
+  const ctxWant = useRef(false);
+  useEffect(() => { try { setDictOn(localStorage.getItem('fr-dict-v1') === '1'); } catch { /* off */ } setCoarse(matchMedia('(pointer: coarse)').matches); }, []);
+  const flipDict = () => { const v = !dictOn; setDictOn(v); setDefReq(null); try { localStorage.setItem('fr-dict-v1', v ? '1' : '0'); } catch { /* ignore */ } flash(v ? 'Dictionary on: tap any word to see what it means here.' : 'Dictionary off.'); };
 
   const pdf = R.pdf(R.pdfId), url = R.url(pdf);
   const qid = q ? String(q.id) : undefined;
@@ -99,6 +108,41 @@ export function ReferenceDrawer({ q }: { q: QCard | null }) {
     return () => { dead = true; clearTimeout(t); };
   }, [findQ, findOn, pdf?.id, url]); // eslint-disable-line
   const stepFind = (d: number) => { if (!finds.length) return; const k = (findIdx + d + finds.length) % finds.length; setFindIdx(k); viewer.current?.scrollToPage(finds[k].page, finds[k].box); };
+
+  /* the floating menu: phones open it when the selection settles, mouse users right-click */
+  const pend = cap.pending, selKey = pend ? pend.page + '|' + pend.text : '';
+  useEffect(() => {
+    setMenu(false);
+    if (!pend || (!coarse && !ctxWant.current) || marker) return;
+    const t = setTimeout(() => { setMenu(true); ctxWant.current = false; }, coarse ? 380 : 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line
+  }, [selKey, coarse, marker]);
+  useEffect(() => {
+    const el = body.current; if (!el) return;
+    const ctx = (ev: MouseEvent) => {
+      const t = ev.target as HTMLElement;
+      if (!t.closest || t.closest('.selmenu') || !t.closest('.pdf-scroll .textLayer')) return;
+      ev.preventDefault();
+      const g = getSelection(), inside = !!g && !g.isCollapsed && g.rangeCount > 0 && Array.from(g.getRangeAt(0).getClientRects()).some(r => ev.clientX >= r.left - 2 && ev.clientX <= r.right + 2 && ev.clientY >= r.top - 2 && ev.clientY <= r.bottom + 2);
+      if (inside && cmd.current.cap.recent()) { setMenu(true); return; }
+      const d: any = document, r = d.caretRangeFromPoint ? d.caretRangeFromPoint(ev.clientX, ev.clientY) : null; if (!r || !g) return;
+      ctxWant.current = true; g.removeAllRanges(); g.addRange(r); (g as any).modify?.('move', 'backward', 'word'); (g as any).modify?.('extend', 'forward', 'word');
+    };
+    const away = (ev: Event) => { if (!(ev.target as HTMLElement)?.closest?.('.selmenu')) setMenu(false); };
+    el.addEventListener('contextmenu', ctx); document.addEventListener('pointerdown', away, true);
+    return () => { el.removeEventListener('contextmenu', ctx); document.removeEventListener('pointerdown', away, true); };
+  }, [mounted]);
+  /* dictionary mode: click or tap a word */
+  useEffect(() => {
+    const el = body.current; if (!el || !dictOn || !R.open) return;
+    const f = (ev: MouseEvent) => {
+      const t = ev.target as HTMLElement; if (!t.closest || !t.closest('.pdf-scroll .textLayer') || t.closest('.selmenu')) return;
+      const g = getSelection(); if (g && !g.isCollapsed) return;
+      const r = wordAt(ev.clientX, ev.clientY); if (r) setDefReq(r);
+    };
+    el.addEventListener('click', f); return () => el.removeEventListener('click', f);
+  }, [dictOn, R.open, mounted]);
 
   /* ---- commands (like a browser PDF reader) ---- */
   const cmd = useRef<any>({}); cmd.current = { cap, color, qid, noteEdit, findOn, full, pop };
@@ -178,6 +222,9 @@ export function ReferenceDrawer({ q }: { q: QCard | null }) {
   }
   function flash(t: string) { setMsg({ t }); setTimeout(() => setMsg(m => (m.t === t ? { t: '' } : m)), 2200); }
   function doHighlight() { if (!cmd.current.cap.pending) { flash('Select some text first, then press H.'); return; } const id = cmd.current.cap.save({ color: cmd.current.color, qid: cmd.current.qid }); if (id) { flash('Highlight saved.'); try { navigator.vibrate?.(12); } catch { /* ignore */ } } }
+  function doStyle(style: 'ul' | 'st') { if (!cmd.current.cap.pending) return; const id = cmd.current.cap.save({ color: cmd.current.color, qid: cmd.current.qid, style }); if (id) { flash(style === 'ul' ? 'Underlined.' : 'Struck through.'); setMenu(false); } }
+  function defineSel() { const s = cap.recent(); if (!s) return; const r = selectionReq(s.text, s.page); if (r) { setDefReq(r); setMenu(false); } }
+  function findSel() { const s = cap.recent(); if (!s) return; setFindQ(s.text.split(' ').slice(0, 6).join(' ')); setFindOn(true); setMenu(false); }
   function openNote() { if (!cmd.current.cap.pending) { flash('Select some text first, then press N.'); return; } setPop(null); setNoteEdit(true); }
   function saveNote() {
     const id = cap.save({ note: noteText.trim(), color, qid });
@@ -241,6 +288,8 @@ export function ReferenceDrawer({ q }: { q: QCard | null }) {
               <span className="vsep" />
               <button className={'vb' + (findOn ? ' on' : '')} onClick={() => setFindOn(f => !f)} aria-label="Search in PDF" aria-pressed={findOn} title="Search (Ctrl F)"><Ic n="search" /></button>
               <button className={'vb' + (marker ? ' on' : '')} onClick={() => { setMarker(!marker); flash(!marker ? 'Marker on: whatever you select is highlighted automatically.' : 'Marker off.'); }} aria-label="Marker mode" aria-pressed={marker} title="Marker: highlight automatically as you select"><Ic n="marker" /></button>
+              <button className={'vb' + (R.autoOn ? ' on' : '')} onClick={() => { R.setAutoOn(!R.autoOn); flash(!R.autoOn ? 'Auto-find on: the reader jumps to where each question is explained.' : 'Auto-find off: the reader stays where you are.'); }} aria-label="Auto-find" aria-pressed={R.autoOn} title={R.autoOn ? 'Auto-find is on (tap to turn off)' : 'Auto-find is off (tap to turn on)'}><Ic n="sparkle" /></button>
+              <button className={'vb' + (dictOn ? ' on' : '')} onClick={flipDict} aria-label="Dictionary" aria-pressed={dictOn} title="Dictionary: tap a word to see its meaning (online)"><Ic n="book" /></button>
               <button className={'vb' + (night ? ' on' : '')} onClick={() => setNight(!night)} aria-label="Night mode" aria-pressed={night} title="Night mode"><Ic n="moon" /></button>
             </div>
           )}
@@ -253,8 +302,9 @@ export function ReferenceDrawer({ q }: { q: QCard | null }) {
               <button className="vb" onClick={() => setFindOn(false)} aria-label="Close search"><Ic n="close" /></button>
             </div>
           )}
-          {pdf && (q || auto) && (auto || mapsHere.length > 0 || (own && q)) && (
+          {pdf && (q || auto) && (auto || mapsHere.length > 0 || (own && q) || (!R.autoOn && q)) && (
             <div className="reftools">
+              {!R.autoOn && q && <span className="chipx soft">Auto-find is off <button className="ghost" onClick={() => R.findNow()}>Find passage</button> <button className="ghost" onClick={() => R.setAutoOn(true)}>Turn on</button></span>}
               {auto && auto.state === 'working' && <span className="chipx soft"><Ic n="sparkle" /> Finding where this is explained…{idxPct !== undefined ? ` ${Math.round(idxPct * 100)}%` : ''}</span>}
               {auto && auto.state === 'ready' && auto.matches.length > 0 && (
                 <span className="chipx"><Ic n="sparkle" /> Best match p. {auto.matches[auto.idx].page}
@@ -340,7 +390,12 @@ export function ReferenceDrawer({ q }: { q: QCard | null }) {
         </section>
       </div>
       <PdfChooserModal />
-    </aside>
+    {typeof document !== 'undefined' && createPortal(<>
+        {menu && sel && R.open && R.view === 'viewer' && !editing && <SelMenu sel={sel} coarse={coarse} color={color} onColor={setColor}
+          acts={{ hl: () => { doHighlight(); setMenu(false); }, ul: () => doStyle('ul'), st: () => doStyle('st'), note: () => { setMenu(false); openNote(); }, copy: () => { copySel(); setMenu(false); }, define: defineSel, find: findSel }} />}
+        <DefineCard req={defReq} hint={pdf?.title || ''} onClose={() => setDefReq(null)} />
+      </>, document.body)}
+      </aside>
   );
 }
 

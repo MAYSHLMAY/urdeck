@@ -56,6 +56,7 @@ export class RefStore {
 
   /* ---------- loading ---------- */
   async load(force = false) {
+    this.readAuto();
     if (!this.localPdfs.length) this.loadLocal();
     if (this.loading || (this.loaded && !force)) return;
     this.loading = true; this.error = ''; this.emit();
@@ -197,9 +198,21 @@ export class RefStore {
    * text index and find where the card's idea is explained. Cards with no connected PDF are skipped.
    */
   private lastQ: QCard | null = null;
-  async prepare(q: QCard | null) {
+  /** Auto-find: when on, the reader prepares matches in the background and jumps to the passage by itself. Anyone can switch it. */
+  autoOn = true; private manual = false;
+  readAuto() { try { this.autoOn = localStorage.getItem('fr-auto-v1') !== '0'; } catch { /* default on */ } }
+  setAutoOn(v: boolean) {
+    this.autoOn = v; try { localStorage.setItem('fr-auto-v1', v ? '1' : '0'); } catch { /* ignore */ }
+    this.auto = null; this.wantAuto = ''; this.emit();
+    if (v && this.lastQ) { this.prepare(this.lastQ); if (this.open) this.resolve(this.lastQ); }
+  }
+  /** One-off find while auto-find is off. */
+  async findNow() { const q = this.lastQ; if (!q) return; this.manual = true; await this.prepare(q, true); await this.resolve(q); this.manual = false; }
+  async prepare(q: QCard | null, force = false) {
     const seq = ++this.prepSeq; this.lastQ = q;
     if (!q) { this.auto = null; this.emit(); return; }
+    if (!this.autoOn && !force) { if (this.auto) { this.auto = null; this.emit(); } return; }
+    if (force) this.auto = null;
     const qid = String(q.id);
     if (this.auto && this.auto.qid === qid && (this.auto.state === 'ready' || this.auto.state === 'working')) return;
     this.auto = { qid, state: 'none', matches: [], idx: 0 }; this.emit();
@@ -238,6 +251,7 @@ export class RefStore {
   async resolve(q: QCard | null) {
     if (!this.open) return;
     const seq = ++this.resolveSeq; this.curSection = q ? q.s : '';
+    if (!this.autoOn && !this.manual) { this.view = this.pdfId ? 'viewer' : 'pools'; this.emit(); return; }
     if (!q) { this.view = this.pdfId ? 'viewer' : 'pools'; this.emit(); return; }
     const maps = (await this.mappingsFor(String(q.id))).filter(m => this.pdf(m.pdf_id));
     if (seq !== this.resolveSeq) return;

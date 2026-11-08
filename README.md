@@ -72,6 +72,11 @@ Deleting a folder, a pool (category), a PDF or a 3D model always asks for the ow
 
 **Mistakes list and Speed round.** Every wrong answer or "I don't know" (in normal study, practice and speed rounds) is logged on the device. Browse has a third tab, **Mistakes**, per set; a card leaves it after two right answers in a row (or tap Clear). **Speed round** (Browse footer) runs the cards of the open tab against a 1 / 2 / 5 / 10 minute clock, auto-advances after each answer, never reschedules anything, then shows answered / right / accuracy and offers to drill the ones you missed.
 
+**Reader: floating selection menu, dictionary, auto-find switch.**
+- *Selection menu* (like WPS / Edge): colour dots plus Highlight, Underline, Strike, Note, Copy, Define, Find. On phones it opens by itself once the selection settles (below the handles); on a computer, right-click a word or a selection. Underline and strike-through are saved as notes with a style. Selection boxes are now merged into one clean box per line (no more doubled, darker patches), and the selection stays steady while dragging the phone handles.
+- *Dictionary* (book button in the PDF toolbar, or Define in the menu): online, uses the free dictionaryapi.dev (Wiktionary data). The meaning that best fits the surrounding words is shown first (a local word-overlap and part-of-speech check, no AI); other meanings are one tap away. Only the single word is sent.
+- *Auto-find switch* (sparkle button in the PDF toolbar, for everyone): turns the background matching and automatic jump to the passage on or off per device. When off, "Find passage" does it once on demand.
+
 ## 5. Run / deploy
 ```bash
 npm run dev        # http://localhost:3000

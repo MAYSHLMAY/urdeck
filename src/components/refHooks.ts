@@ -24,10 +24,23 @@ export function usePoolSync() {
 }
 
 export interface PendingSel { text: string; page: number; rects: Rect[]; box: Hi }
-export interface SaveOpts { note?: string; color?: NoteColor; tags?: string[]; pin?: boolean; qid?: string }
+export interface SaveOpts { note?: string; color?: NoteColor; tags?: string[]; pin?: boolean; qid?: string; style?: 'ul' | 'st' }
 
 const r4 = (n: number) => Math.round(n * 10000) / 10000;
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
+type Box = { left: number; top: number; right: number; bottom: number; width: number; height: number };
+/** One clean box per line: the browser reports many overlapping boxes for a selection, which drew doubled, darker patches. */
+function lineBoxes(list: DOMRect[]): Box[] {
+  const a = list.filter(c => c.width >= 2 && c.height >= 2).sort((p, q) => p.top - q.top || p.left - q.left);
+  const out: { l: number; t: number; r: number; b: number }[] = [];
+  for (const c of a) {
+    const k = { l: c.left, t: c.top, r: c.right, b: c.bottom };
+    if (out.some(o => k.l >= o.l - 1 && k.r <= o.r + 1 && k.t >= o.t - 1 && k.b <= o.b + 1)) continue;
+    const m = out.find(o => Math.min(o.b, k.b) - Math.max(o.t, k.t) > 0.55 * Math.min(o.b - o.t, k.b - k.t) && k.l <= o.r + 4 && k.r >= o.l - 4);
+    if (m) { m.l = Math.min(m.l, k.l); m.r = Math.max(m.r, k.r); m.t = Math.min(m.t, k.t); m.b = Math.max(m.b, k.b); } else out.push(k);
+  }
+  return out.map(o => ({ left: o.l, top: o.t, right: o.r, bottom: o.b, width: o.r - o.l, height: o.b - o.t }));
+}
 
 /**
  * Local-first note capture, made for phones. The selection is "frozen" the moment it is made: tapping a button (which
@@ -46,7 +59,7 @@ export function useNoteCapture(root: RefObject<HTMLElement>, pdfId: string | nul
     const s = pend.current;
     if (!s || !pdfId) return null;
     try {
-      const n = notes().add({ pdf_id: pdfId, selected_text: s.text, page_number: s.page, rects: s.rects, note_content: o.note || '', color: o.color, tags: o.tags, pin: o.pin, qid: o.qid });
+      const n = notes().add({ pdf_id: pdfId, selected_text: s.text, page_number: s.page, rects: s.rects, note_content: o.note || '', color: o.color, tags: o.tags, pin: o.pin, qid: o.qid, style: o.style });
       getSelection()?.removeAllRanges(); set(null); setError('');
       return n.id;
     } catch (e: any) { setError(e.message || 'Could not save the note.'); return null; }
@@ -71,7 +84,7 @@ export function useNoteCapture(root: RefObject<HTMLElement>, pdfId: string | nul
       const pageEl = startEl && (startEl.closest('[data-page]') as HTMLElement | null);
       if (!pageEl) return;
       const pr = pageEl.getBoundingClientRect(), rects: Rect[] = [];
-      Array.from(range.getClientRects()).forEach(c => {
+      lineBoxes(Array.from(range.getClientRects())).forEach(c => {
         const inside = c.bottom > pr.top && c.top < pr.bottom && c.right > pr.left && c.left < pr.right;
         if (!inside || c.width < 2 || c.height < 2) return;
         const x = clamp01((c.left - pr.left) / pr.width), y = clamp01((c.top - pr.top) / pr.height);

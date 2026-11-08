@@ -42,9 +42,17 @@ const clampZ = (z: number) => Math.min(MAX_Z, Math.max(MIN_Z, z));
 let selBound = false;
 function bindSelection() {
   if (selBound || typeof document === 'undefined') return; selBound = true;
-  const done = () => document.querySelectorAll('.textLayer.selecting').forEach(t => t.classList.remove('selecting'));
+  // keep the "selecting" state for as long as a selection touches a page: on phones the browser takes over after a long-press
+  // (pointercancel), and dragging the selection handles must stay as steady as a mouse drag.
+  const sync = () => {
+    const g = getSelection(), has = !!g && !g.isCollapsed && g.rangeCount > 0;
+    document.querySelectorAll('.textLayer').forEach(tl => tl.classList.toggle('selecting', has && g!.getRangeAt(0).intersectsNode(tl)));
+    document.querySelectorAll('.pdf-scroll').forEach(s => s.classList.toggle('has-sel', has));
+  };
+  document.addEventListener('selectionchange', sync);
+  const done = () => { const g = getSelection(); if (!g || g.isCollapsed) document.querySelectorAll('.textLayer.selecting').forEach(t => t.classList.remove('selecting')); };
   ['pointerup', 'pointercancel', 'dragend'].forEach(k => addEventListener(k, done, true));
-  addEventListener('blur', done); addEventListener('keyup', done);
+  addEventListener('blur', done);
 }
 function wireTextLayer(tl: HTMLElement) {
   const eoc = document.createElement('div'); eoc.className = 'endOfContent'; tl.appendChild(eoc);
@@ -278,7 +286,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
   const overlays = useMemo(() => {
     const m = new Map<number, { k: string; r: Hi; cls: string }[]>();
     const add = (p: number, k: string, r: Hi, cls: string) => { const a = m.get(p) || []; a.push({ k, r, cls }); m.set(p, a); };
-    notes.forEach(n => (n.rects || []).forEach((r, i) => n.page_number && add(n.page_number, n.id + i, r, 'pdf-note c-' + (n.color || 'yellow'))));
+    notes.forEach(n => (n.rects || []).forEach((r, i) => n.page_number && add(n.page_number, n.id + i, r, 'pdf-note c-' + (n.color || 'yellow') + (n.style ? ' s-' + n.style : ''))));
     (finds || []).forEach((f, fi) => f.rects.forEach((r, i) => add(f.page, 'f' + fi + '_' + i, r, fi === findIdx ? 'pdf-target' : 'pdf-find')));
     if (target) (target.rects && target.rects.length ? target.rects : target.hi ? [target.hi] : []).forEach((r, i) => add(target.page, 'target' + target.nonce + '_' + i, r, 'pdf-target'));
     if (pending) pending.rects.forEach((r, i) => add(pending.page, 'pend' + i, r, 'pdf-pending'));
