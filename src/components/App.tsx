@@ -1,4 +1,5 @@
 'use client';
+import { applyLook } from '@/lib/look';
 import { useEffect, useState } from 'react';
 import { useEngine, Icon, Ic, Sheet, SheetFrame, AskHost, Toast } from './ui';
 import { QuizContainer } from './QuizContainer';
@@ -40,7 +41,7 @@ export default function App() {
   /* theme + text size */
   const o = e.O;
   useEffect(() => {
-    document.documentElement.dataset.theme = o.theme === 'auto' ? '' : o.theme;
+    applyLook({ t: o.theme });
     document.documentElement.style.setProperty('--fs', ({ s: '14.5px', m: '16px', l: '18px', xl: '20px' } as any)[o.size] || '16px');
   }, [o.theme, o.size]);
 

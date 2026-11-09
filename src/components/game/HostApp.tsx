@@ -7,7 +7,7 @@ import { isOwner, unlock } from '@/lib/api';
 import { Host, makeQuestions } from '@/lib/game/host';
 import { DEFAULTS, TEAM_COLORS, TEAM_NAMES, type Settings } from '@/lib/game/types';
 import { Avatar } from './Avatar';
-import { SHAPES, Confetti, Leaderboards, Ring, useStore, useTick } from './shared';
+import { SHAPES, Confetti, CountUp, Leaderboards, Ring, useStore, useTick } from './shared';
 
 export default function HostApp() {
   const e = useEngine();
@@ -90,25 +90,26 @@ function Live({ host, onExit }: { host: Host; onExit: () => void }) {
       </section>
       <section className="roster">
         <h2>Players <span>{host.players.size}</span></h2>
-        <div className="rgrid">{[...host.players.values()].map(x => <span key={x.id} className={'pchip' + (host.online.has(x.id) ? '' : ' off')} style={x.team != null ? { boxShadow: '0 0 0 3px ' + TEAM_COLORS[x.team] } : undefined}><Avatar av={x.av} size={38} />{x.name}<button title="Remove" onClick={() => host.kick(x.id)}>×</button></span>)}{!host.players.size && <div className="gempty">Waiting for players to join…<br /><small>Scan the QR code or enter the PIN</small></div>}</div>
+        <div className="rgrid">{[...host.players.values()].map(x => <span key={x.id} className={'pchip' + (host.online.has(x.id) ? '' : ' off')} style={x.team != null ? { boxShadow: '0 0 0 3px ' + TEAM_COLORS[x.team] } : undefined}><Avatar av={x.av} size={44} />{x.name}<button title="Remove" onClick={() => host.kick(x.id)}>×</button></span>)}{!host.players.size && <div className="gempty">Waiting for players to join…<br /><small>Scan the QR code or enter the PIN</small></div>}</div>
         <div className="startbar"><span>{host.qs.length} questions · {host.S.secs}s each{host.S.teams ? ` · ${host.S.teams} teams` : ''}</span><button className="gbtn go xl" disabled={!host.players.size} onClick={() => host.start()}>Start</button></div>
       </section>
     </div></div></div>);
   if (p === 'countdown') return <div className="gm">{Top}<div className="gwrap"><p>Question {host.idx + 2} of {host.qs.length}</p><div className="cd">{host.paused ? '⏸' : Math.max(1, Math.ceil((host.phaseEnd - Date.now()) / 1000))}</div>{ctl}</div></div>;
   if (p === 'question' && q) return (
     <div className="gm" style={{ minHeight: '100dvh' }}>{Top}<div className="gwrap start" style={{ maxWidth: 1280, justifyContent: 'flex-start', flex: 1 }}>
-      <div className="qstat"><span className="qn">{host.idx + 1}<small>/{host.qs.length}</small></span><span className="grow" /><span className="cnt-pill">{host.ans.size}/{host.players.size} answered</span><Ring left={left} total={host.S.secs * 1000} size={72} /></div>
-      <div className="qcard xl">{q.text}</div>
-      <div className={'ans full' + (q.choices.length < 3 ? ' one' : '')} style={{ minHeight: 260 }}>{q.choices.map((c, i) => <div key={i} className={'abtn c' + i}>{SHAPES[i % 4]}<span>{c}</span></div>)}</div>
+      <div className="qstat stg" style={{ ['--i' as any]: 0 }}><span className="qn">{host.idx + 1}<small>/{host.qs.length}</small></span><span className="grow" /><span className="cnt-pill">{host.ans.size}/{host.players.size} answered</span><Ring left={left} total={host.S.secs * 1000} size={72} /></div>
+      <div className="qcard xl stg" style={{ ['--i' as any]: 1 }}>{q.text}</div>
+      <div className={'ans full' + (q.choices.length < 3 ? ' one' : '')} style={{ minHeight: 260 }}>{q.choices.map((c, i) => <div key={i} className={'abtn c' + i} style={{ ['--i' as any]: i }}>{SHAPES[i % 4]}<span>{c}</span></div>)}</div>
       {host.paused && <b>⏸ Paused</b>}{ctl}
     </div></div>);
   if ((p === 'reveal' || p === 'board') && q) {
     const mx = Math.max(1, ...host.counts), rows = host.rows();
     return <div className="gm">{Top}<div className="gwrap start">
-      {p === 'reveal' ? <><div className="qcard xl">{q.text}</div>
-        <div className="hist">{q.choices.map((c, i) => <div key={i}><b>{host.counts[i] || 0}</b><i className={'c' + i} style={{ height: ((host.counts[i] || 0) / mx) * 100 + '%', background: ['#e21b3c', '#1368ce', '#d89e00', '#26890c'][i % 4], opacity: i === q.correct ? 1 : .5 }} /><span style={{ fontWeight: i === q.correct ? 900 : 500 }}>{i === q.correct ? '✔ ' : ''}{c}</span></div>)}</div></>
+      {p === 'reveal' ? <><div className="qcard xl stg" style={{ ['--i' as any]: 0 }}>{q.text}</div>
+        <div className="hist">{q.choices.map((c, i) => <div key={i}><b>{host.counts[i] || 0}</b><i className={'c' + i} style={{ animationDelay: (0.25 + i * 0.12) + 's', height: ((host.counts[i] || 0) / mx) * 100 + '%', background: ['#e21b3c', '#1368ce', '#d89e00', '#26890c'][i % 4], opacity: i === q.correct ? 1 : .5 }} /><span style={{ fontWeight: i === q.correct ? 900 : 500 }}>{i === q.correct ? '✔ ' : ''}{c}</span></div>)}</div>
+        {(() => { const all = [...host.players.values()], got = all.filter(x => host.ans.get(x.id)?.choice === q.correct), miss = all.filter(x => host.ans.get(x.id)?.choice !== q.correct); const row = (list: typeof all, mood: 'happy' | 'angry', label: string) => list.length ? <div className="facerow"><b>{label} <CountUp n={list.length} ms={600} /></b><div>{list.slice(0, 16).map((x, i) => <span key={x.id} style={{ ['--i' as any]: i }}><Avatar av={x.av} size={44} mood={mood} /></span>)}{list.length > 16 && <em>+{list.length - 16}</em>}</div></div> : null; return <div className="faces stg" style={{ ['--i' as any]: 5 }}>{row(got, 'happy', 'Got it')}{row(miss, 'angry', 'Missed')}</div>; })()}</>
         : <><h2>Leaderboard</h2>{host.S.teams > 0 && <div className="ctl">{host.teamScores().map((t, i) => <span key={i} className="gpill" style={{ background: TEAM_COLORS[i], color: '#fff' }}>{TEAM_NAMES[i]} {t}</span>)}</div>}</>}
-      {p === 'board' && <div className="board">{rows.slice(0, 5).map(r => <div className="brow" key={r.id}><span className="r">{r.rank}</span><Avatar av={r.av} size={34} /><span className="n">{r.name}</span><span className="d">+{host.tot.get(r.id)?.d || 0}</span><b>{r.score}</b></div>)}</div>}
+      {p === 'board' && <div className="board">{rows.slice(0, 5).map((r, i) => <div className="brow stg" style={{ ['--i' as any]: i }} key={r.id}><span className="r">{r.rank}</span><Avatar av={r.av} size={34} /><span className="n">{r.name}</span><span className="d">+{host.tot.get(r.id)?.d || 0}</span><b>{r.score}</b></div>)}</div>}
       {ctl}
     </div></div>;
   }
@@ -116,7 +117,7 @@ function Live({ host, onExit }: { host: Host; onExit: () => void }) {
     const rows = host.rows(), top = rows.slice(0, 3), order = [top[1], top[0], top[2]].filter(Boolean), h = (r: number) => ({ 1: 190, 2: 140, 3: 100 } as any)[r];
     const dl = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([host.csv()], { type: 'text/csv' })); a.download = `quiz-${host.pin}.csv`; a.click(); };
     return <div className="gm">{Top}<Confetti /><div className="gwrap start"><h1 className="gtitle">🏆 Podium</h1>
-      <div className="podium">{order.map(r => <div className="pst" key={r.id}><Avatar av={r.av} size={70} /><b>{r.name}</b><span>{r.score}</span><div className="pblk" style={{ height: h(r.rank), background: ['', '#d89e00', '#8a8a8a', '#a0603a'][r.rank] }}>{r.rank}</div></div>)}</div>
+      <div className="podium">{order.map(r => <div className="pst" key={r.id}><Avatar av={r.av} size={86} mood="happy" /><b>{r.name}</b><span>{r.score}</span><div className="pblk" style={{ height: h(r.rank), background: ['', '#d89e00', '#8a8a8a', '#a0603a'][r.rank] }}>{r.rank}</div></div>)}</div>
       <table className="lbl"><thead><tr><th>#</th><th>Player</th><th>Score</th><th>Right</th><th>Streak</th></tr></thead><tbody>{rows.map(r => <tr key={r.id}><td>{r.rank}</td><td>{r.name}</td><td>{r.score}</td><td>{r.correct}/{host.qs.length}</td><td>{r.bestStreak}</td></tr>)}</tbody></table>
       {host.history.length > 0 && <details style={{ width: '100%' }}><summary>Hardest questions</summary>{[...host.history].sort((a, b) => a.rate - b.rate).slice(0, 5).map((x, i) => <div className="brow" key={i}><span className="n">{x.text}</span><b>{Math.round(x.rate * 100)}%</b></div>)}</details>}
       <p className={host.saveState === 'error' ? 'err' : 'note'}>{host.saveState === 'saving' ? 'Saving to the leaderboard…' : host.saveMsg}</p>

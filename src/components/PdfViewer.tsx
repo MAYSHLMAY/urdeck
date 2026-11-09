@@ -300,6 +300,28 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
   /* follow the auto-match target: page + highlight */
   useEffect(() => { if (state.s === 'ready' && target) scrollToPage(target.page, target.hi); }, [target, state.s, scrollToPage]);
 
+  /* a visible, draggable scroll handle (system scroll bars are hidden on phones and easy to miss) */
+  const scrub = useRef<HTMLDivElement>(null), thumb = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const root = scroller.current, tr = scrub.current, th = thumb.current; if (state.s !== 'ready' || !root || !tr || !th) return;
+    let drag = false, hide: any;
+    const upd = () => {
+      const sh = root.scrollHeight, ch = root.clientHeight, th0 = Math.max(44, ch * ch / Math.max(sh, 1)), room = Math.max(1, ch - 16 - th0);
+      tr.style.height = Math.max(0, ch - 16) + 'px'; th.style.height = th0 + 'px';
+      th.style.transform = `translateY(${root.scrollTop / Math.max(1, sh - ch) * room}px)`;
+      tr.classList.add('on'); clearTimeout(hide); hide = setTimeout(() => { if (!drag) tr.classList.remove('on'); }, 1400);
+    };
+    const down = (e: PointerEvent) => { drag = true; th.setPointerCapture(e.pointerId); tr.classList.add('on'); e.preventDefault(); };
+    const move = (e: PointerEvent) => {
+      if (!drag) return; const r = tr.getBoundingClientRect(), th0 = th.offsetHeight, room = Math.max(1, r.height - th0);
+      const k = Math.min(1, Math.max(0, (e.clientY - r.top - th0 / 2) / room)); root.scrollTop = k * (root.scrollHeight - root.clientHeight);
+    };
+    const up = () => { drag = false; };
+    root.addEventListener('scroll', upd, { passive: true }); th.addEventListener('pointerdown', down); th.addEventListener('pointermove', move); th.addEventListener('pointerup', up); th.addEventListener('pointercancel', up);
+    const ro = new ResizeObserver(upd); ro.observe(root); const t = setTimeout(upd, 300);
+    return () => { root.removeEventListener('scroll', upd); th.removeEventListener('pointerdown', down); th.removeEventListener('pointermove', move); th.removeEventListener('pointerup', up); th.removeEventListener('pointercancel', up); ro.disconnect(); clearTimeout(t); clearTimeout(hide); };
+  }, [state.s]);
+
   const overlays = useMemo(() => {
     const m = new Map<number, { k: string; r: Hi; cls: string }[]>();
     const add = (p: number, k: string, r: Hi, cls: string) => { const a = m.get(p) || []; a.push({ k, r, cls }); m.set(p, a); };
@@ -315,6 +337,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
       {state.s === 'loading' && <p className="pdf-msg">Opening PDF…</p>}
       {state.s === 'error' && <div className="pdf-msg"><p>{state.err}</p><button className="ghost" onClick={() => setTryN(x => x + 1)}>Try again</button></div>}
       {state.s === 'idle' && <p className="pdf-msg">Choose a document to read.</p>}
+      {state.s === 'ready' && <div className="scrubw" aria-hidden><div className="scrub" ref={scrub}><i ref={thumb as any} /></div></div>}
       {state.s === 'ready' && (
         <div className="pdf-inner" ref={inner}>
           {Array.from({ length: state.n }, (_, i) => i + 1).map(n => (

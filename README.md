@@ -124,3 +124,9 @@ Selection no longer spills into neighbouring text, right-click inside a selectio
 
 
 Note (design): there is no footer. On phones a fixed bottom tab bar (Home, Study, Quiz, 3D lab) gives an app feel; wider screens use the top bar.
+
+## 8. Look, app feel and quiz characters
+- Settings → Look has an accent colour picker (8 palettes) plus light/dark. It is stored on the device and applied before first paint on every page (`src/lib/look.ts`, `src/app/app.css`). Font: Plus Jakarta Sans with Noto Sans Ethiopic fallback.
+- Phones get a floating bottom tab bar, bottom-sheet dialogs and an app-style home (`Today` card, quick actions, swipeable topics).
+- PDF reader has a visible, draggable scroll handle in addition to the scrollbar.
+- Live quiz: face characters (`components/game/Avatar.tsx`) with moods; the player's character sits at the bottom of the screen and gets happy or angry after each answer. Older stick-figure codes still load as characters.

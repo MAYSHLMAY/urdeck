@@ -174,7 +174,7 @@ export default function Lab() {
   const parts = def?.parts || [];
   return (
     <div className="lab">
-      <div className="wrap" style={{ maxWidth: 760 }}>
+      <div className="wrap">
         <div className="top">
           <Link href="/" className="backln"><Ic n="arrowL" /> Back</Link>
           <select value={selId} aria-label="Model" onChange={ev => { setSelId(ev.target.value); location.hash = ev.target.value; openModel(ev.target.value); }}>
@@ -197,12 +197,16 @@ export default function Lab() {
           </div>
         )}
         <div id="msg" className={msg.err ? 'err' : ''}>{msg.t}</div>
+        <div className="labg">
+        <div className="labL">
         <div id="cv" ref={cv}><div id="hud">Drag = orbit · pinch / wheel = zoom · tap a part</div></div>
         <div className="bar">
           <button className={sweep ? 'on' : ''} onClick={toggleSweep}>{sweep ? <><Ic n="stop" /> Stop sweep</> : <><Ic n="play" /> Auto sweep</>}</button>
           <button className={wire ? 'on' : ''} onClick={toggleWire}>Wireframe</button>
           <button onClick={() => { if (R.current.sweep) { R.current.sweep = false; setSweep(false); } resetAll(); }}>Reset</button>
         </div>
+        </div>
+        <div className="labR">
         <div className="tabs">
           {([['a', 'Adjust'], ['p', 'Parts'], ['i', 'Info']] as const).map(([t, l]) => <button key={t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>{l}</button>)}
         </div>
@@ -241,6 +245,8 @@ export default function Lab() {
           })()}
           <p>Units: 1 = 1 m. Nose toward −Z, right is +X. Positive deflection = trailing edge down.</p>
         </div>}
+        </div>
+        </div>
       </div>
       <AskHost />
     </div>

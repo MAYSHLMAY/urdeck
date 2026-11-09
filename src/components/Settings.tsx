@@ -5,6 +5,7 @@ import { api, isOwner, lock, unlock } from '@/lib/api';
 import { dl, Sheet, SheetFrame, useEngine, Ic, ask } from './ui';
 import { useRefs } from './refHooks';
 import { SyncPanel } from './SyncPanel';
+import { ACCENTS, applyLook, getLook } from '@/lib/look';
 
 type F = [string, string, string, any?, any?, number?, string?, string?];
 const BASIC: [string, string, F[]][] = [
@@ -41,6 +42,17 @@ const ADVANCED: [string, F[]][] = [
     ['autoGood', 'Quick rating: correct counts as Good', 'chk', '', '', 0, '', 'Hard and Easy stay available as small buttons']]]
 ];
 
+function Swatches() {
+  const [a, setA] = useState(getLook().a);
+  return (
+    <div className="f swf"><label>Colour<small>Pick the accent used across the whole app</small></label>
+      <div className="swatches" role="radiogroup" aria-label="Accent colour">
+        {ACCENTS.map(([id, nm, hex]) => <button key={id} type="button" role="radio" aria-checked={a === id} aria-label={nm} title={nm} className={'swc' + (a === id ? ' on' : '')} style={{ ['--sw' as any]: hex }} onClick={() => { setA(id); applyLook({ a: id }); }} />)}
+      </div>
+    </div>
+  );
+}
+
 export function Settings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const e = useEngine(), R = useRefs();
   const [msg, setMsg] = useState<{ t: string; c: string }>({ t: '', c: '' });
@@ -59,6 +71,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
     else v = raw;
     if (tg === 'S') S[k] = v; else O[k] = v;
     if (k === 'wrongMax' || k === 'wrongMin') { if (O.wrongMax < O.wrongMin) O.wrongMax = O.wrongMin; }
+    if (k === 'theme') applyLook({ t: v });
     e.later = {}; e.save(); e.emit();
   };
 
@@ -95,7 +108,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
       <SheetFrame title="Settings" onClose={onClose}>
         <div className="sc setp">
           {BASIC.map(([g, ic, fs]) => (
-            <section className="scard" key={g}><h4><Ic n={ic} />{g}</h4>{fs.map(field)}</section>
+            <section className="scard" key={g}><h4><Ic n={ic} />{g}</h4>{g === 'Look' && <Swatches />}{fs.map(field)}</section>
           ))}
 
           <section className="scard"><h4><Ic n="key" />Owner</h4>

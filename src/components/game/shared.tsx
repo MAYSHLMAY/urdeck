@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { Avatar } from './Avatar';
+import { Avatar, type Mood } from './Avatar';
 
 export const SHAPES = [
   <svg key="0" viewBox="0 0 24 24"><path d="M12 2 23 21H1z" /></svg>,
@@ -35,3 +35,31 @@ export function Leaderboards({ dark = true }: { dark?: boolean }) {
   );
 }
 void useSyncExternalStore;
+
+/** Counts up from 0 to n (used for points) so results feel earned. */
+export function CountUp({ n, ms = 800 }: { n: number; ms?: number }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let raf = 0; const t0 = performance.now();
+    const f = (t: number) => { const k = Math.min(1, (t - t0) / ms); setV(Math.round(n * (1 - Math.pow(1 - k, 3)))); if (k < 1) raf = requestAnimationFrame(f); };
+    raf = requestAnimationFrame(f); return () => cancelAnimationFrame(raf);
+  }, [n, ms]);
+  return <>{v.toLocaleString()}</>;
+}
+const SAY: Record<Mood, string[]> = {
+  happy: ['Yes!', 'Nailed it!', 'Boom!', 'Easy!', 'Genius!'], angry: ['Argh!', 'So close!', 'Grr!', 'Not again!', 'Next one!'],
+  sad: ['Too slow…', 'Time ran out', 'Oh no…'], wow: ['Get ready!', 'Here we go!'], idle: ['']
+};
+export const sayFor = (m: Mood, i: number) => { const a = SAY[m]; return a[Math.abs(i) % a.length]; };
+/** The player's character, peeking up from the bottom of the screen and reacting to how they did. */
+export function Dock({ av, mood, say }: { av: string; mood: Mood; say?: string }) {
+  return (
+    <div className={'dock m-' + mood} aria-hidden>
+      <div className="dwrap">
+        <div className="dchar" key={mood}><Avatar av={av} size={150} mood={mood} bare /></div>
+        {say ? <div className="dsay" key={mood + say}>{say}</div> : null}
+        {mood === 'happy' && <div className="dfx">{Array.from({ length: 8 }, (_, i) => <i key={i} style={{ ['--a' as any]: i * 45 + 'deg', animationDelay: i * 30 + 'ms' }} />)}</div>}
+      </div>
+    </div>
+  );
+}
