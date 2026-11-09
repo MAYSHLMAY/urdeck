@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ask, askPassword, Sheet, SheetFrame, useEngine, Ic } from './ui';
 import { isOwner } from '@/lib/api';
+import { qText, withImg, parseImg } from '@/lib/cardimg';
+import { ImageField } from './ImageField';
 
 export type EditorState = { mode: 'edit' | 'add'; id?: string; section?: string } | null;
 
@@ -33,7 +35,7 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
 
   const wrong = w.map(x => x.trim()).filter(Boolean);
   const setName = s === '__new' ? ns.trim() : s;
-  const ok = q.trim() && c.trim() && wrong.length >= 1 && (edit || setName);
+  const ok = qText(q) && c.trim() && wrong.length >= 1 && (edit || setName);
 
   async function save() {
     if (!ok || busy) return;
@@ -81,7 +83,8 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
               {priv && <p className="n">Private: stays on this device and is never uploaded.</p>}
             </>}
           <label className="cl">Question</label>
-          <textarea value={q} onChange={ev => setQ(ev.target.value)} rows={3} maxLength={3900} placeholder="Type the question" />
+          <textarea value={qText(q)} onChange={ev => setQ(withImg(ev.target.value, parseImg(q)))} rows={3} maxLength={3900} placeholder="Type the question" />
+          <ImageField value={q} onChange={setQ} forceLocal={priv} />
           <label className="cl">Correct answer</label>
           <input type="text" value={c} onChange={ev => setC(ev.target.value)} maxLength={3900} placeholder="The right choice" />
           <label className="cl">Wrong answers <small>({wrong.length} of 5)</small></label>

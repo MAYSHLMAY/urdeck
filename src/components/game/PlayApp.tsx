@@ -102,8 +102,13 @@ function Game({ me, pin, onExit, onEdit }: { me: Identity; pin: string; onExit: 
     return <div className="gm">{Top}<div className="pq">
       <div className="qstat stg" style={{ ['--i' as any]: 0 }}><span className="qn">{s.idx + 1}<small>/{s.total}</small></span><span className="dots">{Array.from({ length: Math.min(s.total, 20) }, (_, i) => <i key={i} className={i < s.idx ? 'd' : i === s.idx ? 'n' : ''} />)}</span><Ring left={left} total={s.q.secs * 1000} size={56} /></div>
       {s.q.text && <div className="qcard stg" style={{ ['--i' as any]: 1 }}>{s.q.text}</div>}
-      {done ? <div className="sent stg"><div className="spin" /><b>Answer locked in</b><span>Waiting for the others…</span></div>
-        : <div className={'ans full' + (s.q.choices.length < 3 ? ' one' : '')}>{s.q.choices.map((t, i) => <button key={i} className={'abtn c' + i} style={{ ['--i' as any]: i }} onClick={() => c.answer(i)}>{SHAPES[i % 4]}<span>{s.q!.text ? t : ''}</span></button>)}</div>}
+      {s.q.img && <img className="qimg stg" style={{ ['--i' as any]: 1 }} src={s.q.img} alt="" />}
+      {s.settings.power && !done && <div className="pows stg" style={{ ['--i' as any]: 2 }}>
+        <button disabled={!!((s.pu?.[me.id] || 0) & 1) || s.q.choices.length < 3} onClick={() => c.usePower('half')}><b>50/50</b><small>remove 2</small></button>
+        <button disabled={!!((s.pu?.[me.id] || 0) & 2) || c.dblOn} className={c.dblOn ? 'on' : ''} onClick={() => c.usePower('dbl')}><b>×2</b><small>{c.dblOn ? 'active' : 'double pts'}</small></button>
+      </div>}
+      {done ? <div className="sent stg"><div className="spin" /><b>Answer locked in</b><span>{c.dblOn ? '×2 points if correct · ' : ''}Waiting for the others…</span></div>
+        : <div className={'ans full' + (s.q.choices.length < 3 ? ' one' : '')}>{s.q.choices.map((t, i) => c.hidden.includes(i) ? <div key={i} className="abtn gone" /> : <button key={i} className={'abtn c' + i} style={{ ['--i' as any]: i }} onClick={() => c.answer(i)}>{SHAPES[i % 4]}<span>{s.q!.text ? t : ''}</span></button>)}</div>}
     </div>{dock}</div>;
   }
   if (s.phase === 'reveal' || s.phase === 'board') {

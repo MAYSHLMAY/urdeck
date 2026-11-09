@@ -1,9 +1,10 @@
+import { qText, parseImg } from '../cardimg';
 import { openChannel, gameChannel, LOBBY, type Chan } from './transport';
 import { api } from '../api';
 import { sfx, setSound, startMusic, stopMusic } from './sound';
 import type { Phase, Player, Score, Settings, Snapshot } from './types';
 
-export interface HostQ { id: string; text: string; choices: string[]; correct: number; set: string }
+export interface HostQ { id: string; text: string; img?: string; choices: string[]; correct: number; set: string }
 interface Ans { choice: number; ms: number }
 interface Tot { t: number; d: number; streak: number; best: number; ok: number; a: number; ms: number[] }
 const K = 'fr-host-v1';
@@ -13,7 +14,7 @@ const shuffle = <T,>(a: T[]) => { a = a.slice(); for (let i = a.length - 1; i > 
 export function makeQuestions(cards: { id: string; q: string; c: string; w: string[]; s: string }[], S: Settings): HostQ[] {
   return shuffle(cards).slice(0, S.count).map(c => {
     const wrong = shuffle(c.w).slice(0, 3), all = [c.c, ...wrong], order = S.shuffle ? shuffle(all.map((_, i) => i)) : all.map((_, i) => i);
-    return { id: c.id, text: c.q, choices: order.map(i => all[i]), correct: order.indexOf(0), set: c.s };
+    return { id: c.id, text: qText(c.q), img: ((): string | undefined => { const i = parseImg(c.q); return i && /^https?:/.test(i.src) ? i.src : undefined; })(), choices: order.map(i => all[i]), correct: order.indexOf(0), set: c.s };
   });
 }
 
@@ -25,6 +26,7 @@ export class Host {
   pin: string; hid: string; title: string; S: Settings; qs: HostQ[];
   phase: Phase = 'lobby'; locked = false; paused = false; idx = -1; v = 0; startedAt = 0; saveState: 'idle' | 'saving' | 'saved' | 'error' = 'idle'; saveMsg = '';
   players = new Map<string, Player>(); online = new Set<string>(); kicked = new Set<string>();
+  used = new Map<string, number>(); dbl = new Set<string>();
   ans = new Map<string, Ans>(); tot = new Map<string, Tot>(); counts: number[] = []; ranks = new Map<string, number>();
   qStart = 0; qEnd = 0; phaseEnd = 0; autoAt = 0; pauseLeft = 0; link: 'connecting' | 'open' | 'closed' = 'connecting';
   history: { text: string; correct: number; counts: number[]; rate: number }[] = [];
@@ -44,6 +46,7 @@ export class Host {
     this.chan.onPresence(list => { this.online = new Set(list.map((m: any) => m && m.id).filter(Boolean)); this.emit(); });
     this.chan.on('join', m => this.onJoin(m));
     this.chan.on('answer', m => this.onAnswer(m));
+    this.chan.on('power', m => this.onPower(m));
     this.chan.on('leave', m => { if (m && m.id) { this.online.delete(m.id); this.emit(); } });
     this.chan.on('hello', m => { if (m && m.id) this.broadcast(false); });
     this.announce(); this.timer = setInterval(() => this.tick(), 200);
@@ -68,6 +71,14 @@ export class Host {
     this.online.add(p.id); this.announce(); this.save(); this.broadcast(); this.emit();
   }
   private pickTeam() { const c = new Array(this.S.teams).fill(0); this.players.forEach(p => { if (p.team != null) c[p.team]++; }); return c.indexOf(Math.min(...c)); }
+  private onPower(m: any) {
+    if (!this.S.power || this.phase !== 'question' || this.paused || !m || m.q !== this.idx || !this.players.has(m.id) || this.ans.has(m.id)) return;
+    const q = this.qs[this.idx], u = this.used.get(m.id) || 0;
+    if (m.kind === 'half' && !(u & 1) && q.choices.length >= 3) {
+      const wrong = q.choices.map((_, i) => i).filter(i => i !== q.correct), hide = shuffle(wrong).slice(0, Math.min(2, wrong.length - 1));
+      this.used.set(m.id, u | 1); this.chan.send('half', { id: m.id, q: this.idx, hide }); this.broadcast(false);
+    } else if (m.kind === 'dbl' && !(u & 2) && !this.dbl.has(m.id)) { this.used.set(m.id, u | 2); this.dbl.add(m.id); this.chan.send('dbl', { id: m.id, q: this.idx }); this.broadcast(false); }
+  }
   private onAnswer(m: any) {
     if (this.phase !== 'question' || this.paused || !m || m.q !== this.idx || !this.players.has(m.id) || this.ans.has(m.id)) return;
     const q = this.qs[this.idx], c = Number(m.choice); if (!Number.isInteger(c) || c < 0 || c >= q.choices.length) return;
@@ -89,7 +100,7 @@ export class Host {
   private toCountdown() { this.phase = 'countdown'; this.phaseEnd = Date.now() + 3000; this.afterChange(); }
   private nextQuestion() {
     this.idx++; if (this.idx >= this.qs.length) { this.toPodium(); return; }
-    this.phase = 'question'; this.ans.clear(); this.qStart = Date.now(); this.qEnd = this.qStart + this.S.secs * 1000; this.counts = []; this.afterChange(); sfx.go();
+    this.phase = 'question'; this.ans.clear(); this.dbl.clear(); this.qStart = Date.now(); this.qEnd = this.qStart + this.S.secs * 1000; this.counts = []; this.afterChange(); sfx.go();
   }
   private doReveal() {
     const q = this.qs[this.idx]; this.phase = 'reveal';
@@ -105,6 +116,7 @@ export class Host {
           const frac = Math.min(1, a.ms / (this.S.secs * 1000)); let base = Math.round(1000 * (1 - frac / 2)); if (this.S.points === 'double') base *= 2;
           t.d = base + (this.S.streak && t.streak >= 2 ? Math.min(500, (t.streak - 1) * 100) : 0);
         }
+        if (this.dbl.has(p.id) && this.S.points !== 'none') t.d *= 2;
         t.t += t.d;
       } else t.streak = 0;
     });
@@ -141,7 +153,7 @@ export class Host {
   }
   /** Play again with the same people. */
   again(qs: HostQ[]) {
-    this.qs = qs; this.phase = 'lobby'; this.idx = -1; this.tot.clear(); this.ranks.clear(); this.ans.clear(); this.history = []; this.saveState = 'idle'; this.saveMsg = ''; this.paused = false;
+    this.qs = qs; this.phase = 'lobby'; this.idx = -1; this.tot.clear(); this.ranks.clear(); this.ans.clear(); this.used.clear(); this.dbl.clear(); this.history = []; this.saveState = 'idle'; this.saveMsg = ''; this.paused = false;
     this.afterChange();
   }
   private tick() {
@@ -163,9 +175,9 @@ export class Host {
     if (this.phase === 'reveal' || this.phase === 'board' || this.phase === 'podium') this.players.forEach(p => { const t = this.tot.get(p.id); if (t) scores[p.id] = { t: t.t, d: t.d, r: this.ranks.get(p.id) || 0, s: t.streak, ok: t.ok, a: t.a }; });
     const s: Snapshot = {
       v: ++this.v, pin: this.pin, hid: this.hid, title: this.title, phase: this.phase, settings: this.S, locked: this.locked, paused: this.paused,
-      players: [...this.players.values()], idx: this.idx, total: this.qs.length, answered: this.ans.size, scores,
+      players: [...this.players.values()], idx: this.idx, total: this.qs.length, answered: this.ans.size, scores, pu: this.S.power ? this.puMap() : undefined,
     };
-    if (q && this.phase === 'question') s.q = { text: this.S.showQ ? q.text : '', choices: q.choices, secs: this.S.secs, remaining: this.paused ? this.pauseLeft : Math.max(0, this.qEnd - now) };
+    if (q && this.phase === 'question') s.q = { text: this.S.showQ ? q.text : '', img: this.S.showQ ? q.img : undefined, choices: q.choices, secs: this.S.secs, remaining: this.paused ? this.pauseLeft : Math.max(0, this.qEnd - now) };
     if (q && this.phase === 'countdown') s.q = { text: '', choices: [], secs: 0, remaining: this.paused ? this.pauseLeft : Math.max(0, this.phaseEnd - now) };
     if (q && (this.phase === 'reveal' || this.phase === 'board')) s.reveal = { correct: q.correct, counts: this.counts, choices: q.choices };
     if (this.S.teams) s.teamScores = this.teamScores();
@@ -176,6 +188,7 @@ export class Host {
     this.players.forEach(p => { if (p.team != null) { n[p.team]++; sum[p.team] += this.tot.get(p.id)?.t || 0; } });
     return sum.map((v, i) => (n[i] ? Math.round(v / n[i]) : 0));
   }
+  puMap() { const o: Record<string, number> = {}; this.used.forEach((v, k) => { o[k] = v; }); return o; }
   private broadcast(count = true) { this.lastBeat = Date.now(); if (this.chan) this.chan.send('snap', this.snapshot()); void count; }
   private announce() {
     if (!this.lobby) return;

@@ -1,4 +1,6 @@
 'use client';
+import { qText } from '@/lib/cardimg';
+import { CardFigure } from './CardFigure';
 import { useEffect, useMemo, useState } from 'react';
 import { fnv } from '@/lib/fnv';
 import type { QCard } from '@/lib/types';
@@ -113,8 +115,9 @@ function Tile({ q, mode, show, open, onToggle, onEdit }: { q: QCard; mode: Mode;
     <article className={'btile' + (open ? ' open' : '') + (mode === 'shaky' ? ' sh' : '')}>
       {e.isMissed(q.id) && <small className="bmiss">missed {e.MIS[q.id].w}×</small>}
       <button className="bq" onClick={onToggle} aria-expanded={open}>
-        <span>{q.q}</span>
+        <span>{qText(q.q)}</span>
       </button>
+      {open && <CardFigure q={q.q} reveal compact />}
       {show === 'full' && <ul className="bopt">{opts.map((o, i) => <li key={i} className={open && o.ok ? 'ok' : ''}><kbd>{i + 1}</kbd>{o.t}</li>)}</ul>}
       {show !== 'full' && open && <p className="ba"><Ic n="check" /> {q.c}</p>}
       <div className="bact">

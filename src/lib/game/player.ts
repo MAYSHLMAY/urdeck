@@ -8,6 +8,7 @@ export type Status = 'joining' | 'in' | 'denied' | 'kicked' | 'lost' | 'ended';
 export class PlayerClient {
   snap: Snapshot | null = null; status: Status = 'joining'; why = ''; link: 'connecting' | 'open' | 'closed' = 'connecting';
   myAnswer: number | null = null; myAnswerIdx = -1; recvAt = 0; lastResult: 'right' | 'wrong' | 'none' | null = null; lastIdx = -1;
+  hidden: number[] = []; dblOn = false;
   private chan!: Chan; private subs = new Set<() => void>(); private t: any; private tries = 0; private joined = 0;
   constructor(public pin: string, public me: Player) {}
   subscribe(f: () => void) { this.subs.add(f); return () => { this.subs.delete(f); }; }
@@ -17,6 +18,8 @@ export class PlayerClient {
     this.chan.track({ id: this.me.id });
     this.chan.onStatus(s => { this.link = s; if (s === 'open') this.join(); this.emit(); });
     this.chan.on('snap', (s: Snapshot) => this.onSnap(s));
+    this.chan.on('half', m => { if (m && m.id === this.me.id && this.snap && m.q === this.snap.idx) { this.hidden = m.hide || []; this.emit(); } });
+    this.chan.on('dbl', m => { if (m && m.id === this.me.id && this.snap && m.q === this.snap.idx) { this.dblOn = true; this.emit(); } });
     this.chan.on('deny', m => { if (m && m.id === this.me.id) { this.status = 'denied'; this.why = m.why || 'You cannot join this game.'; this.emit(); } });
     this.chan.on('kick', m => { if (m && m.id === this.me.id) { this.status = 'kicked'; this.emit(); } });
     this.chan.on('bye', () => { this.status = 'ended'; this.emit(); });
@@ -39,6 +42,7 @@ export class PlayerClient {
       if (right) sfx.right(); else sfx.wrong();
     }
     if (s.phase === 'podium' && (!prev || prev.phase !== 'podium')) sfx.fanfare();
+    if (s.phase === 'question' && (!prev || prev.phase !== 'question' || prev.idx !== s.idx)) { this.hidden = []; this.dblOn = false; }
     if (s.phase === 'question' && (!prev || prev.phase !== 'question')) sfx.go();
     if (s.phase === 'lobby' && prev && prev.phase !== 'lobby') this.myAnswer = null;
     this.emit();
@@ -47,6 +51,7 @@ export class PlayerClient {
     const s = this.snap; if (!s || s.phase !== 'question' || this.myAnswer != null || s.paused) return;
     this.myAnswer = choice; this.chan.send('answer', { id: this.me.id, q: s.idx, choice }); this.emit();
   }
+  usePower(kind: 'half' | 'dbl') { const s = this.snap; if (!s || s.phase !== 'question' || this.myAnswer != null || s.paused) return; this.chan.send('power', { id: this.me.id, q: s.idx, kind }); }
   /** milliseconds left of the current question on this device */
   left(): number { const s = this.snap; if (!s || !s.q) return 0; if (s.paused) return s.q.remaining; return Math.max(0, s.q.remaining - (Date.now() - this.recvAt)); }
   leave() { try { this.chan.send('leave', { id: this.me.id }); } catch { /* ignore */ } clearInterval(this.t); setTimeout(() => this.chan.close(), 200); }

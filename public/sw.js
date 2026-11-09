@@ -31,3 +31,20 @@ self.addEventListener('fetch', e => {
     catch (err) { const hit = await c.match(req) || (req.mode === 'navigate' ? await c.match('/') : null); if (hit) return hit; throw err; }
   })());
 });
+
+/* Study reminder (see src/lib/remind.ts): periodic sync fires roughly when the browser allows; show it if it is past the set time and nothing was studied today. */
+self.addEventListener('periodicsync', e => {
+  if (e.tag !== 'fr-remind') return;
+  e.waitUntil((async () => {
+    const r = await (await caches.open('fr-state')).match('/__remind'); if (!r) return;
+    const st = await r.json(), now = new Date(), [h, m] = st.hhmm.split(':').map(Number);
+    const t = new Date(); t.setHours(h, m, 0, 0);
+    const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    if (now >= t && now - t < 5 * 3600 * 1000 && st.last !== today) await self.registration.showNotification('Time to study', { tag: 'fr-remind', body: st.body, icon: '/icon-192.png', data: { url: '/study' } });
+  })());
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => { for (const c of cs) { if ('focus' in c) { c.navigate(url).catch(() => {}); return c.focus(); } } return self.clients.openWindow(url); }));
+});

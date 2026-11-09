@@ -5,6 +5,7 @@ import { useEngine, esc, Ic, ask } from './ui';
 import { useRefs } from './refHooks';
 import { renderQuestion } from './Highlights';
 import { isOwner } from '@/lib/api';
+import { CardFigure } from './CardFigure';
 
 export type CardAct = (mode: 'edit' | 'add', id: string, section: string) => void;
 
@@ -20,7 +21,11 @@ export function Stage({ onInfo, onCard }: { onInfo: (id: string) => void; onCard
 
 function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: CardAct }) {
   const e = useEngine(), R = useRefs(), cur = e.cur!, c = e.get(cur.id), x = e.O, ph = e.phase, i = e.chosen;
-  const [menu, setMenu] = useState(false);
+  const [menu, setMenu] = useState(false), [dx, setDx] = useState(0), sw = useRef<{ x: number; y: number; h: boolean | null } | null>(null);
+  const swipe = (dir: 1 | -1) => {
+    if (dir === 1) { if (ph === 'ok') e.grade(2); else if (ph === 'bad' || ph === 'cr') e.show(); }
+    else if (ph === 'q') e.laterQ(); else if (ph === 'ok' && !e.O.autoGood) e.grade(1);
+  };
   const qRef = useRef<HTMLHeadingElement>(null), fbRef = useRef<HTMLDivElement>(null);
   const flag = e.S.cards[cur.id];
   const mark = !!(flag && flag.mark);
@@ -40,7 +45,16 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
   const wm = x.wrongMin === x.wrongMax ? x.wrongMin : x.wrongMin + '–' + x.wrongMax;
 
   return (
-    <div className="card pop" key={e.showN}>
+    <div className="card pop" key={e.showN}
+      onTouchStart={ev => { const t = ev.touches[0]; sw.current = { x: t.clientX, y: t.clientY, h: null }; }}
+      onTouchMove={ev => {
+        const g = sw.current; if (!g) return; const t = ev.touches[0], mx = t.clientX - g.x, my = t.clientY - g.y;
+        if (g.h === null && (Math.abs(mx) > 12 || Math.abs(my) > 12)) g.h = Math.abs(mx) > Math.abs(my) * 1.6 && !window.getSelection()?.toString();
+        if (g.h) setDx(Math.max(-140, Math.min(140, mx)));
+      }}
+      onTouchEnd={() => { const g = sw.current; sw.current = null; if (g?.h) { if (dx > 90) swipe(1); else if (dx < -90) swipe(-1); } setDx(0); }}
+      onTouchCancel={() => { sw.current = null; setDx(0); }}
+      style={dx ? { transform: `translateX(${dx * 0.5}px) rotate(${dx / 50}deg)`, transition: 'none' } : { transition: 'transform .3s cubic-bezier(.2,.8,.2,1)' }}>
       <div className="qhead">
         <span className="l">
           {cur.p ? <><b className="tag">PAST EXAM</b> </> : null}
@@ -62,6 +76,7 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
         </span>
       </div>
       <h2 className="q" ref={qRef} />
+      <CardFigure key={cur.id} q={cur.q} reveal={answered} />
       <div className="opts">
         {e.curOpts.map((o, k) => (
           <button key={k} className={'opt' + (answered ? (o.ok ? ' right' : k === i ? ' wrong' : '') : '')} disabled={answered} onClick={() => e.answer(k)}>
@@ -77,6 +92,7 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
         </button>
       </div>
       {!answered && <div className="row"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button><button className="ghost" onClick={() => e.answer(-1)}>I don’t know</button></div>}
+      <p className="swh">{!answered ? '← swipe left: ask me later' : ph === 'ok' && !x.autoGood ? '→ swipe right: Good · ← Hard' : '→ swipe right: continue'}</p>
       <div id="fb" ref={fbRef}>
         {ph === 'cr' && <>
           <p className={'say ' + (good ? 'yes' : 'no')}>{good ? 'Correct.' : (i! < 0 ? 'No problem.' : 'Not quite.')} Practice mode: nothing is rescheduled.</p>

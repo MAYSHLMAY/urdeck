@@ -5,6 +5,7 @@ import { api, isOwner, lock, unlock } from '@/lib/api';
 import { dl, Sheet, SheetFrame, useEngine, Ic, ask } from './ui';
 import { useRefs } from './refHooks';
 import { SyncPanel } from './SyncPanel';
+import { askPermission, scheduleReminder, supportsReminders } from '@/lib/remind';
 import { ACCENTS, applyLook, getLook } from '@/lib/look';
 
 type F = [string, string, string, any?, any?, number?, string?, string?];
@@ -14,11 +15,13 @@ const BASIC: [string, string, F[]][] = [
     ['maxRev', 'Maximum reviews per day', 'num', 0, 2000, 10, '', '0 means no limit'],
     ['newOrder', 'New card order', 'sel', [['seq', 'In order'], ['rand', 'Random']]],
     ['mix', 'Show new cards', 'sel', [['after', 'After reviews'], ['mixed', 'Mixed with reviews'], ['first', 'Before reviews']]],
+    ['dailyGoal', 'Daily goal (answers)', 'num', 5, 500, 5, '', 'The ring on Home fills as you answer'],
     ['exam', 'Exam date', 'date', 0, 0, 0, '', 'Shows a countdown and a daily pace']]],
   ['Look', 'palette', [
     ['theme', 'Theme', 'sel', [['auto', 'Match device'], ['light', 'Light'], ['dark', 'Dark']]],
     ['size', 'Text size', 'sel', [['s', 'Small'], ['m', 'Medium'], ['l', 'Large'], ['xl', 'Extra large']]],
-    ['vib', 'Vibrate on a wrong answer', 'chk']]]
+    ['vib', 'Vibrate on a wrong answer', 'chk'],
+    ['sound', 'Answer sounds', 'chk']]]
 ];
 const ADVANCED: [string, F[]][] = [
   ['Scheduling', [
@@ -41,6 +44,24 @@ const ADVANCED: [string, F[]][] = [
     ['fuzz', 'Slightly randomise long intervals', 'chk'],
     ['autoGood', 'Quick rating: correct counts as Good', 'chk', '', '', 0, '', 'Hard and Easy stay available as small buttons']]]
 ];
+
+function Reminder() {
+  const e = useEngine(), [msg, setMsg] = useState(''), v = (e.O.remind as string) || '';
+  const apply = async (t: string) => {
+    if (t) { const err = await askPermission(); if (err) { setMsg(err); return; } }
+    e.O.remind = t; e.later = {}; e.save(); e.emit(); await scheduleReminder(e); setMsg(t ? 'Reminder set for ' + t + '.' : 'Reminder off.');
+  };
+  return (
+    <div className="f swf"><label>Daily reminder<small>A notification at this time, with how many cards are waiting</small></label>
+      <div className="row" style={{ alignItems: 'center' }}>
+        <input type="time" value={v} onChange={ev => apply(ev.target.value)} disabled={!supportsReminders()} />
+        {v && <button type="button" className="ghost" onClick={() => apply('')}>Turn off</button>}
+      </div>
+      {msg && <p className="n">{msg}</p>}
+      {!msg && v && <p className="n">Works best once the app is installed (Add to Home Screen). Browsers cannot always wake a closed app, so a push server would be needed for guaranteed delivery.</p>}
+    </div>
+  );
+}
 
 function Swatches() {
   const [a, setA] = useState(getLook().a);
@@ -108,7 +129,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
       <SheetFrame title="Settings" onClose={onClose}>
         <div className="sc setp">
           {BASIC.map(([g, ic, fs]) => (
-            <section className="scard" key={g}><h4><Ic n={ic} />{g}</h4>{g === 'Look' && <Swatches />}{fs.map(field)}</section>
+            <section className="scard" key={g}><h4><Ic n={ic} />{g}</h4>{g === 'Look' && <Swatches />}{g === 'Studying' && <Reminder />}{fs.map(field)}</section>
           ))}
 
           <section className="scard"><h4><Ic n="key" />Owner</h4>

@@ -130,3 +130,12 @@ Note (design): there is no footer. On phones a fixed bottom tab bar (Home, Study
 - Phones get a floating bottom tab bar, bottom-sheet dialogs and an app-style home (`Today` card, quick actions, swipeable topics).
 - PDF reader has a visible, draggable scroll handle in addition to the scrollbar.
 - Live quiz: face characters (`components/game/Avatar.tsx`) with moods; the player's character sits at the bottom of the screen and gets happy or angry after each answer. Older stick-figure codes still load as characters.
+
+## 9. Pictures, import/export, goals, exam, reminders
+- **Card pictures:** in the card editor, "Picture" adds a diagram; tap it to drop numbered pins and name them. Learners tap a pin to reveal its name; after answering all names show. Stored inside the question text as `<!--img:SRC|name@x,y-->` (no database change). Owner uploads go to a public Storage bucket `card-images` (created automatically by `/api/cardimg` with the service key); private cards keep a small shrunken copy on the device.
+- **Import/export:** Add (+) → Import / export. CSV columns: set, question, correct, wrong1..wrong5, image, pins. Anki text and two-column Quizlet-style files also import (wrong choices are borrowed from other cards). Export as CSV or Anki text.
+- **Goals:** daily goal (Settings → Studying), streak freezes (one earned per 7-day streak, max 2, used automatically to cover missed days), 10 badges, and a "Needs work" list of weak topics on Home.
+- **Mock exam:** `/exam` timed mixed test, no feedback until submit, score by topic, wrong answers can go to Shaky; wrong answers feed the Mistakes list.
+- **Quiz power-ups:** 50/50 and ×2 points, once each per player (host switch "Power-ups").
+- **Study feel:** swipe right/left on the card, optional answer sounds, vibration, offline pill.
+- **Reminders:** Settings → Studying → Daily reminder. Best effort without a push server (scheduled notification, periodic sync for installed apps, timer while open). Guaranteed delivery needs Web Push (VAPID keys + a scheduled job).

@@ -8,6 +8,7 @@ import { DEF, M, D, addDays, dayStart, fmtIv, lab as labFn, nxt, steps, ymd, typ
 import { applyMut, buildTree, emptyTree, fpath, type Tree } from './tree';
 import { emptyMeta, fetchMeta, readCache, saveCards, syncCards, type Meta } from './library';
 import { api, isOwner } from './api';
+import { setSound, sfx } from './game/sound';
 import type { Card, FoldDB, LocalPack, Mut, QCard } from './types';
 
 const K_MIS = 'fr-mistakes-v1', K_SH = 'fr-shaky-v1', K_MY = 'fr-my-v1', K_PROG = 'fr-progress-v1', K_MINE = 'fr-mine-v1', K_FOLD = 'fr-folders-local-v1', K_NOTES = 'fr-notes-v1';
@@ -370,7 +371,15 @@ export class Engine {
   }
   streakTick() {
     const S = this.S, now = Date.now(), t = this.dayKey(now); if (S.last === t) return;
-    S.streak = S.last === this.dayKey(addDays(this.dayStart(now), -1)) ? S.streak + 1 : 1; S.last = t; S.best = Math.max(S.best || 0, S.streak);
+    const yest = this.dayKey(addDays(this.dayStart(now), -1));
+    if (S.last === yest) S.streak += 1;
+    else {
+      // missed days can be covered by streak freezes (one is earned for every 7 days in a row, up to 2)
+      let gap = 0; if (S.last) { for (let k = 1; k < 60; k++) { if (this.dayKey(addDays(this.dayStart(now), -k)) === S.last) { gap = k - 1; break; } } }
+      if (S.last && S.streak > 0 && gap > 0 && gap <= (S.freeze || 0)) { S.freeze -= gap; S.streak += 1; S.saved = (S.saved || 0) + gap; } else S.streak = 1;
+    }
+    if (S.streak > 0 && S.streak % 7 === 0 && S.lastFz !== S.streak) { S.freeze = Math.min(2, (S.freeze || 0) + 1); S.lastFz = S.streak; }
+    S.last = t; S.best = Math.max(S.best || 0, S.streak);
   }
   logAns(good: boolean, wasReview: boolean) {
     const S = this.S, dk = this.dayKey(Date.now()), L = S.log[dk] || (S.log[dk] = { n: 0, k: 0, r: 0, rk: 0 });
@@ -411,7 +420,10 @@ export class Engine {
       const sp = this.speed; if (good) sp.right++; else { sp.wrong++; sp.missed.push(cur.id); }
       setTimeout(() => { if (this.speed && this.phase === 'cr' && this.cur && this.cur.id === cur.id) this.show(); }, good ? 450 : 1400);
     }
-    if (!good && x.vib && typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(40);
+    if (typeof navigator !== 'undefined') {
+      if (x.vib && navigator.vibrate) navigator.vibrate(good ? 12 : [40, 40, 40]);
+      if (x.sound) { setSound(true); (good ? sfx.right : sfx.wrong)(); }
+    }
     if (this.cram) { this.phase = 'cr'; this.emit(); return; }
     this.pend = this.snap(cur.id); this.phase = good ? 'ok' : 'bad';
     S.done++; if (good) S.ok++; this.streakTick(); if (cur.p) { this.PE.seen[cur.id] = 1; this.persist(); }

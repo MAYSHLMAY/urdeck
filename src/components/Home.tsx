@@ -9,6 +9,8 @@ import { Settings } from './Settings';
 import { BUILTIN } from '@/lib/models';
 import { isOwner } from '@/lib/api';
 import { watchLobby } from '@/lib/game/player';
+import { scheduleReminder } from '@/lib/remind';
+import { badges, newBadges, todayCount, weakTopics } from '@/lib/goals';
 import { SiteNav } from './SiteChrome';
 
 /** The landing page: every category (pool) is a card with its card sets, PDFs and 3D models in one place. */
@@ -25,10 +27,14 @@ export default function Home() {
     document.documentElement.style.setProperty('--fs', ({ s: '14.5px', m: '16px', l: '18px', xl: '20px' } as any)[o.size] || '16px');
   }, [o.theme, o.size]);
 
+  useEffect(() => { if (mounted && e.ready) scheduleReminder(e); }, [mounted, e.ready, e.ver]); // eslint-disable-line
+  useEffect(() => { try { if (!mounted || !e.ready) return; newBadges(e).forEach(b => e.toast('Badge earned: ' + b.title)); } catch { /* ignore */ } }, [mounted, e.ver]); // eslint-disable-line
+
   if (!mounted) return <div className="wrap"><p className="info">Loading…</p></div>;
 
   const c = e.counts(), S = e.S, now = Date.now();
-  const live = S.last === e.dayKey(now) || S.last === e.dayKey(e.addDays(e.dayStart(now), -1));
+  let live = false; for (let k = 0; k <= 1 + (S.freeze || 0); k++) if (S.last === e.dayKey(e.addDays(e.dayStart(now), -k))) live = true;
+  const goal = e.O.dailyGoal || 20, tc = todayCount(e), gp = Math.min(1, tc / goal), bs = badges(e), wk = weakTopics(e);
   const model = (id: string) => R.modelCat[id];
   const allModels = [...BUILTIN, ...R.models.filter(m => !BUILTIN.some(b => b.id === m.id))];
   const looseModels = allModels.filter(m => !model(m.id) || !R.category(model(m.id)));
@@ -72,16 +78,24 @@ export default function Home() {
           <Link href="/study"><i><Ic n="cap" /></i>Study</Link>
           <Link href="/play"><i><Ic n="play" /></i>Quiz</Link>
           <Link href="/lab"><i><Ic n="cube" /></i>3D lab</Link>
-          {isOwner() ? <Link href="/host"><i><Ic n="star" /></i>Host</Link> : <button onClick={() => go('all')}><i><Ic n="layers" /></i>Library</button>}
+          <Link href="/exam"><i><Ic n="clock" /></i>Exam</Link>
+          {isOwner() && <Link href="/host"><i><Ic n="star" /></i>Host</Link>}
         </nav>
 
         {liveG.length > 0 && liveG.slice(0, 2).map((g: any) => <Link key={g.pin} className="livebn" href={'/play?pin=' + g.pin}><i className="pulse" /><b>Live now: {g.title}</b><span>Join</span></Link>)}
 
         <section className="panel">
-          <div className="streakln"><Ic n="fire" /><b>{live ? S.streak : 0}</b> day streak{e.examInfo() ? <small> · {e.examInfo()}</small> : null}</div>
+          <div className="streakln"><Ic n="fire" /><b>{live ? S.streak : 0}</b> day streak{(S.freeze || 0) > 0 ? <small className="fz"><Ic n="snow" /> {S.freeze} freeze{S.freeze > 1 ? 's' : ''}</small> : null}{e.examInfo() ? <small> · {e.examInfo()}</small> : null}</div>
+          <div className="goalbar" aria-label="Daily goal"><div><i style={{ width: gp * 100 + '%' }} className={gp >= 1 ? 'full' : ''} /></div><span>{tc >= goal ? 'Goal reached!' : tc + ' / ' + goal + ' today'}</span></div>
           <div className="week" aria-label="Answers in the last 7 days">{week.map((w, i) => <div key={i} title={w.n + ' answers'}><i style={{ height: Math.max(6, w.n / wmax * 100) + '%', animationDelay: i * 50 + 'ms' }} className={w.n ? 'on' : ''} /><small>{w.d}</small></div>)}</div>
         </section>
 
+        {wk.length > 0 && <>
+          <div className="shead"><h2>Needs work</h2><span>Based on your answers</span></div>
+          <div className="insights">{wk.map(w => <button key={w.s} className="ins" onClick={() => go(w.s)}><div><b>{w.label}</b><small>{Math.round(w.acc * 100)}% right · {w.tried} tries{w.missed ? ' · ' + w.missed + ' missed' : ''}</small></div><span className="meter"><i style={{ width: Math.round(w.acc * 100) + '%' }} /></span><Ic n="arrowR" /></button>)}</div>
+        </>}
+        <div className="shead"><h2>Badges</h2><span>{bs.filter(b => b.have).length} of {bs.length}</span></div>
+        <div className="badges">{bs.map(b => <div key={b.id} className={'bdg' + (b.have ? ' on' : '')} title={b.desc}><i><Ic n={b.icon} /></i><b>{b.title}</b><small>{b.have ? 'Earned' : b.cur + ' / ' + b.need}</small></div>)}</div>
         <div className="shead"><h2>Topics</h2><span>Cards, PDFs and 3D models</span></div>
         {R.loading && !R.loaded && <p className="info">Loading topics…</p>}
         {R.error && <p className="info">{R.error}</p>}

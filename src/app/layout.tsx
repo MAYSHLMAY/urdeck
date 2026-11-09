@@ -3,6 +3,7 @@ import './globals.css';
 import './reference.css';
 import './home.css';
 import './browse.css';
+import { OfflineBadge } from '@/components/OfflineBadge';
 import { SyncBoot } from '@/components/SyncBoot';
 import { TabBar } from '@/components/SiteChrome';
 import './theme.css';
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" />
       </head>
-      <body><SyncBoot />{children}<TabBar /></body>
+      <body><SyncBoot /><OfflineBadge />{children}<TabBar /></body>
     </html>
   );
 }

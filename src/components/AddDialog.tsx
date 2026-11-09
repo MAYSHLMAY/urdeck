@@ -1,4 +1,5 @@
 'use client';
+import { importToPack, cardsToCsv, cardsToAnki, downloadText } from '@/lib/exchange';
 import { useEffect, useState } from 'react';
 import { foldList } from '@/lib/tree';
 import { parseRaw } from '@/lib/parse';
@@ -10,7 +11,7 @@ import { Sheet, SheetFrame, useEngine, Ic } from './ui';
 export function AddDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const e = useEngine();
   const [own, setOwn] = useState(false), [pw, setPw] = useState(''), [pwm, setPwm] = useState('');
-  const [tab, setTab] = useState<'F' | 'C'>('F');
+  const [tab, setTab] = useState<'F' | 'C' | 'X'>('F');
   const [where, setWhere] = useState('root'), [fname, setFname] = useState(''), [cpath, setCpath] = useState(''), [ctags, setCtags] = useState(''), [paste, setPaste] = useState('');
   const [msg, setMsg] = useState<{ t: string; c: string }>({ t: '', c: '' });
   const [packs, setPacks] = useState<any[]>([]);
@@ -85,10 +86,33 @@ export function AddDialog({ open, onClose }: { open: boolean; onClose: () => voi
               <div className="tabs2">
                 <button type="button" className={tab === 'F' ? 'on' : ''} onClick={() => setTab('F')}>New folder</button>
                 <button type="button" className={tab === 'C' ? 'on' : ''} onClick={() => setTab('C')}>Add cards</button>
+                <button type="button" className={tab === 'X' ? 'on' : ''} onClick={() => setTab('X')}>Import / export</button>
               </div>
               <label>Where</label>
               <select value={whereVal} onChange={ev => setWhere(ev.target.value)}>{L.map(x => <option key={x.id} value={x.id}>{x.label}</option>)}</select>
-              {tab === 'F' ? (
+              {tab === 'X' ? (
+                <div>
+                  <p className="n">Import a <b>CSV</b> (columns: set, question, correct, wrong1…wrong5, image, pins), an <b>Anki</b> text export, or a two-column <b>Quizlet/Anki</b> file (front, back). Two-column files get their wrong choices borrowed from the other cards.</p>
+                  <input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain,text/tab-separated-values" multiple disabled={busy}
+                    onChange={async ev => {
+                      const t = ev.target, fs = Array.from(t.files || []); t.value = ''; if (!fs.length) return;
+                      setBusy(true); const out: string[] = []; let bad = false;
+                      for (const f of fs) {
+                        const r = importToPack(f.name, await f.text(), '');
+                        if (!r.n) { out.push(f.name + ': ' + (r.note || 'no usable cards found')); bad = true; continue; }
+                        const a = await e.addPack(f.name.replace(/\.[^.]+$/, '') + '.txt', r.text, await whereFor(r.text), ctags.trim());
+                        out.push(a.msg + (r.borrowed ? ' (wrong choices borrowed from other cards)' : '') + (r.skipped ? ` · ${r.skipped} row(s) skipped` : '')); if (!a.ok) bad = true;
+                      }
+                      setBusy(false); say(out.join('\n'), bad ? 'err' : 'ok');
+                    }} />
+                  <label>Export your library</label>
+                  <div className="row">
+                    <button type="button" className="ghost" onClick={() => downloadText('flight-recall-cards.csv', cardsToCsv(e.Q), 'text/csv')}>Download CSV</button>
+                    <button type="button" className="ghost" onClick={() => downloadText('flight-recall-anki.txt', cardsToAnki(e.Q))}>Download for Anki</button>
+                  </div>
+                  <p className="n">CSV keeps pictures and pins. Anki import: File → Import, choose the .txt, tick "Allow HTML in fields".</p>
+                </div>
+              ) : tab === 'F' ? (
                 <div>
                   <label>Folder name, or a path like <b>Materials/Chapter 1</b> (missing folders are created automatically)</label>
                   <input type="text" value={fname} onChange={ev => setFname(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter') mkFolder(); }} placeholder="e.g. Materials/Chapter 1" maxLength={120} autoComplete="off" />
