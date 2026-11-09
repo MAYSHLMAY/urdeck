@@ -64,6 +64,8 @@ input[type=range]{height:26px}
 .ico{border-radius:14px}
 .card{border-radius:26px;box-shadow:var(--shadow);border-color:transparent}
 .opt{border-radius:18px;border-color:transparent;background:var(--card);box-shadow:var(--shadow)}
+.right{border-color:var(--ok);background:var(--okbg)}.wrong{border-color:var(--bad);background:var(--badbg);animation:shake .35s}
+
 .opt:hover:not(:disabled){border-color:var(--acc)}
 .scard{border-radius:20px}
 #toast{border-radius:16px}
