@@ -74,6 +74,8 @@ input[type=range]{height:26px}
 .swc.on{box-shadow:0 0 0 3px var(--sw)}
 .swc.on::after{content:"";position:absolute;inset:0;margin:auto;width:10px;height:6px;border:solid #fff;border-width:0 0 3px 3px;transform:translateY(-2px) rotate(-45deg) scale(.9);width:14px;height:8px;top:-4px;left:0;right:0}
 .swf{display:block!important}
+.right{border-color:var(--ok);background:var(--okbg)}.wrong{border-color:var(--bad);background:var(--badbg);animation:shake .35s}
+
 
 /* ---- app bar ---- */
 .snav{background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:0;box-shadow:0 1px 0 var(--line)}
