@@ -303,3 +303,16 @@ input[type=range]{height:26px}
 .occmode button small{color:var(--mute);font-size:.72rem}.occmode button.on{border-color:var(--acc);background:var(--accbg)}
 .qimg.occw,.occw>.qimg{max-width:100%}
 .nopins .imgprev,.nopins .imgf .n,.nopins .imgf .wrow{display:none}
+
+/* ---- Manage cards ---- */
+.manage .mgf{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}.manage .mgf input[type=search],.manage .mgf .pickr{grid-column:1/-1}
+.mgsel{display:flex;justify-content:space-between;align-items:center;margin:4px 0}
+.mglist{max-height:44dvh;overflow:auto}
+.mgrow{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:14px;border:1.5px solid transparent}.mgrow.on{background:var(--accbg);border-color:var(--acc)}
+.mgtx{flex:1;min-width:0;text-align:left;font:inherit;background:none;border:0;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;padding:2px 0}
+.mgtx span,.mgtx small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}.mgtx small{color:var(--mute)}
+.mgk{font-size:.68rem;font-weight:700;color:var(--mute);white-space:nowrap}
+.mgpanel{display:flex;flex-direction:column;gap:6px;padding:10px;border:1.5px solid var(--line);border-radius:16px;margin:8px 0}
+.mgact{display:flex;flex-wrap:wrap;gap:6px}.mgmsg{margin:6px 0;font-weight:650}
+.manage .btabs,.manage .mgf,.manage .mgsel,.manage .mgmsg,.manage .mgpanel,.manage .mgact,.manage .mglist,.manage>*>.n{margin-left:14px;margin-right:14px}
+.manage .mgact{padding-bottom:8px}

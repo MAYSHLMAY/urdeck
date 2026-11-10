@@ -18,7 +18,7 @@ const load = () => { try { return JSON.parse(localStorage.getItem(K) || 'null') 
  *  - Show only the questions, question + answer, or question + choices; tap a card to reveal its answer.
  *  - Density controls how many cards fit on screen. Nothing here touches the schedule.
  */
-export function Browse({ open, onClose, onEdit, onPick }: { open: boolean; onClose: () => void; onEdit: (id: string) => void; onPick: () => void }) {
+export function Browse({ open, onClose, onEdit, onPick, onManage }: { onManage?: () => void; open: boolean; onClose: () => void; onEdit: (id: string) => void; onPick: () => void }) {
   const e = useEngine();
   const [mode, setMode] = useState<Mode>('study'), [show, setShow] = useState<Show>('q'), [dens, setDens] = useState<Dens>('some');
   const [all, setAll] = useState(false), [rev, setRev] = useState<Set<string>>(new Set()), [limit, setLimit] = useState(PAGE), [shut, setShut] = useState<Set<string>>(new Set());
@@ -54,7 +54,7 @@ export function Browse({ open, onClose, onEdit, onPick }: { open: boolean; onClo
     <Sheet open={open} onClose={onClose} className="sheet browse">
       <SheetFrame title={<span className="ttl"><Ic n="grid" /> Browse</span>} onClose={onClose}>
         <div className="bhead">
-          <p className="bsel"><span>{e.selLabel()}</span><button className="ghost" onClick={() => { onClose(); onPick(); }}>Change</button></p>
+          <p className="bsel"><span>{e.selLabel()}</span><button className="ghost" onClick={() => { onClose(); onPick(); }}>Change</button>{onManage && <button className="ghost" onClick={() => { onClose(); onManage(); }}><Ic n="pencil" /> Manage</button>}</p>
           <div className="btabs t3" role="tablist">
             <button role="tab" aria-selected={mode === 'study'} className={mode === 'study' ? 'on' : ''} onClick={() => { setMode('study'); setLimit(PAGE); }}><Ic n="book" /> Study <b>{nStudy}</b></button>
             <button role="tab" aria-selected={mode === 'shaky'} className={'sh' + (mode === 'shaky' ? ' on' : '')} onClick={() => { setMode('shaky'); setLimit(PAGE); }}><Ic n="flag" /> Shaky <b>{nShaky}</b></button>

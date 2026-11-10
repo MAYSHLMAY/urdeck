@@ -153,3 +153,16 @@ Study shows them the Anki way (Show answer, then Again / Hard / Good / Easy, key
 (a `<!--k:x-->` token in the question, wrong choices borrowed from the set), so the live quiz, mock exam, speed rounds, browse, search and device sync need nothing new.
 
 **Image occlusion.** Add a picture, drag boxes over the parts, name each one; one card per box, "Hide one" or "Hide all". The boxes are also drawn in the live quiz.
+
+### Cards file (.txt)
+Add → Import / export accepts one text file with every card kind (see `example-cards.txt`): `F:` flip, `R:` reversed, `T:` type-in, `C:` cloze, `O:` image occlusion
+(`O: image-url | hide-one|hide-all | Label@x,y,w,h | …`), `Q:` multiple choice, and `#Set name` lines. "Download cards file" exports your whole library in the same format.
+Two-column Anki/Quizlet files now import as flip cards by default (cloze `{{c1::…}}` rows become cloze cards).
+
+Simulations can also be dropped into Add → Import / export (.html, or .js starting with /* flight-recall-sim */); for the owner they are uploaded to the 3D lab.
+
+### Manage cards (batch operations)
+Add (+) or Browse → **Manage cards**: filter by set / type / text / past-exam, tick many cards (or "select all shown"), then **Move** to another set (owner),
+**Find & replace** (questions, answers or both; picture and mask data are never touched), **Mark / unmark past exam**, or **Delete** (owner password once for the whole batch).
+The **Batch add** tab takes pasted lines: spreadsheet columns (front TAB back), `F:`/`R:`/`T:`/`C:` lines, or `question | right | wrong | wrong | wrong`.
+Owner changes are saved for everyone through `POST /api/cards {action:'batch'}` (no new SQL; it reuses `edit_card`). Everyone else's batch edits are private to the device.

@@ -6,4 +6,4 @@ out
 *.tsbuildinfo
 next-env.d.ts
 /data
-/supabase
+example-cards.txt

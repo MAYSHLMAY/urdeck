@@ -16,11 +16,12 @@ import { AddDialog } from './AddDialog';
 import { ModelsDialog } from './ModelsDialog';
 import { CardEditor, type EditorState } from './CardEditor';
 import { Browse } from './Browse';
+import { Manage } from './Manage';
 import { SpeedBar, SpeedSummary } from './Speed';
 
 const PLANE = <svg viewBox="0 0 24 24" width="22" height="22"><path d="M2 12 22 3l-5 18-5-7z" fill="currentColor" /></svg>;
 
-type Dlg = '' | 'menu' | 'browse' | 'grid' | 'stats' | 'set' | 'add' | 'models' | 'info';
+type Dlg = '' | 'manage' | 'menu' | 'browse' | 'grid' | 'stats' | 'set' | 'add' | 'models' | 'info';
 
 export default function App() {
   const e = useEngine();
@@ -120,7 +121,7 @@ export default function App() {
       <Search open={dlg === 'browse'} onClose={close} onStudy={() => close()} onOpenFolder={() => { e.openMenu(true); setDlg('menu'); }} />
       <Stats open={dlg === 'stats'} onClose={close} />
       <Settings open={dlg === 'set'} onClose={() => { close(); if (e.phase === 'done') e.show(); else e.emit(); }} />
-      <AddDialog open={dlg === 'add'} onClose={close} />
+      <AddDialog open={dlg === 'add'} onClose={close} onManage={() => setTimeout(() => setDlg('manage'), 80)} />
       <ModelsDialog open={dlg === 'models'} onClose={close} />
       <Sheet open={dlg === 'info'} onClose={close} className="mini2">
         {infoId && (() => {
@@ -133,7 +134,8 @@ export default function App() {
         })()}
       </Sheet>
       <SpeedSummary />
-      <Browse open={dlg === 'grid'} onClose={close} onPick={() => { e.openMenu(); setDlg('menu'); }} onEdit={id => setEditor({ mode: 'edit', id, section: e.qById(id)?.s })} />
+      <Manage open={dlg === 'manage'} onClose={close} onEdit={id => setEditor({ mode: 'edit', id, section: e.qById(id)?.s })} />
+      <Browse onManage={() => setTimeout(() => setDlg('manage'), 80)} open={dlg === 'grid'} onClose={close} onPick={() => { e.openMenu(); setDlg('menu'); }} onEdit={id => setEditor({ mode: 'edit', id, section: e.qById(id)?.s })} />
       <CardEditor state={editor} onClose={() => setEditor(null)} />
       <HighlightTools />
       <AskHost />

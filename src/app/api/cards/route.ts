@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireOwner, guardDelete } from '@/lib/server/auth';
 import { admin } from '@/lib/server/supabase';
 import { cook } from '@/lib/parse';
+import { replaceCard } from '@/lib/batch';
 const TXT = (x: any, max = 4000) => typeof x === 'string' && x.trim().length > 0 && x.length < max;
 import type { RawCard } from '@/lib/types';
 
@@ -69,6 +70,33 @@ async function single(req: Request, b: any) {
     const cur = await fetchOne(b.id); if (!cur) return bad('That card no longer exists.', 404);
     await rpc({ id: cur.id, s: cur.s, q: cur.q, c: cur.c, w: cur.w || [], p: !!cur.p }, true);
     return NextResponse.json({ ok: true });
+  }
+  if (b.action === 'batch') {
+    const ids: string[] = Array.isArray(b.ids) ? b.ids.filter((x: any) => TXT(x, 300)).slice(0, 400) : [];
+    if (!ids.length) return bad('Select some cards first.');
+    if (b.op === 'delete') { const g = guardDelete(req, b.password); if (g) return bad(g, 403); }
+    if (b.op === 'move' && !TXT(b.s, 300)) return bad('Choose the card set to move them to.');
+    if (b.op === 'replace' && !(typeof b.find === 'string' && b.find.length && typeof b.repl === 'string')) return bad('Type the text to find.');
+    const rows: any[] = [];
+    for (let i = 0; i < ids.length; i += 150) {
+      const r = await db.from('cards').select('id,s,q,c,w,p').in('id', ids.slice(i, i + 150));
+      if (r.error) throw r.error; rows.push(...(r.data || []));
+    }
+    const cards: any[] = [], deleted: string[] = []; let skipped = 0;
+    for (const cur of rows) {
+      const row = { id: cur.id, s: cur.s, q: cur.q, c: cur.c, w: cur.w || [], p: !!cur.p };
+      if (b.op === 'delete') { await rpc(row, true); deleted.push(cur.id); continue; }
+      if (b.op === 'move') row.s = String(b.s).trim();
+      else if (b.op === 'past') row.p = !!b.past;
+      else if (b.op === 'replace') {
+        const n = replaceCard(row, { find: b.find, repl: b.repl, scope: b.scope || 'all', cs: !!b.cs });
+        if (!n) continue;
+        if (!TXT(n.q) || !TXT(n.c) || !n.w.length || !n.w.every((x: string) => TXT(x))) { skipped++; continue; }
+        const c = cook({ s: row.s, q: n.q, c: n.c, w: n.w, p: row.p ? 1 : undefined }); Object.assign(row, { q: c.q, c: c.c, w: c.w });
+      } else return bad('Unknown batch action.');
+      await rpc(row, false); cards.push({ id: row.id, s: row.s, q: row.q, c: row.c, w: row.w, p: row.p ? 1 : 0 });
+    }
+    return NextResponse.json({ cards, deleted, skipped });
   }
   if (b.action === 'edit' || b.action === 'add') {
     const w = Array.isArray(b.w) ? b.w.map((x: any) => (typeof x === 'string' ? x.trim() : '')).filter(Boolean) : [];

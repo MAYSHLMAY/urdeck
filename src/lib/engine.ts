@@ -2,6 +2,7 @@
  * The study engine: every rule of the original app, as one plain TypeScript store.
  * React components subscribe to it (see useEngine) and call its methods.
  */
+import { replaceCard, type BatchOp } from './batch';
 import { fnv } from './fnv';
 import { parsePack, parseRaw, ready, cook } from './parse';
 import { DEF, M, D, addDays, dayStart, fmtIv, lab as labFn, nxt, steps, ymd, type CS, type Opts } from './srs';
@@ -631,6 +632,34 @@ export class Engine {
       this.afterCardChange(isCur);
       return null;
     } catch (x: any) { return x.message || 'Could not save the card.'; }
+  }
+  /** Batch operations. Owner: one request per 300 cards, saved for everyone. Others: private (this device). Returns a message. */
+  async batchCards(ids: string[], op: BatchOp, password?: string): Promise<{ ok: boolean; msg: string }> {
+    let changed = 0, skipped = 0;
+    if (!isOwner()) {
+      if (op.op === 'move') return { ok: false, msg: 'Only the owner can move cards between sets.' };
+      for (const id of ids) {
+        const c = this.qById(id); if (!c) continue;
+        if (op.op === 'delete') { this.myRemoveCard(id); changed++; continue; }
+        let f = { q: c.q, c: c.c, w: [...c.w], p: !!c.p };
+        if (op.op === 'past') f.p = op.past;
+        else if (op.op === 'replace') { const n = replaceCard(c, op); if (!n) continue; f = { ...f, ...n }; }
+        const m = this.myEditCard(id, f); if (m) skipped++; else changed++;
+      }
+      return { ok: true, msg: changed + ' card' + (changed === 1 ? '' : 's') + ' changed for you' + (skipped ? ', ' + skipped + ' skipped' : '') + '.' };
+    }
+    try {
+      for (let i = 0; i < ids.length; i += 300) {
+        const r = await api<{ cards: Card[]; deleted: string[]; skipped: number }>('/api/cards', { action: 'batch', ids: ids.slice(i, i + 300), password, ...op });
+        r.cards.forEach(n => { const k = this.server.findIndex(c => c.id === n.id); if (k >= 0) this.server[k] = { ...n, ord: this.server[k].ord }; });
+        const gone = new Set(r.deleted); if (gone.size) { this.server = this.server.filter(c => !gone.has(c.id)); this.extra = this.extra.filter(c => !gone.has(c.id)); }
+        changed += r.cards.length + r.deleted.length; skipped += r.skipped || 0;
+      }
+    } catch (x: any) { this.afterCardChange(false); return { ok: false, msg: (changed ? changed + ' done, then: ' : '') + (x.message || 'Could not finish.') }; }
+    const cur = !!this.cur && ids.some(id => String(id) === String(this.cur!.id));
+    if (cur) this.pend = null;
+    this.afterCardChange(cur);
+    return { ok: true, msg: changed + ' card' + (changed === 1 ? '' : 's') + ' changed' + (skipped ? ', ' + skipped + ' skipped' : '') + '.' };
   }
   async removeCard(id: string, password: string): Promise<string | null> {
     if (!isOwner()) return 'Locked. Unlock with the owner password first.';
