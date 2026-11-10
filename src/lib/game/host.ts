@@ -4,7 +4,7 @@ import { api } from '../api';
 import { sfx, setSound, startMusic, stopMusic } from './sound';
 import type { Phase, Player, Score, Settings, Snapshot } from './types';
 
-export interface HostQ { id: string; text: string; img?: string; choices: string[]; correct: number; set: string }
+export interface HostQ { id: string; text: string; img?: string; occ?: string; choices: string[]; correct: number; set: string }
 interface Ans { choice: number; ms: number }
 interface Tot { t: number; d: number; streak: number; best: number; ok: number; a: number; ms: number[] }
 const K = 'fr-host-v1';
@@ -14,7 +14,7 @@ const shuffle = <T,>(a: T[]) => { a = a.slice(); for (let i = a.length - 1; i > 
 export function makeQuestions(cards: { id: string; q: string; c: string; w: string[]; s: string }[], S: Settings): HostQ[] {
   return shuffle(cards).slice(0, S.count).map(c => {
     const wrong = shuffle(c.w).slice(0, 3), all = [c.c, ...wrong], order = S.shuffle ? shuffle(all.map((_, i) => i)) : all.map((_, i) => i);
-    return { id: c.id, text: qText(c.q), img: ((): string | undefined => { const i = parseImg(c.q); return i && /^https?:/.test(i.src) ? i.src : undefined; })(), choices: order.map(i => all[i]), correct: order.indexOf(0), set: c.s };
+    return { id: c.id, text: qText(c.q), occ: (/<!--occ:([^>]*)-->/.exec(c.q) || [])[1], img: ((): string | undefined => { const i = parseImg(c.q); return i && /^https?:/.test(i.src) ? i.src : undefined; })(), choices: order.map(i => all[i]), correct: order.indexOf(0), set: c.s };
   });
 }
 
@@ -177,7 +177,7 @@ export class Host {
       v: ++this.v, pin: this.pin, hid: this.hid, title: this.title, phase: this.phase, settings: this.S, locked: this.locked, paused: this.paused,
       players: [...this.players.values()], idx: this.idx, total: this.qs.length, answered: this.ans.size, scores, pu: this.S.power ? this.puMap() : undefined,
     };
-    if (q && this.phase === 'question') s.q = { text: this.S.showQ ? q.text : '', img: this.S.showQ ? q.img : undefined, choices: q.choices, secs: this.S.secs, remaining: this.paused ? this.pauseLeft : Math.max(0, this.qEnd - now) };
+    if (q && this.phase === 'question') s.q = { text: this.S.showQ ? q.text : '', img: this.S.showQ ? q.img : undefined, occ: this.S.showQ ? q.occ : undefined, choices: q.choices, secs: this.S.secs, remaining: this.paused ? this.pauseLeft : Math.max(0, this.qEnd - now) };
     if (q && this.phase === 'countdown') s.q = { text: '', choices: [], secs: 0, remaining: this.paused ? this.pauseLeft : Math.max(0, this.phaseEnd - now) };
     if (q && (this.phase === 'reveal' || this.phase === 'board')) s.reveal = { correct: q.correct, counts: this.counts, choices: q.choices };
     if (this.S.teams) s.teamScores = this.teamScores();

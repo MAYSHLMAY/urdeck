@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import * as THREE from 'three';
 import { BUILTIN, modelCode, validateModel, forgetModel, type ModelDef } from '@/lib/models';
+import { isSim, is3d, simTitle } from '@/lib/sim';
+import SimFrame from './SimFrame';
 import { refs } from '@/lib/refs';
 import { isOwner } from '@/lib/api';
 import { useRefs } from './refHooks';
@@ -18,6 +20,8 @@ export default function Lab() {
   const [own, setOwn] = useState(false);
   const [pend, setPend] = useState<{ name: string; sub: string; info: string; code: string; cat: string } | null>(null);
   const [selId, setSelId] = useState('');
+  const [sim, setSim] = useState<{ code: string; name: string; kind: '2D' | '3D' } | null>(null);
+  const [paste, setPaste] = useState(false);
   const [def, setDef] = useState<ModelDef | null>(null);
   const [vals, setVals] = useState<Record<string, number>>({});
   const [readout, setReadout] = useState<[string, string][]>([]);
@@ -57,7 +61,13 @@ export default function Lab() {
   async function openModel(id: string, code?: string) {
     say('');
     const r = R.current; let def: ModelDef;
-    try { def = await validateModel(code || await modelCode(id)); } catch (e: any) { say('Could not load: ' + e.message, true); return; }
+    let src = code;
+    try { src = code || await modelCode(id); } catch (e: any) { say('Could not load: ' + e.message, true); return; }
+    if (isSim(src)) {
+      const nm = all.find(m => m.id === id)?.name || simTitle(src); setSim({ code: src, name: nm, kind: is3d(src) ? '3D' : '2D' }); document.title = nm + ' · Lab'; return;
+    }
+    setSim(null);
+    try { def = await validateModel(src); } catch (e: any) { say('Could not load: ' + e.message, true); return; }
     if (r.G) { r.scene.remove(r.G); r.G.traverse((o: any) => { if (o.geometry) o.geometry.dispose(); }); }
     r.def = def; r.G = def.build(THREE); r.scene.add(r.G); r.base = new Map(); r.sel = null; r.sweep = false; setSweep(false); setSelPart(null);
     r.G.traverse((o: any) => { if (o.userData.ex) r.base.set(o, [o.position.x, o.position.y, o.position.z]); });
@@ -151,7 +161,9 @@ export default function Lab() {
     if (!f) return;
     if (!isOwner()) { say('Only the owner can upload 3D models. Unlock the owner password in Settings first.', true); return; }
     try {
-      const code = await f.text(), m = await validateModel(code);
+      const code = await f.text();
+      if (isSim(code)) { setPend({ name: simTitle(code, f.name.replace(/\.\w+$/, '')), sub: is3d(code) ? '3D simulation' : '2D simulation', info: '', code, cat: '' }); return; }
+      const m = await validateModel(code);
       const guess = Rf.categories.find(c => c.name.toLowerCase() === String(m.category || '').toLowerCase());
       setPend({ name: m.name, sub: m.sub || '', info: m.info || '', code, cat: guess ? guess.id : '' });
     } catch (x: any) { say(f.name + ': ' + x.message, true); }
@@ -160,7 +172,7 @@ export default function Lab() {
     if (!pend) return;
     try {
       const row = await Rf.uploadModel(pend.name, pend.sub, pend.info, pend.code, pend.cat || null);
-      forgetModel(row.id); setPend(null); setSelId(row.id); location.hash = row.id; await openModel(row.id, pend.code);
+      forgetModel(row.id); setPend(null); setPaste(false); setSelId(row.id); location.hash = row.id; await openModel(row.id, pend.code);
       say('Added “' + row.name + '” to ' + catName(pend.cat || undefined) + '.');
     } catch (x: any) { say(x.message, true); }
   }
@@ -180,24 +192,40 @@ export default function Lab() {
           <select value={selId} aria-label="Model" onChange={ev => { setSelId(ev.target.value); location.hash = ev.target.value; openModel(ev.target.value); }}>
             {groups.map(g => <optgroup key={g} label={g}>{all.filter(m => catName(Rf.modelCat[m.id]) === g).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}</optgroup>)}
           </select>
-          {own && <button onClick={() => fileRef.current?.click()}>Upload .js</button>}
-          <input ref={fileRef} type="file" accept=".js,text/javascript" hidden onChange={async ev => { const t = ev.target; await onUpload(t.files?.[0]); t.value = ''; }} />
+          {own && <button onClick={() => fileRef.current?.click()}>Upload model / sim</button>}
+          {own && <button onClick={() => { setPaste(true); setPend({ name: '', sub: '', info: '', code: '', cat: '' }); }}>Paste code</button>}
+          <input ref={fileRef} type="file" accept=".js,.html,.htm,text/javascript,text/html" hidden onChange={async ev => { const t = ev.target; await onUpload(t.files?.[0]); t.value = ''; }} />
         </div>
         {pend && (
           <div className="note" style={{ marginBottom: 10 }}>
-            <b>Where does “{pend.name}” belong?</b>
+            {paste && <>
+              <b>Paste a three.js script or a full HTML page (2D or 3D)</b>
+              <input value={pend.name} placeholder="Name" style={{ width: '100%', margin: '8px 0 6px' }} onChange={ev => setPend({ ...pend, name: ev.target.value })} />
+              <textarea value={pend.code} rows={8} spellCheck={false} placeholder={'<!doctype html> … or  /* flight-recall-sim */ + three.js code'} style={{ width: '100%', fontFamily: 'monospace', fontSize: 12 }}
+                onChange={ev => { const c = ev.target.value; setPend({ ...pend, code: c, name: pend.name || (isSim(c) ? simTitle(c, '') : ''), sub: is3d(c) ? '3D simulation' : '2D simulation' }); }} />
+              {pend.code && !isSim(pend.code) && <div className="err">Start with a full HTML page or /* flight-recall-sim */</div>}
+              <div style={{ height: 8 }} />
+            </>}
+            <b>Where does “{pend.name || 'this'}” belong?</b>
             <select value={pend.cat} aria-label="Category" style={{ width: '100%', marginTop: 8 }} onChange={ev => setPend({ ...pend, cat: ev.target.value })}>
               <option value="">Uncategorized</option>
               {Rf.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              <button onClick={() => setPend(null)}>Cancel</button>
-              <button className="on" disabled={!!Rf.busy} onClick={confirmUpload}>{Rf.busy || 'Add model'}</button>
+              <button onClick={() => { setPend(null); setPaste(false); }}>Cancel</button>
+              <button className="on" disabled={!!Rf.busy || (paste && (!pend.name.trim() || !isSim(pend.code)))} onClick={confirmUpload}>{Rf.busy || 'Add model'}</button>
             </div>
           </div>
         )}
         <div id="msg" className={msg.err ? 'err' : ''}>{msg.t}</div>
-        <div className="labg">
+        {sim && <>
+          <SimFrame code={sim.code} name={sim.name} kind={sim.kind} />
+          {own && (() => { const row = all.find(m => m.id === selId); return row ? <p className="simadm">
+            <label>Category{' '}<select value={Rf.modelCat[row.id] || ''} onChange={ev => Rf.setModelCategory(row.id, ev.target.value || null).catch((x: any) => say(x.message, true))}>
+              <option value="">Uncategorized</option>{Rf.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+            {!('built' in row) && <>{' '}<button onClick={removeModel}>Delete</button></>}</p> : null; })()}
+        </>}
+        <div className="labg" style={sim ? { display: 'none' } : undefined}>
         <div className="labL">
         <div id="cv" ref={cv}><div id="hud">Drag = orbit · pinch / wheel = zoom · tap a part</div></div>
         <div className="bar">

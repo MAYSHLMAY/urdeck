@@ -18,7 +18,7 @@ export interface Score { t: number; d: number; r: number; s: number; ok: number;
 export interface Snapshot {
   v: number; pin: string; hid: string; title: string; phase: Phase; settings: Settings; locked: boolean; paused: boolean;
   players: Player[]; idx: number; total: number;
-  q?: { text: string; img?: string; choices: string[]; secs: number; remaining: number };
+  q?: { text: string; img?: string; occ?: string; choices: string[]; secs: number; remaining: number };
   answered: number;
   reveal?: { correct: number; counts: number[]; choices?: string[] };
   scores: Record<string, Score>;

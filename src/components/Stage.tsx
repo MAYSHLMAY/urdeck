@@ -6,6 +6,8 @@ import { useRefs } from './refHooks';
 import { renderQuestion } from './Highlights';
 import { isOwner } from '@/lib/api';
 import { CardFigure } from './CardFigure';
+import { FlipBody } from './FlipBody';
+import { kindOf, stripKind, clozeFront, clozeBack, activeCloze } from '@/lib/kind';
 
 export type CardAct = (mode: 'edit' | 'add', id: string, section: string) => void;
 
@@ -21,6 +23,7 @@ export function Stage({ onInfo, onCard }: { onInfo: (id: string) => void; onCard
 
 function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: CardAct }) {
   const e = useEngine(), R = useRefs(), cur = e.cur!, c = e.get(cur.id), x = e.O, ph = e.phase, i = e.chosen;
+  const kind = kindOf(cur.q), flipK = kind !== 'mc', [rev, setRev] = useState(false);
   const [menu, setMenu] = useState(false), [dx, setDx] = useState(0), sw = useRef<{ x: number; y: number; h: boolean | null } | null>(null);
   const swipe = (dir: 1 | -1) => {
     if (dir === 1) { if (ph === 'ok') e.grade(2); else if (ph === 'bad' || ph === 'cr') e.show(); }
@@ -30,7 +33,9 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
   const flag = e.S.cards[cur.id];
   const mark = !!(flag && flag.mark);
 
-  useLayoutEffect(() => { if (qRef.current) renderQuestion(qRef.current, cur.q, e.NOTES[cur.id] || []); }, [cur.id, e.showN, e.notesVer]);
+  useEffect(() => { setRev(false); }, [cur.id, e.showN]);
+  const shown = kind === 'c' ? (rev ? clozeBack : clozeFront)(stripKind(cur.q), activeCloze(cur.q)) : cur.q;
+  useLayoutEffect(() => { if (qRef.current) renderQuestion(qRef.current, shown, e.NOTES[cur.id] || []); }, [cur.id, e.showN, e.notesVer, shown]);
   useEffect(() => { setMenu(false); }, [cur.id, e.showN]);
   useEffect(() => {
     if (!menu) return;
@@ -76,14 +81,15 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
         </span>
       </div>
       <h2 className="q" ref={qRef} />
-      <CardFigure key={cur.id} q={cur.q} reveal={answered} />
-      <div className="opts">
+      <CardFigure key={cur.id} q={cur.q} reveal={answered || rev} />
+      {flipK && <FlipBody key={cur.id + ':' + e.showN} kind={kind} cur={cur} c={c} rev={rev} setRev={setRev} />}
+      {!flipK && <div className="opts">
         {e.curOpts.map((o, k) => (
           <button key={k} className={'opt' + (answered ? (o.ok ? ' right' : k === i ? ' wrong' : '') : '')} disabled={answered} onClick={() => e.answer(k)}>
             <kbd>{k + 1}</kbd><span dangerouslySetInnerHTML={{ __html: o.t }} />
           </button>
         ))}
-      </div>
+      </div>}
       <div className="row refrow">
         <button className={'ghost refbtn' + (R.open ? ' on' : '')} onClick={() => R.toggle(cur)} aria-expanded={R.open} title="Reference PDF (R)">
           <Ic n="clip" /> {R.open ? 'Hide Reference PDF' : 'Open Reference PDF'}
@@ -91,7 +97,8 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
           {!R.open && R.auto && R.auto.qid === String(cur.id) && R.auto.state === 'working' && <span className="refready soft"> …</span>}
         </button>
       </div>
-      {!answered && <div className="row"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button><button className="ghost" onClick={() => e.answer(-1)}>I don’t know</button></div>}
+      {!answered && !flipK && <div className="row"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button><button className="ghost" onClick={() => e.answer(-1)}>I don’t know</button></div>}
+      {!answered && flipK && !rev && <div className="row"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button></div>}
       <p className="swh">{!answered ? '← swipe left: ask me later' : ph === 'ok' && !x.autoGood ? '→ swipe right: Good · ← Hard' : '→ swipe right: continue'}</p>
       <div id="fb" ref={fbRef}>
         {ph === 'cr' && <>

@@ -1,4 +1,5 @@
 'use client';
+import { QImg } from '../CardFigure';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
@@ -99,7 +100,7 @@ function Live({ host, onExit }: { host: Host; onExit: () => void }) {
     <div className="gm" style={{ minHeight: '100dvh' }}>{Top}<div className="gwrap start" style={{ maxWidth: 1280, justifyContent: 'flex-start', flex: 1 }}>
       <div className="qstat stg" style={{ ['--i' as any]: 0 }}><span className="qn">{host.idx + 1}<small>/{host.qs.length}</small></span><span className="grow" /><span className="cnt-pill">{host.ans.size}/{host.players.size} answered</span><Ring left={left} total={host.S.secs * 1000} size={72} /></div>
       <div className="qcard xl stg" style={{ ['--i' as any]: 1 }}>{q.text}</div>
-      {q.img && <img className="qimg" src={q.img} alt="" />}
+      {q.img && <QImg className="qimg" src={q.img} occ={q.occ} />}
       <div className={'ans full' + (q.choices.length < 3 ? ' one' : '')} style={{ minHeight: 260 }}>{q.choices.map((c, i) => <div key={i} className={'abtn c' + i} style={{ ['--i' as any]: i }}>{SHAPES[i % 4]}<span>{c}</span></div>)}</div>
       {host.paused && <b>⏸ Paused</b>}{ctl}
     </div></div>);
@@ -107,7 +108,7 @@ function Live({ host, onExit }: { host: Host; onExit: () => void }) {
     const mx = Math.max(1, ...host.counts), rows = host.rows();
     return <div className="gm">{Top}<div className="gwrap start">
       {p === 'reveal' ? <><div className="qcard xl stg" style={{ ['--i' as any]: 0 }}>{q.text}</div>
-      {q.img && <img className="qimg" src={q.img} alt="" />}
+      {q.img && <QImg className="qimg" src={q.img} occ={q.occ} reveal />}
         <div className="hist">{q.choices.map((c, i) => <div key={i}><b>{host.counts[i] || 0}</b><i className={'c' + i} style={{ animationDelay: (0.25 + i * 0.12) + 's', height: ((host.counts[i] || 0) / mx) * 100 + '%', background: ['#e21b3c', '#1368ce', '#d89e00', '#26890c'][i % 4], opacity: i === q.correct ? 1 : .5 }} /><span style={{ fontWeight: i === q.correct ? 900 : 500 }}>{i === q.correct ? '✔ ' : ''}{c}</span></div>)}</div>
         {(() => { const all = [...host.players.values()], got = all.filter(x => host.ans.get(x.id)?.choice === q.correct), miss = all.filter(x => host.ans.get(x.id)?.choice !== q.correct); const row = (list: typeof all, mood: 'happy' | 'angry', label: string) => list.length ? <div className="facerow"><b>{label} <CountUp n={list.length} ms={600} /></b><div>{list.slice(0, 16).map((x, i) => <span key={x.id} style={{ ['--i' as any]: i }}><Avatar av={x.av} size={44} mood={mood} /></span>)}{list.length > 16 && <em>+{list.length - 16}</em>}</div></div> : null; return <div className="faces stg" style={{ ['--i' as any]: 5 }}>{row(got, 'happy', 'Got it')}{row(miss, 'angry', 'Missed')}</div>; })()}</>
         : <><h2>Leaderboard</h2>{host.S.teams > 0 && <div className="ctl">{host.teamScores().map((t, i) => <span key={i} className="gpill" style={{ background: TEAM_COLORS[i], color: '#fff' }}>{TEAM_NAMES[i]} {t}</span>)}</div>}</>}

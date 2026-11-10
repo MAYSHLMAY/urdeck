@@ -1,4 +1,5 @@
 'use client';
+import { kindOf } from '@/lib/kind';
 import { applyLook } from '@/lib/look';
 import { useEffect, useState } from 'react';
 import { useEngine, Icon, Ic, Sheet, SheetFrame, AskHost, Toast } from './ui';
@@ -57,6 +58,7 @@ export default function App() {
       if ((k === 'r' || k === 'R') && e.cur) { refs().toggle(e.cur); return; }
       if (k === 'z' || k === 'Z') { e.doUndo(); return; }
       if ((k === 'm' || k === 'M') && e.cur && ph !== 'done') { e.toggleFlag(e.cur.id, 'mark'); return; }
+      if (ph === 'q' && e.cur && kindOf(e.cur.q) !== 'mc') return;
       if (ph === 'q') {
         if (/^[1-4]$/.test(k) && e.curOpts[+k - 1]) e.answer(+k - 1);
         else if (k === 'l' || k === 'L') e.laterQ();

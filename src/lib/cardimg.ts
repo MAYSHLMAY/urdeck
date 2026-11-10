@@ -31,7 +31,7 @@ export function withImg(q: string, img: CardImg | null): string {
   return text + tok;
 }
 /** Text-only view of a question (no picture token). */
-export const qText = stripImg;
+export const qText = (q: string) => String(q || '').replace(/<!--(?:img|k|occ):[^>]*-->/g, '').replace(/\{\{c(\d+)::([\s\S]*?)(?:::([^}]*?))?\}\}/g, (_m, _k, _a, h) => '[' + (h || '…') + ']').trim();
 
 /** Shrink a picture in the browser so it stays small (JPEG/WebP). Returns a data URL. */
 export async function compressImage(file: Blob, maxSide = 1100, maxBytes = 150_000): Promise<string> {

@@ -430,6 +430,14 @@ export class Engine {
     if (!good) this.commit(cur.id, 0);
     this.emit();
   }
+  /** Flip / type-in / cloze cards: the learner grades themselves (0 Again … 3 Easy). Same scheduling as a multiple-choice answer. */
+  flipGrade(g: number) {
+    if (this.phase !== 'q' || !this.cur) return;
+    const ok = g > 0, i = this.curOpts.findIndex(o => !!o.ok === ok);
+    this.answer(i < 0 ? -1 : i);
+    const ph = this.phase as string;
+    if (ph === 'ok') this.grade(g); else if (ph === 'bad' || ph === 'cr') this.show();
+  }
   commit(id: string, g: number) {
     const c = this.get(id), x = this.O, S = this.S, was = c.t;
     if (this.pend) { this.pushU(this.pend); this.pend = null; }

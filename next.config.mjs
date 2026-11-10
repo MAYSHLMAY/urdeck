@@ -10,6 +10,7 @@ const nextConfig = {
   async headers() {
     return [
       { source: '/sw.js', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
+      { source: '/vendor/:path*', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }, { key: 'Cache-Control', value: 'public, max-age=86400' }] },
       { source: '/models/:path*', headers: [{ key: 'Cache-Control', value: 'public, max-age=3600, stale-while-revalidate=86400' }] }
     ];
   }

@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MARK = /^\s*\/\*\s*flight-recall-model\s*\*\//;
+const SIM = /^\s*(\/\*\s*flight-recall-sim\b|<!--\s*flight-recall-sim|<!doctype\s+html|<html|<head|<body|<script|<canvas|<div|<style|<svg)/i;
 const fail = (m: string, s = 400) => NextResponse.json({ error: m }, { status: s });
 const text = (x: any, max: number) => (typeof x === 'string' ? x.trim().slice(0, max) : '');
 
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
       case 'upload': {
         const name = text(b.name, 120), code = typeof b.code === 'string' ? b.code : '';
         if (!name) return fail('The model needs a name.');
-        if (!MARK.test(code)) return fail('The first line must be /* flight-recall-model */');
+        if (!MARK.test(code) && !SIM.test(code)) return fail('Use a 3D model file (/* flight-recall-model */), a full HTML page, or a script starting with /* flight-recall-sim */');
         if (code.length > 3_000_000) return fail('That model file is too large (3 MB max).');
         const ex = await db.from('models').select('id').eq('name', name).maybeSingle();
         if (ex.error) throw ex.error;

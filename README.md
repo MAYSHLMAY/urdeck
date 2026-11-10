@@ -139,3 +139,17 @@ Note (design): there is no footer. On phones a fixed bottom tab bar (Home, Study
 - **Quiz power-ups:** 50/50 and ×2 points, once each per player (host switch "Power-ups").
 - **Study feel:** swipe right/left on the card, optional answer sounds, vibration, offline pill.
 - **Reminders:** Settings → Studying → Daily reminder. Best effort without a push server (scheduled notification, periodic sync for installed apps, timer while open). Guaranteed delivery needs Web Push (VAPID keys + a scheduled job).
+
+
+## 10. Simulations, Anki-style cards, image occlusion
+
+**Lab simulations (any Three.js / 2D / HTML).** Besides the built-in model format, the owner can upload (or paste) a full HTML page or a bare three.js script
+(first line `/* flight-recall-sim */`, or `/* flight-recall-sim: My title */`). It runs in a sandboxed iframe with its own buttons and UI; three r128, OrbitControls
+and `import ... from 'three'` are provided from `public/vendor/three`. The viewer has Fill (the sim fills the space) and 16:9 / 4:3 / 1:1 / 9:16 (fixed design size,
+scaled proportionally), restart and full screen. No SQL change: sims are stored in the same `models` table.
+
+**Card kinds.** Add card -> pick Multiple choice, Flip, Reversed (two cards), Type answer, Cloze (`{{c1::word}}`, one card per number) or Image occlusion.
+Study shows them the Anki way (Show answer, then Again / Hard / Good / Easy, keys 1-4) with the same scheduling. They are stored as ordinary cards
+(a `<!--k:x-->` token in the question, wrong choices borrowed from the set), so the live quiz, mock exam, speed rounds, browse, search and device sync need nothing new.
+
+**Image occlusion.** Add a picture, drag boxes over the parts, name each one; one card per box, "Hide one" or "Hide all". The boxes are also drawn in the live quiz.
