@@ -66,6 +66,7 @@ input[type=range]{height:26px}
 .opt{border-radius:18px;border-color:transparent;background:var(--card);box-shadow:var(--shadow)}
 .opt:hover:not(:disabled){border-color:var(--acc)}
 .scard{border-radius:20px}
+.right{border-color:var(--ok);background:var(--okbg)}.wrong{border-color:var(--bad);background:var(--badbg);animation:shake .35s}
 #toast{border-radius:16px}
 
 /* ---- accent swatches (Settings) ---- */
