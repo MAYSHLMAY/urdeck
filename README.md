@@ -166,3 +166,6 @@ Add (+) or Browse → **Manage cards**: filter by set / type / text / past-exam,
 **Find & replace** (questions, answers or both; picture and mask data are never touched), **Mark / unmark past exam**, or **Delete** (owner password once for the whole batch).
 The **Batch add** tab takes pasted lines: spreadsheet columns (front TAB back), `F:`/`R:`/`T:`/`C:` lines, or `question | right | wrong | wrong | wrong`.
 Owner changes are saved for everyone through `POST /api/cards {action:'batch'}` (no new SQL; it reuses `edit_card`). Everyone else's batch edits are private to the device.
+
+### Browse
+Browse opens full screen (cards use the whole width on any device). On a computer, hover a card for ~2 seconds to see a detail popup (set, full question, picture, all choices with the right one marked); it disappears as soon as the mouse leaves and restarts on the next card. Toggle with **Preview on/off** next to Manage (remembered). Touch devices are unaffected.

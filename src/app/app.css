@@ -66,7 +66,6 @@ input[type=range]{height:26px}
 .opt{border-radius:18px;border-color:transparent;background:var(--card);box-shadow:var(--shadow)}
 .opt:hover:not(:disabled){border-color:var(--acc)}
 .scard{border-radius:20px}
-.right{border-color:var(--ok);background:var(--okbg)}.wrong{border-color:var(--bad);background:var(--badbg);animation:shake .35s}
 #toast{border-radius:16px}
 
 /* ---- accent swatches (Settings) ---- */
@@ -317,3 +316,22 @@ input[type=range]{height:26px}
 .mgact{display:flex;flex-wrap:wrap;gap:6px}.mgmsg{margin:6px 0;font-weight:650}
 .manage .btabs,.manage .mgf,.manage .mgsel,.manage .mgmsg,.manage .mgpanel,.manage .mgact,.manage .mglist,.manage>*>.n{margin-left:14px;margin-right:14px}
 .manage .mgact{padding-bottom:8px}
+
+/* ---- Browse: full screen (all sizes), cards use the whole width ---- */
+dialog.sheet.browse,dialog.sheet.browse[open]{position:fixed;inset:0;width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;border-radius:0;border:0;padding:0}
+dialog.sheet.browse .in{height:100dvh;max-height:100dvh;border-radius:0}
+.browse header{padding-top:max(10px,env(safe-area-inset-top))}
+.browse .bhead{max-width:1800px;margin:0 auto;width:100%}
+.browse .bscroll{padding:0 clamp(10px,2vw,28px) 14px}
+.bgrid.few{--tw:380px}.bgrid.some{--tw:250px}.bgrid.many{--tw:170px}
+@media(min-width:1500px){.bgrid.few{--tw:460px}.bgrid.some{--tw:290px}.bgrid.many{--tw:200px}}
+@media(max-width:520px){.bgrid.few{--tw:100%}.bgrid.some{--tw:46%}.bgrid.many{--tw:30%}.browse .bscroll{padding:0 8px 12px}.bgrid{gap:8px}}
+.browse .bfoot{padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+
+/* ---- Browse: hover preview ---- */
+.peek{position:fixed;z-index:60;max-height:min(78dvh,640px);overflow:hidden;padding:16px 18px;border-radius:20px;background:var(--card);color:var(--ink);border:1.5px solid var(--line);box-shadow:0 24px 60px -18px rgba(0,0,0,.5);pointer-events:none;animation:peekin .16s var(--ease,ease-out) both}
+.peek h4{margin:6px 0 10px;font-family:var(--serif);font-size:1.12rem;line-height:1.35}.peek .pset{color:var(--mute);font-weight:650}
+.peek .bopt{margin:8px 0 0}
+@keyframes peekin{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
+.bopts .ghost.on{border-color:var(--acc);background:var(--accbg)}
+@media(hover:none){.peek{display:none}}

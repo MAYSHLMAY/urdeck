@@ -1,7 +1,7 @@
 'use client';
 import { qText } from '@/lib/cardimg';
 import { CardFigure } from './CardFigure';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { fnv } from '@/lib/fnv';
 import type { QCard } from '@/lib/types';
 import { Sheet, SheetFrame, useEngine, Ic, ask } from './ui';
@@ -21,10 +21,11 @@ const load = () => { try { return JSON.parse(localStorage.getItem(K) || 'null') 
 export function Browse({ open, onClose, onEdit, onPick, onManage }: { onManage?: () => void; open: boolean; onClose: () => void; onEdit: (id: string) => void; onPick: () => void }) {
   const e = useEngine();
   const [mode, setMode] = useState<Mode>('study'), [show, setShow] = useState<Show>('q'), [dens, setDens] = useState<Dens>('some');
+  const [hov, setHov] = useState(true), [pv, setPv] = useState<{ q: QCard; r: DOMRect } | null>(null), timer = useRef<any>(0);
   const [all, setAll] = useState(false), [rev, setRev] = useState<Set<string>>(new Set()), [limit, setLimit] = useState(PAGE), [shut, setShut] = useState<Set<string>>(new Set());
 
-  useEffect(() => { if (!open) return; const p = load(); if (p.show) setShow(p.show); if (p.dens) setDens(p.dens); setMode('study'); setAll(false); setRev(new Set()); setLimit(PAGE); setShut(new Set()); }, [open]);
-  const pref = (o: { show?: Show; dens?: Dens }) => { try { localStorage.setItem(K, JSON.stringify({ show, dens, ...o })); } catch { /* ignore */ } };
+  useEffect(() => { if (!open) return; const p = load(); if (p.show) setShow(p.show); if (p.dens) setDens(p.dens); setHov(p.hov !== false); setMode('study'); setAll(false); setRev(new Set()); setLimit(PAGE); setShut(new Set()); }, [open]);
+  const pref = (o: { show?: Show; dens?: Dens; hov?: boolean }) => { try { localStorage.setItem(K, JSON.stringify({ show, dens, hov, ...o })); } catch { /* ignore */ } };
 
   const pool = open ? e.pool() : [];
   const groups = useMemo(() => {
@@ -48,13 +49,19 @@ export function Browse({ open, onClose, onEdit, onPick, onManage }: { onManage?:
     const r = await ask({ title: 'Speed round', msg: `${flat.length} card${flat.length === 1 ? '' : 's'} in a random order. Answer as many as you can before time runs out. Cards you miss go into your Mistakes list, and nothing is rescheduled.`, acts: [{ k: '60', l: '1 minute' }, { k: '120', l: '2 minutes' }, { k: '300', l: '5 minutes' }, { k: '600', l: '10 minutes' }] });
     if (r && r.act) { onClose(); e.startSpeed(flat.map(q => q.id), +r.act); }
   };
+  const onHover = (q: QCard | null, el?: HTMLElement) => {
+    clearTimeout(timer.current); setPv(null);
+    if (q && el && hov) timer.current = setTimeout(() => setPv({ q, r: el.getBoundingClientRect() }), 2200);
+  };
+  useEffect(() => { if (!hov || !open) { clearTimeout(timer.current); setPv(null); } }, [hov, open]);
+  useEffect(() => () => clearTimeout(timer.current), []);
   let left = limit;
 
   return (
     <Sheet open={open} onClose={onClose} className="sheet browse">
       <SheetFrame title={<span className="ttl"><Ic n="grid" /> Browse</span>} onClose={onClose}>
         <div className="bhead">
-          <p className="bsel"><span>{e.selLabel()}</span><button className="ghost" onClick={() => { onClose(); onPick(); }}>Change</button>{onManage && <button className="ghost" onClick={() => { onClose(); onManage(); }}><Ic n="pencil" /> Manage</button>}</p>
+          <p className="bsel"><span>{e.selLabel()}</span><button className="ghost" onClick={() => { onClose(); onPick(); }}>Change</button><button className={'ghost' + (hov ? ' on' : '')} aria-pressed={hov} title="Hover a card for 2 seconds to see its details" onClick={() => { setHov(!hov); pref({ hov: !hov }); }}><Ic n={hov ? 'eye' : 'eyeOff'} /> Preview {hov ? 'on' : 'off'}</button>{onManage && <button className="ghost" onClick={() => { onClose(); onManage(); }}><Ic n="pencil" /> Manage</button>}</p>
           <div className="btabs t3" role="tablist">
             <button role="tab" aria-selected={mode === 'study'} className={mode === 'study' ? 'on' : ''} onClick={() => { setMode('study'); setLimit(PAGE); }}><Ic n="book" /> Study <b>{nStudy}</b></button>
             <button role="tab" aria-selected={mode === 'shaky'} className={'sh' + (mode === 'shaky' ? ' on' : '')} onClick={() => { setMode('shaky'); setLimit(PAGE); }}><Ic n="flag" /> Shaky <b>{nShaky}</b></button>
@@ -92,7 +99,7 @@ export function Browse({ open, onClose, onEdit, onPick, onManage }: { onManage?:
                   <button className="ghost" onClick={() => practice(list.map(q => q.id))}><Ic n="play" /> {mode === 'study' ? 'Practice' : 'Drill'} {list.length}</button>
                 </div>
                 {!closed && <div className={'bgrid ' + dens}>
-                  {part.map(q => <Tile key={q.id} q={q} mode={mode} show={show} open={show === 'qa' || all || rev.has(q.id)} onToggle={() => toggle(q.id)} onEdit={() => { onClose(); onEdit(q.id); }} />)}
+                  {part.map(q => <Tile key={q.id} q={q} mode={mode} show={show} open={show === 'qa' || all || rev.has(q.id)} onHover={onHover} onToggle={() => toggle(q.id)} onEdit={() => { onClose(); onEdit(q.id); }} />)}
                 </div>}
               </section>
             );
@@ -103,16 +110,33 @@ export function Browse({ open, onClose, onEdit, onPick, onManage }: { onManage?:
           <button className="solid" onClick={() => practice(flat.map(q => q.id))}><Ic n="play" /> {mode === 'shaky' ? 'Drill shaky' : mode === 'miss' ? 'Drill mistakes' : 'Practice'} ({flat.length})</button>
           <button className="ghost" onClick={speedRound}><Ic n="clock" /> Speed round</button>
         </div>}
+        {pv && <Peek q={pv.q} r={pv.r} />}
       </SheetFrame>
     </Sheet>
   );
 }
 
-function Tile({ q, mode, show, open, onToggle, onEdit }: { q: QCard; mode: Mode; show: Show; open: boolean; onToggle: () => void; onEdit: () => void }) {
+function Peek({ q, r }: { q: QCard; r: DOMRect }) {
+  const e = useEngine(), W = Math.min(430, innerWidth - 24);
+  const left = Math.max(12, Math.min(innerWidth - W - 12, r.right + 12 + W <= innerWidth ? r.right + 12 : r.left - W - 12 >= 12 ? r.left - W - 12 : r.left + r.width / 2 - W / 2));
+  const top = Math.max(12, Math.min(innerHeight * 0.3, r.top)), opts = [q.c, ...q.w];
+  const ord = [...opts.map((t, i) => ({ t, ok: i === 0, k: fnv(q.id + '|' + i + '|' + t) }))].sort((a, b) => (a.k < b.k ? -1 : 1));
+  return (
+    <aside className="peek" style={{ left, top, width: W }} role="tooltip">
+      <small className="pset">{(q.n ? q.n + ' · ' : '') + q.t}{e.isShaky(q.id) ? ' · shaky' : ''}{e.isMissed(q.id) ? ' · missed ' + e.MIS[q.id].w + '×' : ''}</small>
+      <h4>{qText(q.q)}</h4>
+      <CardFigure q={q.q} reveal compact />
+      <ul className="bopt">{ord.map((o, i) => <li key={i} className={o.ok ? 'ok' : ''}><kbd>{i + 1}</kbd>{o.t}</li>)}</ul>
+    </aside>
+  );
+}
+
+function Tile({ q, mode, show, open, onToggle, onEdit, onHover }: { onHover: (q: QCard | null, el?: HTMLElement) => void; q: QCard; mode: Mode; show: Show; open: boolean; onToggle: () => void; onEdit: () => void }) {
   const e = useEngine();
   const opts = useMemo(() => [q.c, ...q.w].map((t, i) => ({ t, ok: i === 0, k: fnv(q.id + '|' + i + '|' + t) })).sort((a, b) => (a.k < b.k ? -1 : 1)), [q.id, q.c, q.w]);
   return (
-    <article className={'btile' + (open ? ' open' : '') + (mode === 'shaky' ? ' sh' : '')}>
+    <article className={'btile' + (open ? ' open' : '') + (mode === 'shaky' ? ' sh' : '')}
+      onPointerEnter={ev => { if (ev.pointerType === 'mouse') onHover(q, ev.currentTarget); }} onPointerLeave={() => onHover(null)} onPointerDown={ev => { if (ev.pointerType === 'mouse') onHover(null); }}>
       {e.isMissed(q.id) && <small className="bmiss">missed {e.MIS[q.id].w}×</small>}
       <button className="bq" onClick={onToggle} aria-expanded={open}>
         <span>{qText(q.q)}</span>
