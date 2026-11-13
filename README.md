@@ -169,3 +169,16 @@ Owner changes are saved for everyone through `POST /api/cards {action:'batch'}` 
 
 ### Browse
 Browse opens full screen (cards use the whole width on any device). On a computer, hover a card for ~2 seconds to see a detail popup (set, full question, picture, all choices with the right one marked); it disappears as soon as the mouse leaves and restarts on the next card. Toggle with **Preview on/off** next to Manage (remembered). Touch devices are unaffected.
+
+### Challenge, accessibility, sharing
+- **Challenge a friend** (`/duel`, Home → Challenge): 10 questions; the cards, option order and your score travel inside the link (no server). The friend plays the same questions and sends a result link back. Both need the same library. Shows a QR code too.
+- **Accessibility** (Settings → Look): text size (normal / large / largest), easy-reading font with wider spacing, high contrast. Applied before first paint.
+- **Share cards**: Add → Import / export → *Share* sends the cards file through the phone's share sheet (Telegram, WhatsApp…).
+- **Home**: the big card now shows today's goal progress and a message; the streak is computed from the daily log so it always matches the week chart. Days without answers show an empty dashed marker.
+- Not built (needs a backend or hosting choices): study groups with shared streaks, teacher dashboard/assignments, photo-to-card OCR.
+
+## Smart help and Grok (optional)
+
+- **Smart help** (Settings → Smart help, on by default, offline, no download): typed answers are graded by meaning (numbers and "not/increase/decrease" are checked), cards on the same topic show as "Related cards", and Home groups the cards you keep missing into patterns. It is word-based; real paraphrases may land on "Close".
+- **AI helper** (Settings → AI helper): paste a Groq (`gsk_`) or xAI (`xai-`) key; it detects the provider, checks the key and picks a model. It adds "Explain with AI" under answered cards and "Ask AI to judge" on typed answers that were not "Right". The key is stored only in that browser (`fr-ai-v1`), never synced or backed up. Calls go straight to the provider; if the browser blocks that, they go through `/api/ai`, a stateless relay with two fixed upstreams that never stores or logs the key. Without a key nothing changes.
+- **AI cards** (Add → AI cards): paste notes, pick Flip / Type-in / Fill the blank / Multiple choice, and the AI proposes cards made only from that text (long text is split into parts, up to about 18,000 characters). You tick the ones you want before they are added. Needs a connected key.

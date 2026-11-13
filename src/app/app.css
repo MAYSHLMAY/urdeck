@@ -74,8 +74,6 @@ input[type=range]{height:26px}
 .swc.on{box-shadow:0 0 0 3px var(--sw)}
 .swc.on::after{content:"";position:absolute;inset:0;margin:auto;width:10px;height:6px;border:solid #fff;border-width:0 0 3px 3px;transform:translateY(-2px) rotate(-45deg) scale(.9);width:14px;height:8px;top:-4px;left:0;right:0}
 .swf{display:block!important}
-.right{border-color:var(--ok);background:var(--okbg)}.wrong{border-color:var(--bad);background:var(--badbg);animation:shake .35s}
-
 
 /* ---- app bar ---- */
 .snav{background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:0;box-shadow:0 1px 0 var(--line)}
@@ -337,3 +335,18 @@ dialog.sheet.browse .in{height:100dvh;max-height:100dvh;border-radius:0}
 @keyframes peekin{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
 .bopts .ghost.on{border-color:var(--acc);background:var(--accbg)}
 @media(hover:none){.peek{display:none}}
+.srcbtn.hot{border-color:var(--acc);background:var(--accbg);color:var(--acc)}
+
+.duel .dq h2.q{margin:10px 0 14px}.duel .opts{display:grid;gap:8px}
+.meter.bad i{background:var(--no,#e5484d)}
+
+/* ---- smart help ---- */
+.rel{margin:12px 0 4px;display:flex;flex-direction:column;gap:6px}.rel small{color:var(--mute);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:.68rem}
+.rel>div{display:flex;flex-wrap:wrap;gap:6px}.rel .ghost{font-size:.82rem;padding:6px 10px;text-align:left}
+.say.mid{color:var(--warm,#d97706)}
+.pats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px}
+.pat{font:inherit;text-align:left;display:flex;flex-direction:column;gap:3px;padding:14px 16px;border-radius:20px;border:0;background:var(--card);box-shadow:var(--sh,0 2px 10px rgba(0,0,0,.06));color:var(--ink);cursor:pointer}.pat small{color:var(--mute)}
+.ai input{width:100%;margin:6px 0}.ai .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.ai .hint,.ai small{opacity:.75;display:block;margin:6px 0}.aimsg{margin:8px 0 0;font-size:.9em}.aiok select{margin-left:6px}
+.aiex{margin:8px 0}.aiex p{margin:6px 0 0;padding:8px 10px;border-radius:10px;background:var(--card2,rgba(127,127,127,.12));font-size:.92em;line-height:1.45}
+.aigen textarea{width:100%;min-height:130px;margin:6px 0}.aigen .row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.aigen .row input[type=text]{flex:1;min-width:120px}
+.agl{list-style:none;margin:8px 0;padding:0;max-height:300px;overflow:auto;display:grid;gap:6px}.agl li{padding:8px 10px;border-radius:10px;background:var(--card2,rgba(127,127,127,.12))}.agl label{display:flex;gap:8px;align-items:flex-start;font-size:.92em}.agl small{opacity:.7}

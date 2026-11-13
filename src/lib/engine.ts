@@ -38,6 +38,8 @@ export class Engine {
   PE: any = { batch: 'past-exam-batch1', added: Date.now(), seen: {} };
   DATA: { packs: LocalPack[]; titles: Record<string, string> } = { packs: [], titles: {} };
   NOTES: Record<string, any[]> = {};
+  AUX: { mn: Record<string, string>; oc: Record<string, number> } = { mn: {}, oc: {} };
+  conf = 0;
   LF: FoldDB = { folders: [], place: {} };
 
   /* shared library */
@@ -86,6 +88,7 @@ export class Engine {
     this.S.opt = Object.assign({}, DEF, this.S.opt); this.S.log = this.S.log || {}; this.S.cards = this.S.cards || {};
     const lf = jget(K_FOLD); if (lf) this.LF = { folders: lf.folders || [], place: lf.place || {} };
     this.NOTES = jget(K_NOTES) || {};
+    { const a = jget('fr-aux-v1') || {}; this.AUX = { mn: a.mn || {}, oc: a.oc || {} }; }
     if (typeof window !== 'undefined') {
       addEventListener('pagehide', () => this.flushAll());
       document.addEventListener('visibilitychange', () => {
@@ -176,6 +179,8 @@ export class Engine {
     const S = this.S;
     for (const id in S.cards) m.set('c:' + id, { v: S.cards[id], ts: S.cards[id]?.a || 0 });
     for (const id in this.SH) m.set('sh:' + id, { v: 1 });
+    for (const id in this.AUX.mn) m.set('mn:' + id, { v: this.AUX.mn[id] });
+    for (const id in this.AUX.oc) m.set('oc:' + id, { v: this.AUX.oc[id] });
     for (const id in this.MIS) m.set('mi:' + id, { v: this.MIS[id], ts: this.MIS[id].t });
     this.MY.cards.forEach(c => m.set('my:' + c.id, { v: c }));
     for (const id in this.MY.edits) m.set('me:' + id, { v: this.MY.edits[id] });
@@ -191,6 +196,8 @@ export class Engine {
       const i = k.indexOf(':'), t = k.slice(0, i), id = k.slice(i + 1), del = v == null;
       if (t === 'c') { if (del) delete S.cards[id]; else S.cards[id] = v; cards = true; }
       else if (t === 'sh') { if (del) delete this.SH[id]; else this.SH[id] = 1; }
+      else if (t === 'mn') { if (del) delete this.AUX.mn[id]; else this.AUX.mn[id] = String(v); }
+      else if (t === 'oc') { if (del) delete this.AUX.oc[id]; else this.AUX.oc[id] = +v || 0; }
       else if (t === 'mi') { if (del) delete this.MIS[id]; else this.MIS[id] = v; }
       else if (t === 'my') { this.MY.cards = this.MY.cards.filter(c => c.id !== id); if (!del) this.MY.cards.push(v); cards = true; }
       else if (t === 'me') { if (del) delete this.MY.edits[id]; else this.MY.edits[id] = v; cards = true; }
@@ -199,7 +206,7 @@ export class Engine {
       else if (t === 'lg') { S.log = S.log || {}; if (del) delete S.log[id]; else S.log[id] = v; }
       else if (t === 'pe') { this.PE.seen = this.PE.seen || {}; if (del) delete this.PE.seen[id]; else this.PE.seen[id] = v; }
     }
-    this.flushSave(); this.saveMy(); this.saveLF();
+    this.flushSave(); this.saveMy(); this.saveLF(); this.saveAux();
     try { localStorage.setItem(K_SH, JSON.stringify(this.SH)); localStorage.setItem(K_MIS, JSON.stringify(this.MIS)); } catch { /* ignore */ }
     if (cards && this.ready) this.buildQ();
     this.emit();
@@ -370,6 +377,11 @@ export class Engine {
     const nw = this.Q.filter(q => this.isNew(this.S.cards[q.id]) && !(this.S.cards[q.id] && this.S.cards[q.id].susp)).length;
     return days === 0 ? 'exam today' : `exam in ${days} d${nw ? ` · ~${Math.ceil(nw / Math.max(1, days))} new/day to finish` : ''}`;
   }
+  /** Consecutive days with at least one answer, read from the daily log (the same data the week chart shows). */
+  logStreak() {
+    const now = Date.now(), n = (k: number) => this.S.log?.[this.dayKey(addDays(this.dayStart(now), -k))]?.n || 0;
+    let k = n(0) > 0 ? 0 : 1, c = 0; while (k < 400 && n(k) > 0) { c++; k++; } return c;
+  }
   streakTick() {
     const S = this.S, now = Date.now(), t = this.dayKey(now); if (S.last === t) return;
     const yest = this.dayKey(addDays(this.dayStart(now), -1));
@@ -380,7 +392,7 @@ export class Engine {
       if (S.last && S.streak > 0 && gap > 0 && gap <= (S.freeze || 0)) { S.freeze -= gap; S.streak += 1; S.saved = (S.saved || 0) + gap; } else S.streak = 1;
     }
     if (S.streak > 0 && S.streak % 7 === 0 && S.lastFz !== S.streak) { S.freeze = Math.min(2, (S.freeze || 0) + 1); S.lastFz = S.streak; }
-    S.last = t; S.best = Math.max(S.best || 0, S.streak);
+    S.streak = Math.max(S.streak, this.logStreak() + (S.log?.[t]?.n ? 0 : 1)); S.last = t; S.best = Math.max(S.best || 0, S.streak);
   }
   logAns(good: boolean, wasReview: boolean) {
     const S = this.S, dk = this.dayKey(Date.now()), L = S.log[dk] || (S.log[dk] = { n: 0, k: 0, r: 0, rk: 0 });
@@ -389,8 +401,11 @@ export class Engine {
   }
 
   /* ---------- the study loop ---------- */
+  saveAux() { try { localStorage.setItem('fr-aux-v1', JSON.stringify(this.AUX)); } catch { /* ignore */ } }
+  setConf(n: number) { if (this.phase === 'q') { this.conf = this.conf === n ? 0 : n; this.emit(); } }
+  setMnemonic(id: string, t: string) { t = t.trim().slice(0, 300); if (t) this.AUX.mn[id] = t; else delete this.AUX.mn[id]; this.saveAux(); this.emit(); }
   show() {
-    this.cur = this.pick(); this.showN++; this.chosen = null;
+    this.cur = this.pick(); this.showN++; this.chosen = null; this.conf = 0;
     if (!this.cur && this.speed) { this.finishSpeed(false); return; }
     if (!this.cur) { this.phase = 'done'; this.curOpts = []; this.emit(); return; }
     this.phase = 'q';
@@ -417,6 +432,7 @@ export class Engine {
     const good = i >= 0 && !!this.curOpts[i].ok, x = this.O, S = this.S, cur = this.cur;
     this.chosen = i;
     this.noteResult(cur.id, good);
+    if (x.conf && this.conf === 3) { const o = this.AUX.oc; if (!good) o[cur.id] = (o[cur.id] || 0) + 1; else if (o[cur.id]) { o[cur.id]--; if (!o[cur.id]) delete o[cur.id]; } this.saveAux(); }
     if (this.speed) {
       const sp = this.speed; if (good) sp.right++; else { sp.wrong++; sp.missed.push(cur.id); }
       setTimeout(() => { if (this.speed && this.phase === 'cr' && this.cur && this.cur.id === cur.id) this.show(); }, good ? 450 : 1400);

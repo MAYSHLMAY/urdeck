@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { qText } from '@/lib/cardimg';
 import { M, D } from '@/lib/srs';
 import { useEngine, esc, Ic, ask } from './ui';
 import { useRefs } from './refHooks';
@@ -7,6 +8,9 @@ import { renderQuestion } from './Highlights';
 import { isOwner } from '@/lib/api';
 import { CardFigure } from './CardFigure';
 import { FlipBody } from './FlipBody';
+import { Related } from './Related';
+import { AiExplain } from './AiConnect';
+import { parseSrc } from '@/lib/src';
 import { kindOf, stripKind, clozeFront, clozeBack, activeCloze } from '@/lib/kind';
 
 export type CardAct = (mode: 'edit' | 'add', id: string, section: string) => void;
@@ -83,6 +87,8 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
       <h2 className="q" ref={qRef} />
       <CardFigure key={cur.id} q={cur.q} reveal={answered || rev} />
       {flipK && <FlipBody key={cur.id + ':' + e.showN} kind={kind} cur={cur} c={c} rev={rev} setRev={setRev} />}
+      {!flipK && x.conf && ph === 'q' && <div className="conf" role="group" aria-label="How sure are you?"><small>How sure?</small>
+        {([[1, 'Guess'], [2, 'Think so'], [3, 'Sure']] as [number, string][]).map(([n, l]) => <button key={n} className={e.conf === n ? 'on' : ''} aria-pressed={e.conf === n} onClick={() => e.setConf(n)}>{l}</button>)}</div>}
       {!flipK && <div className="opts">
         {e.curOpts.map((o, k) => (
           <button key={k} className={'opt' + (answered ? (o.ok ? ' right' : k === i ? ' wrong' : '') : '')} disabled={answered} onClick={() => e.answer(k)}>
@@ -90,7 +96,10 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
           </button>
         ))}
       </div>}
+      {(answered || (flipK && rev)) && <Mnemonic id={String(cur.id)} />}
+      {(answered || (flipK && rev)) && <TeachBack key={cur.id + ':' + e.showN} q={cur.q} c={cur.c} />}
       <div className="row refrow">
+        {parseSrc(cur.q) && <button className={'ghost srcbtn' + (answered && ph === 'bad' ? ' hot' : '')} title="Open the PDF page this card came from" onClick={async () => { const sr = parseSrc(cur.q)!; if (!R.open) await R.toggle(cur); R.openPdf(sr.pdfId, sr.page); }}><Ic n="mappin" /> Source p. {parseSrc(cur.q)!.page}</button>}
         <button className={'ghost refbtn' + (R.open ? ' on' : '')} onClick={() => R.toggle(cur)} aria-expanded={R.open} title="Reference PDF (R)">
           <Ic n="clip" /> {R.open ? 'Hide Reference PDF' : 'Open Reference PDF'}
           {!R.open && R.auto && R.auto.qid === String(cur.id) && R.auto.state === 'ready' && R.auto.matches.length > 0 && <span className="refready"><Ic n="sparkle" /> p. {R.auto.matches[0].page}</span>}
@@ -99,6 +108,7 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
       </div>
       {!answered && !flipK && <div className="row"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button><button className="ghost" onClick={() => e.answer(-1)}>I don’t know</button></div>}
       {!answered && flipK && !rev && <div className="row"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button></div>}
+      {(answered || rev) && <><AiExplain q={cur} /><Related id={cur.id} /></>}
       <p className="swh">{!answered ? '← swipe left: ask me later' : ph === 'ok' && !x.autoGood ? '→ swipe right: Good · ← Hard' : '→ swipe right: continue'}</p>
       <div id="fb" ref={fbRef}>
         {ph === 'cr' && <>
@@ -170,3 +180,32 @@ function Done() {
 }
 
 export { esc };
+
+function Mnemonic({ id }: { id: string }) {
+  const e = useEngine(), t = e.AUX.mn[id] || '', [ed, setEd] = useState(false), [v, setV] = useState(t);
+  if (ed) return <div className="mnem"><textarea rows={2} autoFocus maxLength={300} value={v} onChange={ev => setV(ev.target.value)} placeholder="A picture, rhyme or trick that makes it stick…" />
+    <button className="solid" onClick={() => { e.setMnemonic(id, v); setEd(false); }}>Save</button></div>;
+  return t ? <div className="mnem"><Ic n="sparkle" /><p>{t}</p><button className="ghost" aria-label="Edit memory trick" onClick={() => { setV(t); setEd(true); }}><Ic n="pencil" /></button></div>
+    : <div className="row"><button className="ghost" onClick={() => { setV(''); setEd(true); }}><Ic n="sparkle" /> Add a memory trick</button></div>;
+}
+
+const STOP = new Set('the and for are was were with that this from into than then they them their there which when what where while have has had been being will would should could can not but its it\'s also such each both more most other some any all only over under about after before between because'.split(' '));
+const terms = (t: string) => [...new Set(String(t).replace(/<[^>]+>/g, ' ').toLowerCase().match(/[\p{L}\p{N}][\p{L}\p{N}-]{3,}/gu) || [])].filter(w => !STOP.has(w)).slice(0, 12);
+
+/** Teach it back: say it in your own words, then see which key ideas you covered. */
+function TeachBack({ q, c }: { q: string; c: string }) {
+  const [open, setOpen] = useState(false), [t, setT] = useState(''), [done, setDone] = useState(false);
+  const key = useMemo(() => { const k = terms(c); return k.length >= 2 ? k : [...k, ...terms(qText(q))].slice(0, 8); }, [q, c]);
+  if (!open) return <div className="row"><button className="ghost" onClick={() => setOpen(true)}><Ic n="note" /> Teach it back</button></div>;
+  const mine = t.toLowerCase();
+  return (
+    <div className="teach">
+      <label className="cl">Explain it in your own words</label>
+      <textarea rows={3} value={t} onChange={ev => { setT(ev.target.value); setDone(false); }} placeholder="As if you were teaching a friend…" />
+      {!done ? <div className="row"><button className="ghost" onClick={() => setOpen(false)}>Close</button><button className="solid" disabled={t.trim().length < 8} onClick={() => setDone(true)}>Compare</button></div>
+        : <><p className="n">Key ideas from the answer:</p>
+          <div className="tchips">{key.map(k => <span key={k} className={mine.includes(k.slice(0, Math.max(4, k.length - 2))) ? 'yes' : 'no'}>{mine.includes(k.slice(0, Math.max(4, k.length - 2))) ? '✓ ' : '✗ '}{k}</span>)}</div>
+          <div className="flipans" dangerouslySetInnerHTML={{ __html: c }} /></>}
+    </div>
+  );
+}

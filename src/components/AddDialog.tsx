@@ -3,6 +3,7 @@ import { isSim, is3d, simTitle } from '@/lib/sim';
 import { refs } from '@/lib/refs';
 import { importToPack, cardsToCardsFile, cardsToCsv, cardsToAnki, downloadText } from '@/lib/exchange';
 import { useEffect, useState } from 'react';
+import { AiCards } from './AiCards';
 import { foldList } from '@/lib/tree';
 import { parseRaw } from '@/lib/parse';
 import { splitPath } from '@/lib/engine';
@@ -14,7 +15,7 @@ export function AddDialog({ open, onClose, onManage }: { open: boolean; onClose:
   const e = useEngine();
   const [own, setOwn] = useState(false), [pw, setPw] = useState(''), [pwm, setPwm] = useState('');
   const [flipIn, setFlipIn] = useState(true);
-  const [tab, setTab] = useState<'F' | 'C' | 'X'>('F');
+  const [tab, setTab] = useState<'F' | 'C' | 'X' | 'A'>('F');
   const [where, setWhere] = useState('root'), [fname, setFname] = useState(''), [cpath, setCpath] = useState(''), [ctags, setCtags] = useState(''), [paste, setPaste] = useState('');
   const [msg, setMsg] = useState<{ t: string; c: string }>({ t: '', c: '' });
   const [packs, setPacks] = useState<any[]>([]);
@@ -91,10 +92,13 @@ export function AddDialog({ open, onClose, onManage }: { open: boolean; onClose:
                 <button type="button" className={tab === 'F' ? 'on' : ''} onClick={() => setTab('F')}>New folder</button>
                 <button type="button" className={tab === 'C' ? 'on' : ''} onClick={() => setTab('C')}>Add cards</button>
                 <button type="button" className={tab === 'X' ? 'on' : ''} onClick={() => setTab('X')}>Import / export</button>
+                <button type="button" className={tab === 'A' ? 'on' : ''} onClick={() => setTab('A')}>AI cards</button>
               </div>
               <label>Where</label>
               <select value={whereVal} onChange={ev => setWhere(ev.target.value)}>{L.map(x => <option key={x.id} value={x.id}>{x.label}</option>)}</select>
-              {tab === 'X' ? (
+              {tab === 'A' ? (
+                <div className="addc"><AiCards where={whereVal} tags={ctags.trim()} onMsg={say} /></div>
+              ) : tab === 'X' ? (
                 <div>
                   <p className="n">Import a <b>CSV</b> (columns: set, question, correct, wrong1…wrong5, image, pins), an <b>Anki</b> text export, or a two-column <b>Quizlet/Anki</b> file (front, back). Or a <b>cards file</b> (.txt) with every kind of card: <code>F: front | back</code>, <code>R:</code> reversed, <code>T:</code> type-in, <code>C: The {'{{c1::heart}}'} pumps…</code> cloze, <code>O: image-url | hide-one | Wing@x,y,w,h</code> occlusion, <code>Q: question | correct | wrong…</code> multiple choice. Use <code>#Set name</code> lines to choose the set. <b>Simulations</b>: drop a Three.js / HTML file (.html or .js starting with <code>/* flight-recall-sim */</code>) here too; the owner's upload goes straight to the 3D lab.</p>
                   <label className="pickr"><input type="checkbox" checked={flipIn} onChange={ev => setFlipIn(ev.target.checked)} /><span>Two-column files become flip cards (otherwise multiple choice with borrowed wrong answers)</span></label>
@@ -121,6 +125,7 @@ export function AddDialog({ open, onClose, onManage }: { open: boolean; onClose:
                   <div className="row">
                     <button type="button" className="ghost" onClick={() => downloadText('flight-recall-cards.csv', cardsToCsv(e.Q), 'text/csv')}>Download CSV</button>
                     <button type="button" className="ghost" onClick={() => downloadText('flight-recall-cards.txt', cardsToCardsFile(e.Q))}>Download cards file</button>
+                    <button type="button" className="ghost" onClick={async () => { const txt = cardsToCardsFile(e.Q); try { const f = new File([txt], 'flight-recall-cards.txt', { type: 'text/plain' }); if ((navigator as any).canShare?.({ files: [f] })) { await navigator.share({ files: [f], title: 'Flight Recall cards' }); return; } await navigator.share?.({ title: 'Flight Recall cards', text: txt.slice(0, 60000) }); if (!navigator.share) downloadText('flight-recall-cards.txt', txt); } catch { /* cancelled */ } }}>Share (Telegram, WhatsApp…)</button>
                     <button type="button" className="ghost" onClick={() => downloadText('flight-recall-anki.txt', cardsToAnki(e.Q))}>Download for Anki</button>
                   </div>
                   <p className="n">CSV keeps pictures and pins. Anki import: File → Import, choose the .txt, tick "Allow HTML in fields".</p>

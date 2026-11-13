@@ -17,7 +17,7 @@ const mk1 = (t: string) =>
     .replace(/α0/g, 'α<sub>0</sub>')
     .replace(/αi/g, 'α<sub>i</sub>');
 /** Like mk, but leaves a card picture token (<!--img:...-->) untouched. */
-export const mk = (t: string) => String(t).split(/(<!--(?:img|k|occ):[^>]*-->)/).map(x => /^<!--(?:img|k|occ):/.test(x) ? x : mk1(x)).join('');
+export const mk = (t: string) => String(t).split(/(<!--(?:img|k|occ|src):[^>]*-->)/).map(x => /^<!--(?:img|k|occ|src):/.test(x) ? x : mk1(x)).join('');
 
 /** Split a section title into display title (t), number (n) and group key (g). */
 export function meta(s: string, p?: number | boolean) {
@@ -55,7 +55,7 @@ export function parseRaw(name: string, text: string) {
   text.replace(/^﻿/, '').split(/\r?\n/).forEach((line, i) => {
     if (!line.trim()) return;
     if (line.startsWith('#')) { sec = line.replace(/^#+/, '').trim(); return; }
-    const p = line.replace(/^=/, '').split('|').map(x => clean(x).trim().replace(/<!--(?:img|k|occ):[^>]*-->/g, m => m.replace(/¦/g, '|')));
+    const p = line.replace(/^=/, '').split('|').map(x => clean(x).trim().replace(/<!--(?:img|k|occ|src):[^>]*-->/g, m => m.replace(/¦/g, '|')));
     if (p.length !== 5) { errs.push(`${name}:${i + 1}: expected 5 parts, found ${p.length}`); return; }
     if (p.some(x => !x)) { errs.push(`${name}:${i + 1}: empty part`); return; }
     if (!sec) { errs.push(`${name}:${i + 1}: question before any #Section title`); return; }

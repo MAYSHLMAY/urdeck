@@ -37,3 +37,22 @@ export function weakTopics(e: Engine, limit = 3): Weak[] {
     return { s, label: i ? (i.n ? i.n + ' · ' : '') + i.t : s, cards: r.cards, tried: r.a, acc: r.k / r.a, missed: r.missed };
   }).filter(w => w.acc < 0.85 || w.missed >= 3).sort((a, b) => a.acc - b.acc || b.missed - a.missed).slice(0, limit);
 }
+
+/** Cards you were SURE about and got wrong (confidence rating). */
+export const overconfident = (e: Engine) => Object.keys(e.AUX.oc).filter(id => e.qById(id));
+
+/** Weak-spot sprint: the weakest cards across all topics, mixed. */
+export function sprintIds(e: Engine, n = 15): string[] {
+  const sc = e.Q.map(q => { const c = e.S.cards[q.id], m = e.MIS[q.id];
+    return { id: q.id, s: (e.AUX.oc[q.id] || 0) * 3 + (m ? m.w * 2 : 0) + (e.isShaky(q.id) ? 2 : 0) + (c && c.a >= 2 && c.k / c.a < 0.6 ? 2 : 0) + Math.random() * 0.5 };
+  }).filter(x => x.s >= 1).sort((a, b) => b.s - a.s).slice(0, n).map(x => x.id);
+  return sc.sort(() => Math.random() - 0.5);
+}
+
+/** One honest streak number for the Home screen: log-based, but never lower than a freeze-protected streak. */
+export function streakInfo(e: Engine) {
+  const S = e.S, now = Date.now(), done = todayCount(e) > 0, y = e.dayKey(e.addDays(e.dayStart(now), -1));
+  let live = false; for (let k = 0; k <= 1 + (S.freeze || 0); k++) if (S.last === e.dayKey(e.addDays(e.dayStart(now), -k))) live = true;
+  const n = Math.max(e.logStreak(), live ? S.streak || 0 : 0);
+  return { n, done, atRisk: !done && n > 0, yest: !!S.log?.[y]?.n };
+}

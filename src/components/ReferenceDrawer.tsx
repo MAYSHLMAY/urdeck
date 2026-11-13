@@ -11,6 +11,7 @@ import { PdfViewer, type PdfViewerHandle } from './PdfViewer';
 import { CategoryPool, PdfChooserModal } from './CategoryPool';
 import { useNoteCapture, useNotesStore, useRefs } from './refHooks';
 import { Ic } from './ui';
+import { MakeCard } from './MakeCard';
 
 const boxOf = (rs: { x: number; y: number; width: number; height: number }[]) => {
   if (!rs.length) return null;
@@ -37,6 +38,7 @@ function Dots({ value, onPick }: { value: NoteColor; onPick: (c: NoteColor) => v
 export function ReferenceDrawer({ q }: { q: QCard | null }) {
   const R = useRefs(), N = useNotesStore();
   const [mounted, setMounted] = useState(false);
+  const [mk, setMk] = useState(false), [mkSel, setMkSel] = useState<{ text: string; page: number } | null>(null);
   const viewer = useRef<PdfViewerHandle>(null), body = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState({ n: 1, total: 0 });
   const [zoom, setZoom] = useState(1);
@@ -365,10 +367,12 @@ export function ReferenceDrawer({ q }: { q: QCard | null }) {
                 </span>
                 <button className="vact" disabled={!sel} onClick={doHighlight} title="Highlight the selection (H)"><Ic n="marker" /><span>Highlight</span></button>
                 <button className="vact" disabled={!sel} onClick={openNote} title="Add a note to the selection (N)"><Ic n="note" /><span>Note</span></button>
+                <button className="vact" disabled={!sel} onClick={() => { if (sel) { setMkSel({ text: sel.text, page: sel.page }); setMk(true); } }} title="Turn the selection into a card"><Ic n="sparkle" /><span>Card</span></button>
                 <button className="vact icon" disabled={!sel} onClick={copySel} aria-label="Copy selection" title="Copy"><Ic n="copy" /></button>
               </div>
             </div>
           )}
+          {pdf && <MakeCard open={mk} onClose={() => setMk(false)} text={mkSel?.text || ''} pdfId={pdf.id} page={mkSel?.page || 1} />}
         </section>
 
         <section className={'refp' + (R.view === 'pools' ? ' show' : '')}>

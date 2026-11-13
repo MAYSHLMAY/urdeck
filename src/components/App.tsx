@@ -45,7 +45,8 @@ export default function App() {
   useEffect(() => {
     applyLook({ t: o.theme });
     document.documentElement.style.setProperty('--fs', ({ s: '14.5px', m: '16px', l: '18px', xl: '20px' } as any)[o.size] || '16px');
-  }, [o.theme, o.size]);
+    const d = document.documentElement; o.readable ? d.setAttribute('data-read', '1') : d.removeAttribute('data-read'); o.contrast ? d.setAttribute('data-contrast', '1') : d.removeAttribute('data-contrast');
+  }, [o.theme, o.size, o.readable, o.contrast]);
 
   /* keyboard */
   useEffect(() => {

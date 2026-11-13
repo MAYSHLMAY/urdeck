@@ -4,7 +4,7 @@ export const M = 60000, D = 86400000;
 export const DEF = {
   steps: '1 10', relearn: '10', wrongMin: 1, wrongMax: 4, grad: 1, easyIv: 4, startEase: 2.5, easyBonus: 1.3,
   hardIv: 1.2, ivMod: 1, maxIv: 3650, lapseNew: 50, leech: 8, leechSusp: false, learnAhead: 2, rollover: 4,
-  newOrder: 'seq', mix: 'after', maxRev: 200, fuzz: true, autoGood: false, vib: true, sound: false, dailyGoal: 20, remind: '', theme: 'auto', size: 'm', exam: ''
+  newOrder: 'seq', mix: 'after', maxRev: 200, fuzz: true, autoGood: false, vib: true, sound: false, smart: true, dailyGoal: 20, remind: '', theme: 'auto', size: 'm', exam: '', conf: true, readable: false, contrast: false
 };
 export type Opts = typeof DEF;
 

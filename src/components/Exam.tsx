@@ -19,25 +19,27 @@ export default function Exam() {
   const [stage, setStage] = useState<'setup' | 'run' | 'report'>('setup');
   const [sel, setSel] = useState('all'), [count, setCount] = useState(20), [mins, setMins] = useState(20);
   const [items, setItems] = useState<Item[]>([]), [i, setI] = useState(0), [left, setLeft] = useState(0), [sure, setSure] = useState(false);
+  const [penalty, setPenalty] = useState(0), [secs, setSecs] = useState(1), [sc, setSc] = useState(0);
   const end = useRef(0);
   useEffect(() => { e.init(); }, []); // eslint-disable-line
 
   const pool = useMemo(() => e.ready ? e.Q.filter(q => e.inSel(q, sel, e.S.cards[q.id])) : [], [e.ready, e.qver, sel]); // eslint-disable-line
-  const n = Math.min(count, pool.length);
+  const n = Math.min(count, pool.length), size = Math.max(1, Math.ceil(n / secs)), lo = sc * size, hi = Math.min(items.length || n, lo + size) - 1, last = sc >= secs - 1 || lo + size >= (items.length || n);
 
   function start() {
     const pick = shuf(pool).slice(0, n).map(q => ({ q, opts: shuf([q.c, ...q.w].map((t, k) => ({ t, ok: k === 0 }))), pick: -1, flag: false }));
-    setItems(pick); setI(0); setSure(false); end.current = Date.now() + mins * 60_000; setLeft(mins * 60); setStage('run');
+    setItems(pick); setI(0); setSc(0); setSure(false); end.current = Date.now() + (mins / secs) * 60_000; setLeft(Math.round(mins * 60 / secs)); setStage('run');
   }
   const finish = () => {
     items.forEach(it => { if (it.pick >= 0) e.noteResult(it.q.id, it.opts[it.pick].ok); else e.noteResult(it.q.id, false); });
     e.save(); setStage('report');
   };
+  const nextSection = () => { setSure(false); setSc(v => v + 1); setI((sc + 1) * size); end.current = Date.now() + (mins / secs) * 60_000; setLeft(Math.round(mins * 60 / secs)); };
   useEffect(() => {
     if (stage !== 'run') return;
-    const t = setInterval(() => { const s = Math.ceil((end.current - Date.now()) / 1000); setLeft(s); if (s <= 0) { clearInterval(t); finish(); } }, 500);
+    const t = setInterval(() => { const s = Math.ceil((end.current - Date.now()) / 1000); setLeft(s); if (s <= 0) { if (last) { clearInterval(t); finish(); } else nextSection(); } }, 500);
     return () => clearInterval(t);
-  }, [stage, items]); // eslint-disable-line
+  }, [stage, items, sc]); // eslint-disable-line
 
   const choose = (k: number) => setItems(a => a.map((it, j) => j === i ? { ...it, pick: it.pick === k ? -1 : k } : it));
   const flag = () => setItems(a => a.map((it, j) => j === i ? { ...it, flag: !it.flag } : it));
@@ -47,7 +49,8 @@ export default function Exam() {
     const right = items.filter(it => it.pick >= 0 && it.opts[it.pick].ok).length, skipped = items.filter(it => it.pick < 0).length;
     const by = new Map<string, { t: string; n: number; ok: number }>();
     items.forEach(it => { const k = it.q.s, r = by.get(k) || { t: (it.q.n ? it.q.n + ' · ' : '') + it.q.t, n: 0, ok: 0 }; r.n++; if (it.pick >= 0 && it.opts[it.pick].ok) r.ok++; by.set(k, r); });
-    return { right, skipped, total: items.length, by: [...by.values()].sort((a, b) => a.ok / a.n - b.ok / b.n) };
+    const wrong = items.length - right - skipped, marks = Math.max(0, right - wrong * penalty);
+    return { right, skipped, wrong, marks, total: items.length, by: [...by.values()].sort((a, b) => a.ok / a.n - b.ok / b.n) };
   }, [stage]); // eslint-disable-line
 
   const it = items[i];
@@ -67,29 +70,35 @@ export default function Exam() {
               <div className="segx">{[10, 20, 40, 60].map(v => <button key={v} type="button" className={count === v ? 'on' : ''} onClick={() => { setCount(v); setMins(Math.max(5, Math.round(v * 1))); }}>{v}</button>)}</div></label>
             <label>Time limit: <b>{mins} min</b>
               <input type="range" min={5} max={120} step={5} value={mins} onChange={ev => setMins(+ev.target.value)} /></label>
+            <label>Several timed sections <small>(like a real exam: you cannot go back)</small>
+              <div className="segx">{[1, 2, 3, 4].map(v => <button key={v} type="button" className={secs === v ? 'on' : ''} onClick={() => setSecs(v)}>{v === 1 ? 'One' : v}</button>)}</div></label>
+            <label>Marks lost for a wrong answer
+              <div className="segx">{([[0, 'None'], [0.25, '¼'], [1 / 3, '⅓'], [0.5, '½']] as [number, string][]).map(([v, l]) => <button key={l} type="button" className={penalty === v ? 'on' : ''} onClick={() => setPenalty(v)}>{l}</button>)}</div></label>
             <p className="hnote">{pool.length ? `${pool.length} cards available. You will get ${n}.` : e.ready ? 'No cards in this selection.' : 'Loading cards…'} No feedback until you submit. Cards are not rescheduled; wrong answers go to your Mistakes list.</p>
             <button className="solid" disabled={!n} onClick={start}>Start exam</button>
           </section>
         </>}
 
         {stage === 'run' && it && <>
-          <div className="xbar"><b className={left < 60 ? 'low' : ''}><Ic n="clock" /> {mmss(left)}</b><span>{i + 1} / {items.length}</span><button className="ghost" onClick={() => setSure(true)}>Submit</button></div>
+          <div className="xbar"><b className={left < 60 ? 'low' : ''}><Ic n="clock" /> {mmss(left)}</b><span>{secs > 1 && <small>Section {sc + 1}/{secs} · </small>}{i + 1} / {items.length}</span><button className="ghost" onClick={() => setSure(true)}>{last ? 'Submit' : 'Finish section'}</button></div>
           <div className="card xq" key={i}>
             <button className={'mini xflag' + (it.flag ? ' on' : '')} onClick={flag} aria-label="Flag for review"><Ic n="flag" /></button>
             <h2 className="q" style={{ fontSize: '1.2rem' }}>{qText(it.q.q).replace(/<[^>]+>/g, '')}</h2>
             <CardFigure q={it.q.q} reveal={false} compact />
             <div className="opts">{it.opts.map((o, k) => <button key={k} className={'opt' + (it.pick === k ? ' sel' : '')} onClick={() => choose(k)}><kbd>{k + 1}</kbd><span dangerouslySetInnerHTML={{ __html: o.t }} /></button>)}</div>
           </div>
-          <div className="xnav"><button className="ghost" disabled={i === 0} onClick={() => setI(i - 1)}>Previous</button><button className="solid" disabled={i === items.length - 1} onClick={() => setI(i + 1)}>Next</button></div>
-          <div className="xgrid">{items.map((x, k) => <button key={k} className={(k === i ? 'cur ' : '') + (x.pick >= 0 ? 'done ' : '') + (x.flag ? 'fl' : '')} onClick={() => setI(k)}>{k + 1}</button>)}</div>
+          <div className="xnav"><button className="ghost" disabled={i <= lo} onClick={() => setI(i - 1)}>Previous</button><button className="solid" disabled={i >= hi} onClick={() => setI(i + 1)}>Next</button></div>
+          <div className="xgrid">{items.map((x, k) => (k < lo || k > hi) ? null : <button key={k} className={(k === i ? 'cur ' : '') + (x.pick >= 0 ? 'done ' : '') + (x.flag ? 'fl' : '')} onClick={() => setI(k)}>{k + 1}</button>)}</div>
           {sure && <div className="clight" onClick={() => setSure(false)}><div className="card" onClick={ev => ev.stopPropagation()} style={{ maxWidth: 360 }}>
-            <h3>Submit the exam?</h3><p className="n">{items.filter(x => x.pick < 0).length} unanswered · {items.filter(x => x.flag).length} flagged</p>
-            <div className="row"><button className="ghost" onClick={() => setSure(false)}>Keep going</button><button className="solid" onClick={finish}>Submit</button></div></div></div>}
+            <h3>{last ? 'Submit the exam?' : 'Finish this section?'}</h3>
+            <p className="n">{items.filter((x, k) => k >= lo && k <= hi && x.pick < 0).length} unanswered · {items.filter((x, k) => k >= lo && k <= hi && x.flag).length} flagged{!last && ' · you cannot come back to this section'}</p>
+            <div className="xrevchips">{items.map((x, k) => (k >= lo && k <= hi && (x.pick < 0 || x.flag)) ? <button key={k} className={x.flag ? 'fl' : ''} onClick={() => { setI(k); setSure(false); }}>{k + 1}{x.flag ? ' ⚑' : ' ·'}</button> : null)}</div>
+            <div className="row"><button className="ghost" onClick={() => setSure(false)}>Keep going</button><button className="solid" onClick={last ? finish : nextSection}>{last ? 'Submit' : 'Next section'}</button></div></div></div>}
         </>}
 
         {stage === 'report' && report && <>
           <section className="today xres">
-            <div><small>Your score</small><h2>{Math.round(report.right / Math.max(1, report.total) * 100)}%</h2><p>{report.right} of {report.total} correct{report.skipped ? ` · ${report.skipped} skipped` : ''}</p></div>
+            <div><small>Your score</small><h2>{Math.round(report.marks / Math.max(1, report.total) * 100)}%</h2><p>{report.right} of {report.total} correct{report.skipped ? ` · ${report.skipped} skipped` : ''}{penalty > 0 && report.wrong > 0 ? ` · ${report.wrong} wrong cost ${+(report.wrong * penalty).toFixed(2)} marks` : ''}</p></div>
             <div className="ringw"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" className="rb" /><circle cx="60" cy="60" r="50" className="rf" strokeDasharray={2 * Math.PI * 50} strokeDashoffset={2 * Math.PI * 50 * (1 - report.right / Math.max(1, report.total))} /></svg></div>
           </section>
           <div className="shead"><h2>By topic</h2></div>

@@ -16,4 +16,4 @@ export function applyLook(p?: { a?: string; t?: string }) {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', hex);
 }
 /** Inline script for <head>: applies the saved look before the first paint (no flash). */
-export const LOOK_BOOT = `try{var j=JSON.parse(localStorage.getItem('${K}')||'{}'),d=document.documentElement;if(j.a)d.dataset.accent=j.a;if(j.t&&j.t!=='auto')d.dataset.theme=j.t}catch(e){}`;
+export const LOOK_BOOT = `try{var j=JSON.parse(localStorage.getItem('${K}')||'{}'),d=document.documentElement;if(j.a)d.dataset.accent=j.a;if(j.t&&j.t!=='auto')d.dataset.theme=j.t;}catch(e){}`;

@@ -51,7 +51,7 @@ export function Browse({ open, onClose, onEdit, onPick, onManage }: { onManage?:
   };
   const onHover = (q: QCard | null, el?: HTMLElement) => {
     clearTimeout(timer.current); setPv(null);
-    if (q && el && hov) timer.current = setTimeout(() => setPv({ q, r: el.getBoundingClientRect() }), 500);
+    if (q && el && hov) timer.current = setTimeout(() => setPv({ q, r: el.getBoundingClientRect() }), 2200);
   };
   useEffect(() => { if (!hov || !open) { clearTimeout(timer.current); setPv(null); } }, [hov, open]);
   useEffect(() => () => clearTimeout(timer.current), []);

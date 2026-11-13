@@ -8,7 +8,7 @@ import { OccEditor, type Mask } from './OccEditor';
 import { occToken } from '@/lib/occ';
 import { kindOf, withKind, clozeCards, clozeNums, distractors, type Kind } from '@/lib/kind';
 
-const raw = (q: string) => String(q || '').replace(/<!--(?:img|k|occ):[^>]*-->/g, '');
+const raw = (q: string) => String(q || '').replace(/<!--(?:img|k|occ|src):[^>]*-->/g, '');
 const KINDS: [Kind | 'r', string, string][] = [['mc', 'Multiple choice', 'Pick the right answer'], ['f', 'Flip card', 'Front and back, like Anki'], ['r', 'Reversed', 'Two flip cards, both directions'], ['t', 'Type answer', 'You type it, then compare'], ['c', 'Cloze', 'Hide words in a sentence'], ['o', 'Image occlusion', 'Cover parts of a picture']];
 
 export type EditorState = { mode: 'edit' | 'add'; id?: string; section?: string } | null;
@@ -117,9 +117,9 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
             {KINDS.map(([k, l, d]) => <button key={k} type="button" role="tab" aria-selected={kind === k} className={'kb' + (kind === k ? ' on' : '')} onClick={() => setKind(k)}><b>{l}</b><small>{d}</small></button>)}
           </div>}
           {!occNew && <label className="cl">{kind === 'c' ? 'Text (wrap hidden words like {{c1::this}})' : flip ? 'Front' : 'Question'}</label>}
-          <textarea value={raw(q)} onChange={ev => setQ(ev.target.value + ((q.match(/<!--(?:img|k|occ):[^>]*-->/g) || []).join('')))} rows={3} maxLength={3900} placeholder={kind === 'c' ? 'The {{c1::heart}} pumps {{c2::blood}}.' : 'Type the question'} />
+          <textarea value={raw(q)} onChange={ev => setQ(ev.target.value + ((q.match(/<!--(?:img|k|occ|src):[^>]*-->/g) || []).join('')))} rows={3} maxLength={3900} placeholder={kind === 'c' ? 'The {{c1::heart}} pumps {{c2::blood}}.' : 'Type the question'} />
           {kind === 'c' && <div className="clzbar">
-            <button type="button" className="ghost" onClick={() => { const t = raw(q), n = clozeNums(t).length + 1; setQ(t + ' {{c' + n + '::answer}}' + (q.match(/<!--(?:img|k|occ):[^>]*-->/g) || []).join('')); }}>+ Add a hidden word</button>
+            <button type="button" className="ghost" onClick={() => { const t = raw(q), n = clozeNums(t).length + 1; setQ(t + ' {{c' + n + '::answer}}' + (q.match(/<!--(?:img|k|occ|src):[^>]*-->/g) || []).join('')); }}>+ Add a hidden word</button>
             <small>{nums.length ? nums.length + ' card' + (nums.length > 1 ? 's' : '') + ' will be made (one per number)' : 'Add at least one {{c1::…}}'}</small>
           </div>}
           {kind !== 'c' && <div className={occNew ? 'nopins' : ''}><ImageField value={q} onChange={setQ} forceLocal={priv} /></div>}

@@ -150,7 +150,7 @@ export function cardsToCardsFile(cards: Card[]): string {
   bySet.forEach((list, s) => {
     out.push('', '#' + s); const done = new Set<string>();
     list.forEach(c => {
-      const k = kindOf(c.q), raw = stripKind(c.q).replace(/<!--(?:img|occ):[^>]*-->/g, '').trim();
+      const k = kindOf(c.q), raw = stripKind(c.q).replace(/<!--(?:img|occ|src):[^>]*-->/g, '').trim();
       if (k === 'o') {
         const oc = parseOcc(c.q), im = parseImg(c.q); if (!oc || !im) return;
         const key = im.src + JSON.stringify(oc.boxes); if (done.has(key)) return; done.add(key);

@@ -5,6 +5,7 @@ import { api, isOwner, lock, unlock } from '@/lib/api';
 import { dl, Sheet, SheetFrame, useEngine, Ic, ask } from './ui';
 import { useRefs } from './refHooks';
 import { SyncPanel } from './SyncPanel';
+import { AiConnect } from './AiConnect';
 import { askPermission, scheduleReminder, supportsReminders } from '@/lib/remind';
 import { ACCENTS, applyLook, getLook } from '@/lib/look';
 
@@ -15,13 +16,18 @@ const BASIC: [string, string, F[]][] = [
     ['maxRev', 'Maximum reviews per day', 'num', 0, 2000, 10, '', '0 means no limit'],
     ['newOrder', 'New card order', 'sel', [['seq', 'In order'], ['rand', 'Random']]],
     ['mix', 'Show new cards', 'sel', [['after', 'After reviews'], ['mixed', 'Mixed with reviews'], ['first', 'Before reviews']]],
+    ['conf', 'Ask how sure I am before answering', 'chk'],
     ['dailyGoal', 'Daily goal (answers)', 'num', 5, 500, 5, '', 'The ring on Home fills as you answer'],
     ['exam', 'Exam date', 'date', 0, 0, 0, '', 'Shows a countdown and a daily pace']]],
   ['Look', 'palette', [
     ['theme', 'Theme', 'sel', [['auto', 'Match device'], ['light', 'Light'], ['dark', 'Dark']]],
     ['size', 'Text size', 'sel', [['s', 'Small'], ['m', 'Medium'], ['l', 'Large'], ['xl', 'Extra large']]],
+    ['readable', 'Easy-reading text (wider spacing, calmer font)', 'chk'],
+    ['contrast', 'High contrast', 'chk'],
     ['vib', 'Vibrate on a wrong answer', 'chk'],
-    ['sound', 'Answer sounds', 'chk']]]
+    ['sound', 'Answer sounds', 'chk']]],
+  ['Smart help', 'bolt', [
+    ['smart', 'Smart help: grade typed answers by meaning, show related cards, spot mistake patterns (works offline)', 'chk']]]
 ];
 const ADVANCED: [string, F[]][] = [
   ['Scheduling', [
@@ -146,6 +152,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
             </>}
           </section>
 
+          <AiConnect />
           <SyncPanel />
 
           <section className="scard"><h4><Ic n="lock" />Your private space</h4>
