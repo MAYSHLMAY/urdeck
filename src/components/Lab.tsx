@@ -1,4 +1,5 @@
 'use client';
+import { useStage, StageBar } from './useStage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import * as THREE from 'three';
@@ -14,7 +15,7 @@ const esc = (t: any) => String(t);
 
 /** The 3D lab: orbit camera, adjustable controls, exploded view, part picking. */
 export default function Lab() {
-  const cv = useRef<HTMLDivElement>(null);
+  const cv = useRef<HTMLDivElement>(null), st = useStage(cv);
   const R = useRef<any>({ V: {}, dirty: true, sweep: false, t0: 0, wire: false, sel: null, def: null, G: null, base: new Map() });
   const Rf = useRefs();
   const [own, setOwn] = useState(false);
@@ -227,7 +228,7 @@ export default function Lab() {
         </>}
         <div className="labg" style={sim ? { display: 'none' } : undefined}>
         <div className="labL">
-        <div id="cv" ref={cv}><div id="hud">Drag = orbit · pinch / wheel = zoom · tap a part</div></div>
+        <div id="cv" ref={cv} className={st.cls}><div id="hud">Drag = orbit · pinch / wheel = zoom · tap a part</div><StageBar st={st} /></div>
         <div className="bar">
           <button className={sweep ? 'on' : ''} onClick={toggleSweep}>{sweep ? <><Ic n="stop" /> Stop sweep</> : <><Ic n="play" /> Auto sweep</>}</button>
           <button className={wire ? 'on' : ''} onClick={toggleWire}>Wireframe</button>

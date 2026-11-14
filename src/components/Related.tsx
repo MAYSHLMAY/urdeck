@@ -13,7 +13,6 @@ export function Related({ id }: { id: string }) {
   const cut = (t: string) => { const p = plain(qText(t)); return p.length > 46 ? p.slice(0, 44) + '…' : p; };
   return (
     <div className="rel" aria-label="Related cards">
-      <small>Related cards</small>
       <div>{r.map(x => <button key={x.q.id} className="ghost" onClick={() => e.toast(cut(x.q.q) + ' → ' + plain(x.q.c))}>{cut(x.q.q)}</button>)}</div>
       <button className="ghost" onClick={() => e.startPracticeIds([id, ...r.map(x => x.q.id)])}>Practice these together</button>
     </div>

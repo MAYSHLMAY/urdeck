@@ -274,7 +274,7 @@ input[type=range]{height:26px}
 .simr button.on{background:var(--acc);color:#fff}
 .simbox{position:relative;width:100%;height:clamp(320px,72dvh,820px);border:1.5px solid var(--line);border-radius:20px;overflow:hidden;background:color-mix(in srgb,var(--card) 70%,#000 6%)}
 .simbox iframe{border:0;background:#fff;display:block}
-.simbox.fs{border-radius:0;height:100%}
+
 .simadm{margin:4px 0}
 @media(max-width:640px){.simbox{height:clamp(300px,64dvh,640px);border-radius:16px}}
 
@@ -350,3 +350,40 @@ dialog.sheet.browse .in{height:100dvh;max-height:100dvh;border-radius:0}
 .aiex{margin:8px 0}.aiex p{margin:6px 0 0;padding:8px 10px;border-radius:10px;background:var(--card2,rgba(127,127,127,.12));font-size:.92em;line-height:1.45}
 .aigen textarea{width:100%;min-height:130px;margin:6px 0}.aigen .row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.aigen .row input[type=text]{flex:1;min-width:120px}
 .agl{list-style:none;margin:8px 0;padding:0;max-height:300px;overflow:auto;display:grid;gap:6px}.agl li{padding:8px 10px;border-radius:10px;background:var(--card2,rgba(127,127,127,.12))}.agl label{display:flex;gap:8px;align-items:flex-start;font-size:.92em}.agl small{opacity:.7}
+
+/* answer colours: .opt's own background/border (above) would otherwise win over .right/.wrong */
+.opt.right{border-color:var(--ok);background:var(--okbg);opacity:1}
+.opt.wrong{border-color:var(--bad);background:var(--badbg);opacity:1}
+.opt:disabled:not(.right):not(.wrong){opacity:.55}
+/* "How sure?" (renamed from .conf, which the confetti overlay already uses) */
+.sure{display:flex;align-items:center;gap:6px;margin:4px 0 0;flex-wrap:wrap}.sure small{color:var(--mute);font-weight:700;margin-right:2px}
+.sure button{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;min-height:34px}
+.sure button.on{border-color:var(--acc);background:var(--accbg);color:var(--acc)}
+/* compact tool chips (wrap, never scroll sideways) + a single panel under them */
+.tbar{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+.tchip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;font-size:.82rem;font-weight:700;white-space:nowrap;min-height:38px}
+.tchip.on{border-color:var(--acc);color:var(--acc);background:var(--accbg)}
+.tpanel{margin:8px 0 0;padding:12px;border-radius:16px;background:var(--accbg);max-height:46vh;overflow:auto;animation:tp .18s ease-out}
+@keyframes tp{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.tpanel .mnem,.tpanel .teach{margin:0;padding:0;background:none;border:0;box-shadow:none}.tpanel textarea{width:100%}.tpanel .mtxt{margin:0 0 8px;font-weight:600}
+.tpanel .rel{margin:0}.aipanel p{margin:0;line-height:1.5;font-size:.95rem}.aipanel .ghost{margin-top:8px}.aiwait{color:var(--mute)}
+
+/* ---- viewer: full screen + orientation (3D lab and simulations) ---- */
+.stagebox{overscroll-behavior:contain;-webkit-user-select:none;user-select:none}
+.stagebox.ol{aspect-ratio:16/9!important;height:auto!important;max-height:72dvh!important}
+.stagebox.op{aspect-ratio:3/4!important;height:auto!important;max-height:78dvh!important;width:min(100%,calc(78dvh * .75))!important;margin-inline:auto}
+.lab #cv.ol{aspect-ratio:16/9;height:auto;max-height:72dvh;min-height:0}
+.lab #cv.op{aspect-ratio:3/4;height:auto;max-height:78dvh;width:min(100%,calc(78dvh * .75));margin-inline:auto;min-height:0}
+.stagebox.vfull,.lab #cv.vfull{touch-action:none;position:fixed!important;inset:0;z-index:400;width:100%!important;height:100dvh!important;max-width:none!important;max-height:none!important;min-height:0!important;aspect-ratio:auto!important;margin:0!important;border-radius:0!important;border:0!important;background:#0b0b0e}
+.stagebox.vfull.vrot{inset:auto;top:0;left:0;width:100dvh!important;height:100dvw!important;transform-origin:0 0;transform:translateX(100dvw) rotate(90deg)}
+html.vlock,html.vlock body{overflow:hidden!important;overscroll-behavior:none}
+.stbar{position:absolute;top:max(8px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));z-index:6;display:flex;gap:6px;transition:opacity .35s;touch-action:manipulation}
+.stbar button{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px;border:0;border-radius:12px;background:rgba(18,18,24,.62);color:#fff;font:inherit;font-size:.8rem;font-weight:700;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.stbar button:active{transform:scale(.96)}
+.stbar.idle{opacity:.22}.stbar.idle:hover{opacity:1}
+@media(max-width:420px){.stbar button span{display:none}.stbar button{padding:0 11px}}
+.sthint{position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:6;padding:9px 14px;border-radius:12px;background:rgba(18,18,24,.8);color:#fff;font-size:.85rem;font-weight:650}
+.vfull .stbar{z-index:7}
+/* grading buttons stay reachable above the bottom nav instead of hiding under it */
+#fb{position:sticky;bottom:calc(92px + env(safe-area-inset-bottom));z-index:5;background:linear-gradient(to bottom,transparent,var(--card) 14px);padding-top:14px}
+#hud{max-width:calc(100% - 120px);line-height:1.3}

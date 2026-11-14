@@ -5,20 +5,25 @@ import { Lexical, cos, type Vec } from './lexical';
 import { plain, tokens } from './text';
 import { qText } from '../cardimg';
 
-const text = (q: QCard) => plain(qText(q.q)) + ' ' + plain(q.c);
+const text = (q: QCard) => plain(qText(String(q.q ?? ''))) + ' ' + plain(String(q.c ?? ''));
 let lex: Lexical | null = null, vecs = new Map<string, Vec>(), ver = -1;
 function build(e: Engine) {
-  if (ver === e.qver && lex) return;
+  if (ver === e.qver && lex && vecs.size === e.Q.length) return;
   lex = new Lexical(); lex.fit(e.Q.map(text)); vecs = new Map(e.Q.map(q => [q.id, lex!.vec(text(q))])); ver = e.qver;
 }
 export function related(e: Engine, id: string, k = 4): { q: QCard; s: number }[] {
-  build(e); const a = vecs.get(id); if (!a) return [];
-  return e.Q.filter(q => q.id !== id).map(q => ({ q, s: cos(a, vecs.get(q.id)!) })).filter(x => x.s > 0.3).sort((x, y) => y.s - x.s).slice(0, k);
+  try {
+    build(e); const a = vecs.get(id); if (!a) return [];
+    return e.Q.filter(q => q.id !== id && vecs.has(q.id)).map(q => ({ q, s: cos(a, vecs.get(q.id)!) })).filter(x => x.s > 0.3).sort((x, y) => y.s - x.s).slice(0, k);
+  } catch { return []; }   // a helper must never take the study screen down
 }
 export interface Pattern { ids: string[]; label: string }
 /** Groups the cards you keep missing by similarity, so you see "what you confuse", not just single cards. */
 export function patterns(e: Engine, ids: string[], min = 2): Pattern[] {
-  build(e); const cards = ids.map(i => e.qById(i)).filter(Boolean) as QCard[], seen = new Set<string>(), out: Pattern[] = [];
+  try { return patternsOf(e, ids, min); } catch { return []; }
+}
+function patternsOf(e: Engine, ids: string[], min: number): Pattern[] {
+  build(e); const cards = ids.map(i => e.qById(i)).filter(c => !!c && vecs.has(c.id)) as QCard[], seen = new Set<string>(), out: Pattern[] = [];
   cards.forEach(c => {
     if (seen.has(c.id)) return;
     const g = cards.filter(o => !seen.has(o.id) && (o.id === c.id || cos(vecs.get(c.id)!, vecs.get(o.id)!) > 0.32));

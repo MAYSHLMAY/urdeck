@@ -107,7 +107,7 @@ export default function Home() {
         {overconfident(e).length > 0 && <div className="oc"><span><b>{overconfident(e).length}</b> card{overconfident(e).length === 1 ? '' : 's'} you were sure about but got wrong</span><button className="solid" onClick={() => { e.startPracticeIds(overconfident(e)); router.push('/study'); }}>Fix them</button></div>}
         {e.O.smart !== false && (() => { const pt = patterns(e, Object.keys(e.MIS)); return pt.length ? <>
           <div className="shead"><h2>Patterns in your mistakes</h2><span>Cards you confuse together</span></div>
-          <div className="pats">{pt.map((p, k) => <button key={k} className="pat" onClick={() => { e.startPracticeIds(p.ids); router.push('/study'); }}><b>{p.label}</b><small>{p.ids.length} cards · practice together</small></button>)}</div>
+          <div className="pats">{pt.map((p, k) => <button key={k} className="pat" onClick={() => { try { e.startPracticeIds(p.ids); } catch { e.toast('Could not start that practice.'); return; } router.push('/study'); }}><b>{p.label}</b><small>{p.ids.length} cards · practice together</small></button>)}</div>
         </> : null; })()}
         {wk.length > 0 && <>
           <div className="shead"><h2>Needs work</h2><span>Based on your answers</span></div>

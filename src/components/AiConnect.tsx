@@ -40,11 +40,14 @@ export function AiConnect() {
   );
 }
 
-/** Under an answered card: ask Grok to explain it. Shows nothing unless a key is connected. */
-export function AiExplain({ q, hint }: { q: any; hint?: boolean }) {
-  const c = useAI(), [t, setT] = useState(''), [busy, setBusy] = useState(false);
-  useEffect(() => setT(''), [q.id]);
-  if (!c) return null;
-  const go = async () => { setBusy(true); try { setT(await (hint ? aiHint(q) : aiExplain(q))); } catch (er: any) { setT(er.message); } setBusy(false); };
-  return <div className="aiex"><button className="ghost" disabled={busy} onClick={go}>{busy ? 'Thinking…' : hint ? 'Hint from AI' : 'Explain with AI'}</button>{t && <p>{t}</p>}</div>;
+/** Panel for the Explain / Hint chip: runs once when opened. */
+export function AiPanel({ q, hint }: { q: any; hint?: boolean }) {
+  const [t, setT] = useState(''), [busy, setBusy] = useState(true), [bad, setBad] = useState(false), [n, setN] = useState(0);
+  useEffect(() => {
+    let live = true; setBusy(true); setBad(false);
+    (hint ? aiHint(q) : aiExplain(q)).then(r => live && setT(r), er => { if (live) { setT(er.message); setBad(true); } }).finally(() => live && setBusy(false));
+    return () => { live = false; };
+  }, [q.id, hint, n]); // eslint-disable-line
+  return <div className="aipanel" aria-live="polite">{busy ? <p className="aiwait">{hint ? 'Thinking of a hint…' : 'Explaining…'}</p> : <p>{t}</p>}
+    {bad && !busy && <button className="ghost" onClick={() => setN(x => x + 1)}>Try again</button>}</div>;
 }
