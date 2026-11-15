@@ -8,6 +8,7 @@
  *  - Nothing is sent that did not change; the server keeps only the newest version of each record.
  *  - Not synced: PDF files (they stay on the device they were added on), display settings, and the live quiz identity.
  */
+import { apiUrl } from '@/lib/base';
 import { engine } from './engine';
 import { notes } from './notes';
 import { api } from './api';
@@ -132,7 +133,7 @@ class Sync {
   }
   private async pull() {
     for (let guard = 0; guard < 60; guard++) {
-      const r = await fetch(`/api/sync?space=${this.cfg!.space}&after=${this.cur}`, { cache: 'no-store' });
+      const r = await fetch(apiUrl(`/api/sync?space=${this.cfg!.space}&after=${this.cur}`), { cache: 'no-store' });
       const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Could not reach sync.');
       const rows: { rk: string; t: string; d: string; seq: number }[] = j.rows || []; if (!rows.length) return;
       const got: { k: string; t: string; v: any }[] = [];

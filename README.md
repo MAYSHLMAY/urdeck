@@ -1,4 +1,4 @@
-# Flight Recall (Next.js + Supabase)
+# UrDeck (Next.js + Supabase)
 
 Spaced-repetition flashcards with a 3D lab. Same features as the single-HTML version, rebuilt so it can grow:
 
@@ -188,3 +188,6 @@ Browse opens full screen (cards use the whole width on any device). On a compute
 - Under the answer options there is one row of small chips (Reference PDF, Memory trick, Teach back, Related, Explain/Hint). Each opens a single panel under the row, so the card does not jump. Explain and Hint appear only when an AI key is connected.
 - "How sure?" buttons live under the options. The grade buttons (Hard/Good/Easy) stick above the bottom bar.
 - 3D lab and simulations: Full opens a full-screen layer (also uses the browser's fullscreen and orientation lock when available). Orientation cycles Auto, Landscape, Portrait: inline it reshapes the viewer, in full screen it locks the screen, and for simulations on phones without a lock it turns the viewer 90 degrees. The 3D models (canvas) rely on the real lock; otherwise they ask you to turn the phone.
+
+## Android app
+See `ANDROID.md`: push to GitHub and the included workflow builds `FlightRecall.apk`.

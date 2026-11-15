@@ -1,4 +1,5 @@
 /* Browser side of the owner login + API calls. */
+import { apiUrl } from './base';
 const K_TOKEN = 'fr-owner-token-v2';
 
 type Tok = { token: string; exp: number };
@@ -11,7 +12,7 @@ export const lock = () => { try { localStorage.removeItem(K_TOKEN); } catch { /*
 
 export async function unlock(password: string): Promise<string | null> {
   try {
-    const r = await fetch('/api/auth', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password }) });
+    const r = await fetch(apiUrl('/api/auth'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ password }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) return j.error || 'Could not unlock.';
     localStorage.setItem(K_TOKEN, JSON.stringify(j));
@@ -23,7 +24,7 @@ export class ApiError extends Error { constructor(m: string, public status: numb
 
 export async function api<T = any>(path: string, body?: unknown, method = 'POST'): Promise<T> {
   const t = read();
-  const r = await fetch(path, {
+  const r = await fetch(apiUrl(path), {
     method,
     headers: { 'content-type': 'application/json', ...(t ? { authorization: 'Bearer ' + t.token } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body)

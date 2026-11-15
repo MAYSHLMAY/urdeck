@@ -123,10 +123,10 @@ export function AddDialog({ open, onClose, onManage }: { open: boolean; onClose:
                     }} />
                   <label>Export your library</label>
                   <div className="row">
-                    <button type="button" className="ghost" onClick={() => downloadText('flight-recall-cards.csv', cardsToCsv(e.Q), 'text/csv')}>Download CSV</button>
-                    <button type="button" className="ghost" onClick={() => downloadText('flight-recall-cards.txt', cardsToCardsFile(e.Q))}>Download cards file</button>
-                    <button type="button" className="ghost" onClick={async () => { const txt = cardsToCardsFile(e.Q); try { const f = new File([txt], 'flight-recall-cards.txt', { type: 'text/plain' }); if ((navigator as any).canShare?.({ files: [f] })) { await navigator.share({ files: [f], title: 'Flight Recall cards' }); return; } await navigator.share?.({ title: 'Flight Recall cards', text: txt.slice(0, 60000) }); if (!navigator.share) downloadText('flight-recall-cards.txt', txt); } catch { /* cancelled */ } }}>Share (Telegram, WhatsApp…)</button>
-                    <button type="button" className="ghost" onClick={() => downloadText('flight-recall-anki.txt', cardsToAnki(e.Q))}>Download for Anki</button>
+                    <button type="button" className="ghost" onClick={() => downloadText('urdeck-cards.csv', cardsToCsv(e.Q), 'text/csv')}>Download CSV</button>
+                    <button type="button" className="ghost" onClick={() => downloadText('urdeck-cards.txt', cardsToCardsFile(e.Q))}>Download cards file</button>
+                    <button type="button" className="ghost" onClick={async () => { const txt = cardsToCardsFile(e.Q); try { const f = new File([txt], 'urdeck-cards.txt', { type: 'text/plain' }); if ((navigator as any).canShare?.({ files: [f] })) { await navigator.share({ files: [f], title: 'UrDeck cards' }); return; } await navigator.share?.({ title: 'UrDeck cards', text: txt.slice(0, 60000) }); if (!navigator.share) downloadText('urdeck-cards.txt', txt); } catch { /* cancelled */ } }}>Share (Telegram, WhatsApp…)</button>
+                    <button type="button" className="ghost" onClick={() => downloadText('urdeck-anki.txt', cardsToAnki(e.Q))}>Download for Anki</button>
                   </div>
                   <p className="n">CSV keeps pictures and pins. Anki import: File → Import, choose the .txt, tick "Allow HTML in fields".</p>
                 </div>

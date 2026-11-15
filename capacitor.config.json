@@ -1,0 +1,12 @@
+{
+  "appId": "app.urdeck.study",
+  "appName": "UrDeck",
+  "webDir": "out",
+  "backgroundColor": "#F4F3FB",
+  "server": { "androidScheme": "https" },
+  "android": { "allowMixedContent": false, "backgroundColor": "#F4F3FB" },
+  "plugins": {
+    "SplashScreen": { "launchAutoHide": false, "backgroundColor": "#0E7A4F", "showSpinner": false, "androidScaleType": "CENTER_INSIDE" },
+    "Keyboard": { "resize": "body", "resizeOnFullScreen": true }
+  }
+}

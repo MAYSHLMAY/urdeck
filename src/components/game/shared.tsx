@@ -1,4 +1,5 @@
 'use client';
+import { apiUrl } from '@/lib/base';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Avatar, type Mood } from './Avatar';
 
@@ -22,7 +23,7 @@ export function Confetti() {
 }
 export function Leaderboards({ dark = true }: { dark?: boolean }) {
   const [tab, setTab] = useState<'alltime' | 'recent'>('alltime'), [d, setD] = useState<any>(null), [err, setErr] = useState('');
-  useEffect(() => { setD(null); setErr(''); fetch('/api/games?view=' + tab, { cache: 'no-store' }).then(r => r.json()).then(j => j.error ? setErr(j.error) : setD(j)).catch(() => setErr('Could not load the leaderboard.')); }, [tab]);
+  useEffect(() => { setD(null); setErr(''); fetch(apiUrl('/api/games?view=' + tab), { cache: 'no-store' }).then(r => r.json()).then(j => j.error ? setErr(j.error) : setD(j)).catch(() => setErr('Could not load the leaderboard.')); }, [tab]);
   void dark;
   return (
     <div className="board">

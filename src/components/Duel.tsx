@@ -1,4 +1,5 @@
 'use client';
+import { siteOrigin } from '@/lib/base';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
@@ -46,11 +47,11 @@ export default function Duel() {
   }
   const score = picks.filter((p, k) => o[k]?.[p]?.ok).length;
   const reply = useMemo(() => stage === 'done' ? encodeChallenge({ v: 1, ids: deck.map(q => q.id), seed, by: name || 'A friend', sc: score, ms }) : '', [stage]); // eslint-disable-line
-  const link = reply ? location.origin + '/duel#' + reply : '';
+  const link = reply ? siteOrigin() + '/duel#' + reply : '';
   useEffect(() => { if (link) QRCode.toDataURL(link, { margin: 1, width: 200 }).then(setQr).catch(() => {}); }, [link]);
   const share = async () => {
     const text = ch ? `I scored ${score}/${deck.length} on your challenge. Can you beat ${score}?` : `I scored ${score}/${deck.length} in ${Math.round(ms / 1000)}s. Beat me!`;
-    try { if (navigator.share) { await navigator.share({ title: 'Flight Recall challenge', text, url: link }); return; } } catch { return; }
+    try { if (navigator.share) { await navigator.share({ title: 'UrDeck challenge', text, url: link }); return; } } catch { return; }
     try { await navigator.clipboard.writeText(text + ' ' + link); e.toast('Link copied. Paste it in Telegram or WhatsApp.'); } catch { e.toast('Copy the link from the address bar after sharing'); }
   };
   const missing = ch ? ch.ids.length - cards.length : 0;

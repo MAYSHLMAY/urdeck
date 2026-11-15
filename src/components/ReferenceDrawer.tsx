@@ -251,7 +251,7 @@ export function ReferenceDrawer({ q }: { q: QCard | null }) {
   }
   function exportNotes(copy: boolean) {
     const byPdf = new Map<string, LocalNote[]>(); list.forEach(n => byPdf.set(n.pdf_id, [...(byPdf.get(n.pdf_id) || []), n]));
-    let md = '# Flight Recall notes\n';
+    let md = '# UrDeck notes\n';
     byPdf.forEach((ns, id) => {
       md += `\n## ${R.pdf(id)?.title || '(PDF removed)'}\n`;
       ns.forEach(n => {

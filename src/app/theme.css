@@ -1,4 +1,4 @@
-/* ===== Flight Recall design layer: fonts, baseline controls, site chrome, home, footer. Loaded last. ===== */
+/* ===== UrDeck design layer: fonts, baseline controls, site chrome, home, footer. Loaded last. ===== */
 :root{--sans:Inter,"Noto Sans Ethiopic","Abyssinica SIL","Nyala","Avenir Next","Segoe UI",system-ui,sans-serif;--serif:"Source Serif 4","Noto Serif Ethiopic","Abyssinica SIL","Nyala",Charter,Georgia,serif;--r:16px;--eth-g:#078930;--eth-y:#FCDD09;--eth-r:#DA121A}
 body{font-family:var(--sans);display:flex;flex-direction:column;min-height:100dvh;line-height:1.5}
 

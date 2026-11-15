@@ -19,7 +19,7 @@ import { Browse } from './Browse';
 import { Manage } from './Manage';
 import { SpeedBar, SpeedSummary } from './Speed';
 
-const PLANE = <svg viewBox="0 0 24 24" width="22" height="22"><path d="M2 12 22 3l-5 18-5-7z" fill="currentColor" /></svg>;
+const PLANE = <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden><rect x="5.2" y="3.2" width="11.6" height="15.6" rx="2.6" fill="currentColor" opacity=".3" transform="rotate(-14 11 11)" /><rect x="6.6" y="4" width="11.6" height="15.6" rx="2.6" fill="currentColor" opacity=".55" transform="rotate(-6 12 12)" /><rect x="7.6" y="4.6" width="11.2" height="15.2" rx="2.6" fill="currentColor" /><path d="m10.6 12.4 2 2 3.6-4.4" fill="none" stroke="var(--card,#fff)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>;
 
 type Dlg = '' | 'manage' | 'menu' | 'browse' | 'grid' | 'stats' | 'set' | 'add' | 'models' | 'info';
 
@@ -36,7 +36,7 @@ export default function App() {
     setMounted(true);
     e.init();
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator && !(window as any).Capacitor?.isNativePlatform?.()) navigator.serviceWorker.register('/sw.js').catch(() => {});
     // eslint-disable-next-line
   }, []);
 
@@ -90,7 +90,7 @@ export default function App() {
     <>
       <div className="wrap">
         <div className="top">
-          <h1><Link href="/" className="homeln" aria-label="Home" title="Home">{PLANE}Flight Recall</Link></h1>
+          <h1><Link href="/" className="homeln" aria-label="Home" title="Home">{PLANE}UrDeck</Link></h1>
           <div className="tools">
             <button className="ico" disabled={!e.U.length} onClick={() => e.doUndo()} aria-label="Undo" title="Undo (Z)"><Icon n="undo" /></button>
             <button className="ico" onClick={() => setDlg('browse')} aria-label="Search" title="Search (/)"><Icon n="search" /></button>

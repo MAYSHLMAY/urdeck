@@ -118,7 +118,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
   async function exportLibrary() {
     try {
       const r = await api<any>('/api/export', undefined, 'GET');
-      dl('flight-recall-library-' + ymd(new Date()) + '.json', JSON.stringify(r));
+      dl('urdeck-library-' + ymd(new Date()) + '.json', JSON.stringify(r));
       say('Library exported.');
     } catch (x: any) { say(x.message, 'err'); }
   }
@@ -177,7 +177,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
             </div>
             <input ref={bk} type="file" accept=".json,application/json" hidden onChange={async ev => {
               const f = ev.target.files?.[0]; if (!f) return;
-              try { say(e.restoreBackup(await f.text())); } catch { say('That is not a Flight Recall backup file.', 'err'); }
+              try { say(e.restoreBackup(await f.text())); } catch { say('That is not an UrDeck backup file.', 'err'); }
               ev.target.value = '';
             }} />
             <p className={'n ' + msg.c} id="smsg">{msg.t}</p>
@@ -196,13 +196,13 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
             </div>
             <h5>Import</h5>
             {e.oldData() && <div className="row"><button className="ghost" onClick={() => { const o = e.oldData(); if (o) say(e.mergeData(o)); }}>Import from old version in this browser</button></div>}
-            <p className="n">Merge an older Flight Recall .html file (adds its question banks and progress):</p>
+            <p className="n">Merge an older UrDeck .html file (adds its question banks and progress):</p>
             <input type="file" accept=".html,text/html" onChange={async ev => {
               const f = ev.target.files?.[0]; if (!f) return;
               try {
                 const t = await f.text(), m = t.match(/<script id="fr-data" type="application\/json">([\s\S]*?)<\/script>/);
                 if (!m) throw 0; say(e.mergeData(JSON.parse(m[1])));
-              } catch { say('That is not a Flight Recall .html file.', 'err'); }
+              } catch { say('That is not an UrDeck .html file.', 'err'); }
               ev.target.value = '';
             }} />
             <div className="row" style={{ marginTop: 14 }}>

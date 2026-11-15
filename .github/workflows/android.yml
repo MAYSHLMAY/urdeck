@@ -1,0 +1,61 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install packages
+        run: npm ci
+
+      # The app's pages are bundled in the APK; its server routes (cards, sync, live quiz...) are called on your website.
+      # Set these once in the repo: Settings -> Secrets and variables -> Actions -> Variables
+      #   API_BASE                       your website, e.g. https://urdeck.vercel.app
+      #   NEXT_PUBLIC_SUPABASE_URL       the same value you put in Vercel
+      #   NEXT_PUBLIC_SUPABASE_ANON_KEY  the same value you put in Vercel
+      - name: Build the web app (static)
+        run: npm run build:mobile
+        env:
+          API_BASE: ${{ vars.API_BASE || 'https://urdeck.vercel.app' }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Copy it into the Android project
+        run: npx cap sync android
+
+      - name: Build the APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+        env:
+          KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE_PATH }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Name the file
+        run: cp android/app/build/outputs/apk/release/app-release.apk UrDeck.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UrDeck-apk
+          path: UrDeck.apk
+          retention-days: 30

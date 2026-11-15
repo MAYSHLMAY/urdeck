@@ -1,4 +1,5 @@
 'use client';
+import { siteOrigin } from '@/lib/base';
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { sync, fmtCode } from '@/lib/sync';
@@ -9,7 +10,7 @@ const ago = (t: number) => { if (!t) return 'not yet'; const s = Math.round((Dat
 export function SyncPanel() {
   const s = sync(), [, bump] = useState(0), [code, setCode] = useState(''), [err, setErr] = useState(''), [show, setShow] = useState(false), [qr, setQr] = useState('');
   useEffect(() => { s.start(); const u = s.subscribe(() => bump(x => x + 1)), t = setInterval(() => bump(x => x + 1), 5000); return () => { u(); clearInterval(t); }; }, []); // eslint-disable-line
-  const cfg = s.cfg, st = s.st, link = cfg ? `${location.origin}/?sync=${cfg.code}` : '';
+  const cfg = s.cfg, st = s.st, link = cfg ? `${siteOrigin()}/?sync=${cfg.code}` : '';
   useEffect(() => { if (show && link) QRCode.toDataURL(link, { margin: 1, width: 220 }).then(setQr).catch(() => {}); }, [show, link]);
   const go = async (c?: string) => { setErr(''); try { await s.enable(c); setCode(''); } catch (e: any) { setErr(e.message || 'Could not start sync.'); } };
   return (

@@ -1,4 +1,5 @@
 'use client';
+import { apiUrl } from '@/lib/base';
 import { QImg } from '../CardFigure';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -55,7 +56,7 @@ function Home({ me, auto, go, setView }: { me: Identity; auto: string; go: (p: s
   const [pin, setPin] = useState(auto), [games, setGames] = useState<any[]>([]), [top, setTop] = useState<any[]>([]);
   useEffect(() => { if (auto.length === 6) go(auto); }, [auto]); // eslint-disable-line
   useEffect(() => watchLobby(g => setGames(g)), []);
-  useEffect(() => { fetch('/api/games?view=alltime', { cache: 'no-store' }).then(r => r.json()).then(j => setTop((j.players || []).slice(0, 3))).catch(() => {}); }, []);
+  useEffect(() => { fetch(apiUrl('/api/games?view=alltime'), { cache: 'no-store' }).then(r => r.json()).then(j => setTop((j.players || []).slice(0, 3))).catch(() => {}); }, []);
   return (
     <div className="gm"><div className="gtop"><Link href="/" className="gbtn sm ghost">← Home</Link><b>Live quiz</b><button className="me-chip sm" onClick={() => setView('edit')} aria-label="Edit your player"><Avatar av={me.av} size={30} /><b>{me.name}</b></button></div>
       <div className="gwrap start">

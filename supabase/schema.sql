@@ -1,4 +1,4 @@
--- Flight Recall database schema. Run once in the Supabase SQL editor.
+-- UrDeck database schema. Run once in the Supabase SQL editor.
 -- Safe to re-run.
 
 create table if not exists public.packs (

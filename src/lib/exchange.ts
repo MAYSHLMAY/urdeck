@@ -146,7 +146,7 @@ const pipeFree = (x: string) => x.replace(/\|/g, '/');
 /** Every card of the library as a cards file (round-trips with importCardsFile). */
 export function cardsToCardsFile(cards: Card[]): string {
   const bySet = new Map<string, Card[]>(); cards.forEach(c => (bySet.get(c.s) || bySet.set(c.s, []).get(c.s)!).push(c));
-  const out: string[] = ['# Flight Recall cards file. Q: multiple choice, F: flip, T: type-in, C: cloze, O: image occlusion'];
+  const out: string[] = ['# UrDeck cards file. Q: multiple choice, F: flip, T: type-in, C: cloze, O: image occlusion'];
   bySet.forEach((list, s) => {
     out.push('', '#' + s); const done = new Set<string>();
     list.forEach(c => {

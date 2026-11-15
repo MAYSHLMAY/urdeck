@@ -1,4 +1,5 @@
 'use client';
+import { siteOrigin } from '@/lib/base';
 import { QImg } from '../CardFigure';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -71,7 +72,7 @@ function Setup({ resume, onResume, onDiscard, onStart }: { resume: any; onResume
 function Live({ host, onExit }: { host: Host; onExit: () => void }) {
   useStore(host); useTick(250);
   const [qr, setQr] = useState('');
-  const url = typeof location !== 'undefined' ? `${location.origin}/play?pin=${host.pin}${location.search.includes('t=local') ? '&t=local' : ''}` : '';
+  const url = typeof location !== 'undefined' ? `${siteOrigin()}/play?pin=${host.pin}${location.search.includes('t=local') ? '&t=local' : ''}` : '';
   useEffect(() => { if (url) QRCode.toDataURL(url, { margin: 1, width: 260 }).then(setQr).catch(() => {}); }, [url]);
   const p = host.phase, q = host.qs[host.idx], left = Math.max(0, host.paused ? host.pauseLeft : host.qEnd - Date.now());
   const Top = <div className="gtop"><button className="gbtn sm ghost" onClick={() => { if (p === 'podium' || p === 'lobby' || confirm('End this game and close it for everyone?')) onExit(); }}>Close</button><b>{host.title}</b><span className="gpill">PIN {host.pin}</span><span>{host.players.size} 👤</span>{host.link !== 'open' && <span title="Connecting to the live channel">⚠</span>}</div>;

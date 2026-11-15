@@ -1,6 +1,7 @@
 /* Optional cloud AI (Groq or xAI Grok). The key lives only in this browser (localStorage, never synced, never in backups).
    Calls go straight from the browser to the provider; if the browser blocks that, they pass through /api/ai, a stateless relay
    that forwards the key for that one request and stores nothing. Everything here is optional: without a key the offline layer does the work. */
+import { apiUrl } from '@/lib/base';
 import { plain } from './text';
 import { qText } from '../cardimg';
 import type { Grade } from './grade';
@@ -27,7 +28,7 @@ async function raw(c: AICfg, path: 'chat' | 'models', body?: unknown): Promise<{
     ? { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + c.key }, body: JSON.stringify(body) }
     : { headers: { Authorization: 'Bearer ' + c.key } };
   if (!c.relay) { try { return { res: await fetch(url, init()), relay: false }; } catch { /* blocked by the browser: use the relay */ } }
-  const res = await fetch('/api/ai', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-ai-key': c.key }, body: JSON.stringify({ path, p: P, body }) });
+  const res = await fetch(apiUrl('/api/ai'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-ai-key': c.key }, body: JSON.stringify({ path, p: P, body }) });
   return { res, relay: true };
 }
 const why = async (r: Response) => {

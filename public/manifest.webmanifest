@@ -1,23 +1,70 @@
 {
-  "name": "Flight Recall",
-  "short_name": "Flight Recall",
-  "description": "Spaced-repetition flashcards, 3D lab and live quiz.",
+  "name": "UrDeck",
+  "short_name": "UrDeck",
+  "description": "Study anything: smart flashcards, 3D lab and live quizzes.",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#FAF4EA",
-  "theme_color": "#CF5F27",
+  "background_color": "#F4F3FB",
+  "theme_color": "#0E7A4F",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ],
   "shortcuts": [
-    { "name": "Study", "url": "/study", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Join live quiz", "url": "/play", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "3D lab", "url": "/lab", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "Study",
+      "url": "/study",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Join live quiz",
+      "url": "/play",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "3D lab",
+      "url": "/lab",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }
