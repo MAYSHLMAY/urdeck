@@ -10,6 +10,12 @@ import '@fontsource/source-serif-4/latin-400.css';
 import '@fontsource/source-serif-4/latin-600.css';
 import '@fontsource/atkinson-hyperlegible/latin-400.css';
 import '@fontsource/atkinson-hyperlegible/latin-700.css';
+import '@fontsource/nunito/latin-400.css';
+import '@fontsource/nunito/latin-600.css';
+import '@fontsource/nunito/latin-800.css';
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-500.css';
+import '@fontsource/inter/latin-700.css';
 import '@fontsource/noto-sans-ethiopic/ethiopic-400.css';
 import '@fontsource/noto-sans-ethiopic/ethiopic-600.css';
 import '@fontsource/noto-sans-ethiopic/ethiopic-700.css';
@@ -20,9 +26,14 @@ import './browse.css';
 import { OfflineBadge } from '@/components/OfflineBadge';
 import { SyncBoot } from '@/components/SyncBoot';
 import { NativeBoot } from '@/components/NativeBoot';
+import { Welcome } from '@/components/Welcome';
+import { Buddy } from '@/components/Buddy';
 import { TabBar } from '@/components/SiteChrome';
 import './theme.css';
 import './app.css';
+import './welcome.css';
+import './look.css';
+import './buddy.css';
 import { LOOK_BOOT } from '@/lib/look';
 
 export const metadata: Metadata = {
@@ -40,7 +51,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: LOOK_BOOT }} />
       </head>
-      <body><NativeBoot /><SyncBoot /><OfflineBadge />
+      <body><NativeBoot /><SyncBoot />
+        <Welcome />
+        <Buddy /><OfflineBadge />
         <Listen />{children}<TabBar /></body>
     </html>
   );

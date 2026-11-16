@@ -32,7 +32,9 @@ export async function loadIdentity(): Promise<Identity | null> {
 }
 export function saveIdentity(p: { id?: string; name: string; av: string }): Identity {
   const i: Identity = { id: p.id || lsGet()?.id || uid(), name: p.name.trim().slice(0, 24), av: p.av, v: Date.now() };
-  writeAll(i); return i;
+  writeAll(i);
+  try { dispatchEvent(new Event('ud-identity')); } catch { /* ignore */ }
+  return i;
 }
 export const newId = uid;
 export const recoveryCode = (i: Identity) => enc(i);

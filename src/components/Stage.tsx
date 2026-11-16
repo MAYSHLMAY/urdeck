@@ -152,10 +152,11 @@ async function checkAgainFlow(e: ReturnType<typeof useEngine>) {
 function Done() {
   const e = useEngine(), S = e.S, info = e.doneInfo(), [tk, setTk] = useState(0);
   const checkAgain = () => checkAgainFlow(e);
-  const first = info.first;
+  const first = info.first, tried = useRef(-1);
   useEffect(() => {
-    if (e.phase !== 'done') return;
-    if (first && Date.now() >= first - e.O.learnAhead * M) { e.show(); return; }
+    if (e.phase !== 'done' || e.cram) return; // practice decks never wait for learning cards
+    // try once per tick: show() that finds nothing re-renders this screen, and without this guard that loops forever (React error #185)
+    if (first && Date.now() >= first - e.O.learnAhead * M && tried.current !== tk) { tried.current = tk; e.show(); return; }
     if (first && first - Date.now() <= 3600e3) { const id = setTimeout(() => setTk(t => t + 1), 1000); return () => clearTimeout(id); }
   }, [tk, first, e.ver]);
   const t = Date.now();

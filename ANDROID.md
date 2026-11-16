@@ -26,3 +26,6 @@ Push your changes, run the workflow again, install the new APK over the old one.
 - Icon and splash: edit `resources/logo-fg.svg` and `resources/logo-bg.svg`, then run `node scripts/make-icons.mjs`.
 - App name: `capacitor.config.json` and `android/app/src/main/res/values/strings.xml`.
 - Build on your own computer: `API_BASE=https://your-site npm run android:sync` then `npm run android:open` (needs Android Studio).
+
+## Google sign-in in the APK
+The manifest has a deep-link filter for `app.urdeck.study://auth`, and `@capacitor/browser` opens Google in the system browser. Add `app.urdeck.study://auth` to Supabase → Authentication → URL Configuration → Redirect URLs, otherwise Google will return to the wrong place.

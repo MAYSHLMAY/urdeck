@@ -1,5 +1,14 @@
 'use client';
-import { applyLook } from '@/lib/look';
+import { applyLook, getHome, setHome, HOME_SECTIONS } from '@/lib/look';
+import { useMe } from './Welcome';
+import { useSyncExternalStore } from 'react';
+
+let _hs = '', _hv = getHomeSafe();
+function getHomeSafe() { try { return getHome(); } catch { return { order: HOME_SECTIONS.map(x => x[0]), hidden: [] as string[] }; } }
+function useHomeCfg() {
+  const snap = () => { try { const j = JSON.stringify(getHome()); if (j !== _hs) { _hs = j; _hv = JSON.parse(j); } } catch { /* ignore */ } return _hv; };
+  return useSyncExternalStore(f => { addEventListener('ud-home', f); return () => removeEventListener('ud-home', f); }, snap, () => _hv);
+}
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -20,6 +29,8 @@ export default function Home() {
   const e = useEngine(), R = usePoolSync(), router = useRouter();
   const [liveG, setLive] = useState<any[]>([]);
   useEffect(() => watchLobby(g => setLive(g)), []);
+  const home = useHomeCfg(), me = useMe(), [edit, setEdit] = useState(false);
+  useEffect(() => { const f = () => setEdit(true); addEventListener('ud-arrange', f); return () => removeEventListener('ud-arrange', f); }, []);
   const [mounted, setMounted] = useState(false), [set, setSet] = useState(false), [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => { setMounted(true); e.init(); if (new URLSearchParams(location.search).get('settings')) { setSet(true); history.replaceState(null, '', '/'); } }, []); // eslint-disable-line
@@ -53,37 +64,34 @@ export default function Home() {
   const go = (sel: string) => { e.setSel(sel); router.push('/study'); };
   const cat = open ? R.category(open) : null;
 
-  return (
-    <>
-      <SiteNav owner={isOwner()} onSettings={() => setSet(true)} />
-      <main className="hm">
-        <header className="hhead">
-          <div>
-            <p><span lang="am" className="geez">{hr < 12 ? 'እንደምን አደሩ' : hr < 18 ? 'እንደምን ዋሉ' : 'እንደምን አመሹ'}</span> · {hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'}</p>
-            <h1>{todo > 0 ? 'Ready to learn?' : 'All caught up'}</h1>
-          </div>
-          <button className="avatar" onClick={() => setSet(true)} aria-label="Settings"><Ic n="sliders" /></button>
-        </header>
-
-        <section className="today">
+  const moveSec = (id: string, d: number) => { const o = [...home.order], i = o.indexOf(id), j = i + d; if (j < 0 || j >= o.length) return; [o[i], o[j]] = [o[j], o[i]]; setHome({ order: o, hidden: home.hidden }); };
+  const toggleSec = (id: string) => setHome({ order: home.order, hidden: home.hidden.includes(id) ? home.hidden.filter(x => x !== id) : [...home.hidden, id] });
+  const tod = hr < 12 ? 'morning' : hr < 18 ? 'day' : 'evening', first = me ? me.name.split(' ')[0] : '';
+  const TIPS = ['Short sessions beat long ones. Ten minutes a day wins.', 'Say the answer out loud before you flip the card.', 'Sleep after studying locks memories in.', 'Mix topics: it feels harder and works better.', 'Wrong answers teach the most. Keep them.', 'Explain a card to an imaginary friend.', 'Start with your weakest topic while you are fresh.'];
+  const tip = TIPS[Math.floor(now / 864e5) % TIPS.length];
+  const SEC: Record<string, React.ReactNode> = {
+    today: (<>
+        <section className="today" data-tod={tod}>
           <div>
             <small>{todo > 0 ? 'Today' : 'Nothing due'}</small>
             <h2>{todo > 0 ? <>{todo} card{todo === 1 ? '' : 's'}<br />to review</> : <>Come back<br />tomorrow</>}</h2>
             <p className="tmsg">{msg}</p>
             <Link className="go" href="/study">{todo > 0 ? (tc > 0 ? 'Continue' : 'Start') : 'Browse cards'} <Ic n="arrowR" /></Link>
           </div>
-          <div className="ringw" aria-label="Today's goal">
+          <div className={'ringw' + (gp >= 1 ? ' met' : '')} aria-label="Today's goal">
             <svg viewBox="0 0 120 120" aria-hidden><circle cx="60" cy="60" r="50" className="rb" /><circle cx="60" cy="60" r="50" className="rf" strokeDasharray={2 * Math.PI * 50} strokeDashoffset={2 * Math.PI * 50 * (1 - gp)} /></svg>
             <div className="rt">{gp >= 1 ? <b><Ic n="check" /></b> : <b>{tc}<span>/{goal}</span></b>}<small>{gp >= 1 ? 'goal met' : 'today'}</small></div>
           </div>
         </section>
-
+    </>),
+    stats: (<>
         <div className="tstats">
           <div className="tstat n"><b>{c.nToday}</b><span>New</span></div>
           <div className="tstat l"><b>{c.l}</b><span>Learning</span></div>
           <div className="tstat d"><b>{c.dToday}</b><span>Due</span></div>
         </div>
-
+    </>),
+    shortcuts: (<>
         <nav className="qa" aria-label="Shortcuts">
           <Link href="/study"><i><Ic n="cap" /></i>Study</Link>
           <Link href="/play"><i><Ic n="play" /></i>Quiz</Link>
@@ -94,27 +102,33 @@ export default function Home() {
           <button onClick={openListen}><i><Ic n="bell" /></i>Listen</button>
           {isOwner() && <Link href="/host"><i><Ic n="star" /></i>Host</Link>}
         </nav>
-
-        {liveG.length > 0 && liveG.slice(0, 2).map((g: any) => <Link key={g.pin} className="livebn" href={'/play?pin=' + g.pin}><i className="pulse" /><b>Live now: {g.title}</b><span>Join</span></Link>)}
-
+    </>),
+    progress: (<>
         <section className="panel">
           <div className="streakln"><Ic n="fire" /><b>{st.n}</b> day streak{st.atRisk ? <small className="risk">study today to keep it</small> : st.done ? <small className="okk">done for today</small> : null}{(S.freeze || 0) > 0 ? <small className="fz"><Ic n="snow" /> {S.freeze} freeze{S.freeze > 1 ? 's' : ''}</small> : null}{e.examInfo() ? <small> · {e.examInfo()}</small> : null}</div>
           <div className="goalbar" aria-label="Daily goal"><div><i style={{ width: gp * 100 + '%' }} className={gp >= 1 ? 'full' : ''} /></div><span>{tc >= goal ? 'Goal reached!' : tc + ' / ' + goal + ' today'}</span></div>
           <div className="week" aria-label="Answers in the last 7 days">{week.map((w, i) => <div key={i} className={w.today ? 'td' : ''} title={w.n + ' answers'}><i style={{ height: w.n ? Math.max(14, w.n / wmax * 100) + '%' : undefined, animationDelay: i * 50 + 'ms' }} className={(w.n ? 'on' : 'z') + (w.n >= goal ? ' hit' : '')} /><small>{w.d}</small></div>)}</div>
           <p className="wnote">{pct}% mastered · {c.tot - c.m} to go</p>
         </section>
-
+    </>),
+    mistakes: (<>
         {overconfident(e).length > 0 && <div className="oc"><span><b>{overconfident(e).length}</b> card{overconfident(e).length === 1 ? '' : 's'} you were sure about but got wrong</span><button className="solid" onClick={() => { e.startPracticeIds(overconfident(e)); router.push('/study'); }}>Fix them</button></div>}
         {e.O.smart !== false && (() => { const pt = patterns(e, Object.keys(e.MIS)); return pt.length ? <>
           <div className="shead"><h2>Patterns in your mistakes</h2><span>Cards you confuse together</span></div>
           <div className="pats">{pt.map((p, k) => <button key={k} className="pat" onClick={() => { try { e.startPracticeIds(p.ids); } catch { e.toast('Could not start that practice.'); return; } router.push('/study'); }}><b>{p.label}</b><small>{p.ids.length} cards · practice together</small></button>)}</div>
         </> : null; })()}
+    </>),
+    needs: (<>
         {wk.length > 0 && <>
           <div className="shead"><h2>Needs work</h2><span>Based on your answers</span></div>
           <div className="insights">{wk.map(w => <button key={w.s} className="ins" onClick={() => go(w.s)}><div><b>{w.label}</b><small>{Math.round(w.acc * 100)}% right · {w.tried} tries{w.missed ? ' · ' + w.missed + ' missed' : ''}</small></div><span className="meter"><i style={{ width: Math.round(w.acc * 100) + '%' }} /></span><Ic n="arrowR" /></button>)}</div>
         </>}
+    </>),
+    badges: (<>
         <div className="shead"><h2>Badges</h2><span>{bs.filter(b => b.have).length} of {bs.length}</span></div>
         <div className="badges">{bs.map(b => <div key={b.id} className={'bdg' + (b.have ? ' on' : '')} title={b.desc}><i><Ic n={b.icon} /></i><b>{b.title}</b><small>{b.have ? 'Earned' : b.cur + ' / ' + b.need}</small></div>)}</div>
+    </>),
+    topics: (<>
         <div className="shead"><h2>Topics</h2><span>Cards, PDFs and 3D models</span></div>
         {R.loading && !R.loaded && <p className="info">Loading topics…</p>}
         {R.error && <p className="info">{R.error}</p>}
@@ -136,7 +150,41 @@ export default function Home() {
           <div className="empty2"><Ic n="layers" /><p>No topics yet. As the owner, open the study screen, press <b>R</b> and use the <b>Pools</b> tab to create one, then link PDFs and card sets.</p></div>
         )}
         {looseModels.length > 0 && R.categories.length > 0 && <p className="hnote">{looseModels.length} 3D model{looseModels.length === 1 ? ' has' : 's have'} no category yet.</p>}
+    </>)
+  };
+
+  return (
+    <>
+      <SiteNav owner={isOwner()} onSettings={() => setSet(true)} />
+      <main className={'hm' + (edit ? ' editing' : '')}>
+        <header className="hhead">
+          <div>
+            <p><span lang="am" className="geez">{hr < 12 ? 'እንደምን አደሩ' : hr < 18 ? 'እንደምን ዋሉ' : 'እንደምን አመሹ'}</span> · {hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'}{first ? ', ' + first : ''}</p>
+            <h1>{todo > 0 ? 'Ready to learn?' : 'All caught up'}</h1>
+            <p className="htip">{tip}</p>
+          </div>
+          <button className="avatar" onClick={() => setSet(true)} aria-label="Settings">{me?.pic ? <img src={me.pic} alt="" referrerPolicy="no-referrer" /> : <Ic n="sliders" />}</button>
+        </header>
+
+        {liveG.length > 0 && liveG.slice(0, 2).map((g: any) => <Link key={g.pin} className="livebn" href={'/play?pin=' + g.pin}><i className="pulse" /><b>Live now: {g.title}</b><span>Join</span></Link>)}
+
+        <div className="hsecs">
+          {home.order.map((id, ix) => {
+            const hidden = home.hidden.includes(id); if (hidden && !edit) return null;
+            return (
+              <div key={id} className={'hsec s-' + id + (hidden ? ' off' : '') + (edit ? ' edit' : '')} style={{ ['--i' as any]: ix }}>
+                {edit && <div className="hedit"><b>{HOME_SECTIONS.find(x => x[0] === id)![1]}</b>
+                  <button type="button" aria-label="Move up" disabled={ix === 0} onClick={() => moveSec(id, -1)}><Ic n="chevD" className="flipv" /></button>
+                  <button type="button" aria-label="Move down" disabled={ix === home.order.length - 1} onClick={() => moveSec(id, 1)}><Ic n="chevD" /></button>
+                  <button type="button" aria-label={hidden ? 'Show section' : 'Hide section'} className={hidden ? 'off' : ''} onClick={() => toggleSec(id)}>{hidden ? 'Show' : 'Hide'}</button></div>}
+                {SEC[id]}
+              </div>
+            );
+          })}
+        </div>
+        {!edit && <button type="button" className="hcustom" onClick={() => setEdit(true)}><Ic n="sliders" /> Customize home</button>}
       </main>
+      {edit && <div className="arbar" role="toolbar" aria-label="Arranging home"><span>Arranging home</span><button type="button" onClick={() => setHome({ order: HOME_SECTIONS.map(x => x[0]), hidden: [] })}>Reset</button><button type="button" className="done" onClick={() => setEdit(false)}>Done</button></div>}
 
       <Sheet open={!!cat} onClose={() => setOpen(null)} className="sheet">
         {cat && (

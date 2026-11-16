@@ -191,3 +191,16 @@ Browse opens full screen (cards use the whole width on any device). On a compute
 
 ## Android app
 See `ANDROID.md`: push to GitHub and the included workflow builds `FlightRecall.apk`.
+
+## Accounts and first launch
+- **First launch** shows an animated splash, an interactive tour (flip a card, tap mistake pairs, spin a 3D cube, answer a quiz, toggle smart help), a hands-on practice round, then a player-card builder with optional **Continue with Google**. It appears once; Settings → Account → *Replay the tour* shows it again. Existing users and `/play`, `/host`, `/duel` links skip it.
+- **Google sign-in** uses Supabase Auth (PKCE). One-time setup: Google Cloud → OAuth client (Web) with redirect `https://<project>.supabase.co/auth/v1/callback`; Supabase → Authentication → Providers → Google (paste client id/secret); Authentication → URL Configuration → add `https://<your-site>/**` and `app.urdeck.study://auth` to Redirect URLs. Then run `supabase/profiles.sql` once.
+- **Local first.** Name, avatar and goal live on the device. The account row (`profiles`) is written only after you edit your player (batched 4 s, skipped if unchanged); there is no polling. Signing in on a new device restores your player id, so past game results (`game_players`) follow you. Lifetime stats are one cached read (30 min).
+- **Android:** Google blocks sign-in inside a WebView, so the app opens the system browser and returns through `app.urdeck.study://auth` (intent filter already in the manifest).
+- **Protected sync.** Run `supabase/sync-owner.sql` once. When you sign in, your sync space is claimed by your account: from then on the pairing code alone no longer opens it, sync requests must also carry your login (`x-user-token`, verified on the server and cached 5 minutes). Spaces nobody claimed keep working with the code only (guest mode). Signing out releases the claim so that device keeps syncing as a guest. Data was already end-to-end encrypted; this stops strangers from reading the encrypted blobs or writing junk into your space.
+
+## Look and layout
+Settings → *Look and layout* changes the font (UrDeck, Clean, Rounded, Serif, Readable, System), spacing, corner style, the shortcut style and a two-column dashboard for wide screens, all saved on the device and applied before first paint. *Arrange home sections* (or the Customize home button at the bottom of Home) lets you move sections up or down and hide them.
+
+## Buddy
+A small animated companion (your own customizable character, no AI, works offline). It greets you, reacts to goals and streaks, answers simple questions by keyword, and **walks you through tasks**: it highlights the real button (works inside dialogs too) and waits for you to press it. Settings → Buddy: turn it on or off, rename it, shuffle or customize its look, pick a personality, move it to the other side, and optionally let it speak (browser voice on the web, the phone's voice through `@capacitor-community/text-to-speech` in the app; English works best). Drag it anywhere; "Put the buddy back" resets it. Voice input appears only where the browser supports it.

@@ -1,0 +1,81 @@
+/* Fonts, spacing, corners, home layout. Applied through data attributes on <html>, set before first paint. */
+:root[data-font=jakarta]{--sans:"Plus Jakarta Sans","Noto Sans Ethiopic","Abyssinica SIL",Nyala,system-ui,sans-serif}
+:root[data-font=inter]{--sans:Inter,"Noto Sans Ethiopic","Abyssinica SIL",Nyala,system-ui,sans-serif}
+:root[data-font=rounded]{--sans:Nunito,"Noto Sans Ethiopic","Abyssinica SIL",Nyala,system-ui,sans-serif}
+:root[data-font=serif]{--sans:"Source Serif 4","Noto Serif Ethiopic","Abyssinica SIL",Nyala,Georgia,serif}
+:root[data-font=hyper]{--sans:"Atkinson Hyperlegible","Noto Sans Ethiopic",system-ui,sans-serif}
+:root[data-font=system]{--sans:system-ui,-apple-system,"Segoe UI","Noto Sans Ethiopic",sans-serif}
+:root[data-font=serif] h1,:root[data-font=serif] h2{font-weight:650}
+
+:root[data-corner=soft]{--r:12px}:root[data-corner=sharp]{--r:5px}
+:root[data-corner=soft] :is(.today,.panel,.tcard,.ins,.bdg,.pat,.tstat,.qa a,.qa button,.oc,.wl-btn,.scard){border-radius:12px}
+:root[data-corner=sharp] :is(.today,.panel,.tcard,.ins,.bdg,.pat,.tstat,.qa a,.qa button,.oc,.wl-btn,.scard){border-radius:4px}
+
+:root[data-density=compact] .hm{gap:12px;padding-top:8px}
+:root[data-density=compact] .hsecs{gap:12px}
+:root[data-density=compact] .today{padding:14px 16px}
+:root[data-density=compact] .htip{display:none}
+:root[data-density=compact] :is(.panel,.tcard,.ins,.oc){padding-top:9px;padding-bottom:9px}
+
+/* home sections */
+.hsecs{display:flex;flex-direction:column;gap:20px;min-width:0}
+.hsec{min-width:0;animation:pgin .55s var(--ease) backwards;animation-delay:calc(var(--i,0)*55ms)}
+.hsec:empty{display:none}
+.hsec.off{opacity:.45}
+.hsec.edit{border:2px dashed var(--line);border-radius:18px;padding:8px;background:color-mix(in srgb,var(--acc) 4%,transparent)}
+.hsec.edit>:not(.hedit){pointer-events:none;user-select:none}
+.hedit{display:flex;align-items:center;gap:6px;padding:2px 2px 8px}.hedit b{flex:1;font-size:.9rem}
+.hedit button{min-width:40px;height:36px;padding:0 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.hedit button:disabled{opacity:.35}.hedit button svg{width:18px;height:18px}.hedit .off{background:var(--accbg);color:var(--acc)}
+.flipv{transform:rotate(180deg)}
+.hcustom{align-self:center;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:99px;border:1.5px dashed var(--line);background:transparent;color:var(--mute);font:inherit;font-weight:650;font-size:.85rem;cursor:pointer;margin-top:4px}.hcustom svg{width:16px;height:16px}
+.arbar{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));z-index:60;display:flex;align-items:center;gap:8px;padding:8px 8px 8px 16px;border-radius:99px;background:var(--ink);color:var(--bg);box-shadow:0 10px 30px rgba(0,0,0,.3);animation:wlup .3s ease both}
+.arbar span{font-weight:700;font-size:.85rem;margin-right:6px}.arbar button{border:0;border-radius:99px;padding:9px 16px;font:inherit;font-weight:700;background:rgba(127,127,127,.25);color:inherit;cursor:pointer}.arbar .done{background:var(--acc);color:#fff}
+.hm.editing{padding-bottom:90px}
+
+/* life */
+.htip{margin:6px 0 0;font-size:.82rem;color:var(--mute);max-width:36ch;line-height:1.4}
+.avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.today{position:relative;overflow:hidden}
+.today::after{content:"";position:absolute;right:-34px;top:-34px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,226,140,.5),transparent 68%);animation:hfloat 7s ease-in-out infinite;pointer-events:none}
+.today[data-tod=day]::after{background:radial-gradient(circle,rgba(255,255,255,.35),transparent 68%)}
+.today[data-tod=evening]::after{background:radial-gradient(circle,rgba(190,170,255,.5),transparent 68%)}
+@keyframes hfloat{50%{transform:translate(-10px,12px) scale(1.08)}}
+.streakln svg{transform-origin:50% 90%;animation:hflame 2.4s ease-in-out infinite}
+@keyframes hflame{0%,100%{transform:rotate(-4deg) scale(1)}50%{transform:rotate(4deg) scale(1.1)}}
+.ringw.met{animation:hglow 2.2s ease-in-out infinite;border-radius:50%}
+@keyframes hglow{50%{filter:drop-shadow(0 0 10px rgba(255,255,255,.7))}}
+.qa a,.qa button,.tcard,.pat,.ins{transition:transform .15s var(--ease),box-shadow .2s}
+.qa a:active,.qa button:active,.tcard:active,.pat:active,.ins:active{transform:scale(.97)}
+@media (hover:hover){.qa a:hover,.qa button:hover,.tcard:hover{transform:translateY(-2px)}}
+
+/* shortcuts as a swipeable row */
+:root[data-qa=row] .qa{display:flex;overflow-x:auto;scroll-snap-type:x proximity;gap:10px;padding-bottom:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+:root[data-qa=row] .qa::-webkit-scrollbar{display:none}
+:root[data-qa=row] .qa>*{flex:0 0 92px;scroll-snap-align:start}
+
+/* dashboard on wide screens */
+@media (min-width:900px){
+  :root[data-layout=grid] .hm{max-width:1120px}
+  :root[data-layout=grid] .hsecs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  :root[data-layout=grid] .hsecs>:is(.s-today,.s-stats,.s-shortcuts,.s-topics,.s-badges){grid-column:1/-1}
+}
+
+/* appearance card */
+.ap-l{display:block;margin:14px 0 6px;font-size:.78rem;font-weight:700;color:var(--mute);letter-spacing:.02em}
+.ap-fonts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ap-fonts button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.ap-fonts span{font-size:1.5rem;font-weight:700;line-height:1.1}.ap-fonts small{font-size:.74rem;color:var(--mute)}
+.ap-fonts button.on{border-color:var(--acc);background:var(--accbg)}.ap-fonts button.on small{color:var(--acc)}
+.ap-seg{display:flex;background:var(--accbg);padding:3px;border-radius:12px;gap:2px}
+.ap-seg button{flex:1;border:0;background:transparent;padding:9px 6px;border-radius:9px;font:inherit;font-weight:650;font-size:.85rem;color:var(--mute);cursor:pointer}
+.ap-seg button.on{background:var(--card);color:var(--acc);box-shadow:0 1px 4px rgba(15,20,36,.12)}
+@media (prefers-reduced-motion:reduce){.today::after,.streakln svg,.ringw.met,.hsec{animation:none!important}}
+
+/* spacing fixes */
+.hsec>:first-child{margin-top:0!important}.hsec>:last-child{margin-bottom:0!important}
+.arbar{width:max-content;max-width:calc(100vw - 24px);white-space:nowrap;bottom:calc(92px + env(safe-area-inset-bottom))}
+@media (min-width:900px){.arbar{bottom:24px}}
+.qa a,.qa button{font-size:.72rem;letter-spacing:.02em;min-width:0}
+.hsecs>.hsec{margin:0!important}
+.arbar{left:12px;right:12px;transform:none;margin:0 auto}

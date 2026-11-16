@@ -11,6 +11,13 @@ import { isOwner, lock, unlock } from '@/lib/api';
 import { sb } from '@/lib/library';
 import { Sheet, SheetFrame, useEngine, Ic } from './ui';
 
+/** "ai-1763269781234.txt" and "pasted-2026-11-16-07-09.txt" are file names, not titles: show what they are and when they were added. */
+const packLabel = (n: string) => {
+  const b = n.replace(/\.txt$/i, ''), d = (t: number) => new Date(t).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  let m = b.match(/^(ai|batch)-(\d{12,14})$/); if (m) return (m[1] === 'ai' ? 'AI cards' : 'Batch add') + ' · ' + d(+m[2]);
+  m = b.match(/^pasted-(\d{4})-(\d\d)-(\d\d)-(\d\d)-(\d\d)$/); if (m) return 'Pasted · ' + d(new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]).getTime());
+  return b;
+};
 export function AddDialog({ open, onClose, onManage }: { open: boolean; onClose: () => void; onManage?: () => void }) {
   const e = useEngine();
   const [own, setOwn] = useState(false), [pw, setPw] = useState(''), [pwm, setPwm] = useState('');
@@ -75,7 +82,7 @@ export function AddDialog({ open, onClose, onManage }: { open: boolean; onClose:
     <Sheet open={open} onClose={onClose} className="sheet addm">
       <SheetFrame title={<>Add <Ic n={own ? 'unlock' : 'lock'} /></>} onClose={onClose}>
         <div className="sc">
-          {onManage && <button type="button" className="ghost wide" style={{ marginBottom: 8 }} onClick={() => { onClose(); onManage(); }}><Ic n="pencil" /> Manage cards: select many, move, delete, find &amp; replace, batch add</button>}
+          {onManage && <button type="button" className="ad-manage" onClick={() => { onClose(); onManage(); }}><Ic n="pencil" /><span><b>Manage cards</b><small>Select, move, delete, find &amp; replace</small></span><Ic n="chevR" /></button>}
           {locked ? (
             <div>
               <p className="n">Owner only. Enter the password to add folders or cards.</p>
@@ -87,22 +94,23 @@ export function AddDialog({ open, onClose, onManage }: { open: boolean; onClose:
             </div>
           ) : (
             <div>
-              <p className="n">{own ? 'Owner: cards and folders you add are saved for everyone.' : 'Private: everything you add here stays on this device and is never uploaded. Only you can see it.'}</p>
-              <div className="tabs2">
-                <button type="button" className={tab === 'F' ? 'on' : ''} onClick={() => setTab('F')}>New folder</button>
-                <button type="button" className={tab === 'C' ? 'on' : ''} onClick={() => setTab('C')}>Add cards</button>
-                <button type="button" className={tab === 'X' ? 'on' : ''} onClick={() => setTab('X')}>Import / export</button>
-                <button type="button" className={tab === 'A' ? 'on' : ''} onClick={() => setTab('A')}>AI cards</button>
+              <p className="ad-priv"><Ic n={own ? 'unlock' : 'lock'} /> {own ? 'Owner: what you add is saved for everyone' : 'Private: stays on this device'}</p>
+              <div className="tabs2 ad-tabs" role="tablist">
+                <button type="button" className={tab === 'F' ? 'on' : ''} onClick={() => setTab('F')}>Folder</button>
+                <button type="button" className={tab === 'C' ? 'on' : ''} onClick={() => setTab('C')}>Cards</button>
+                <button type="button" className={tab === 'X' ? 'on' : ''} onClick={() => setTab('X')}>Import</button>
+                <button type="button" className={tab === 'A' ? 'on' : ''} onClick={() => setTab('A')}>AI</button>
               </div>
-              <label>Where</label>
+              <label className="ad-l">Add to</label>
               <select value={whereVal} onChange={ev => setWhere(ev.target.value)}>{L.map(x => <option key={x.id} value={x.id}>{x.label}</option>)}</select>
               {tab === 'A' ? (
                 <div className="addc"><AiCards where={whereVal} tags={ctags.trim()} onMsg={say} /></div>
               ) : tab === 'X' ? (
                 <div>
-                  <p className="n">Import a <b>CSV</b> (columns: set, question, correct, wrong1…wrong5, image, pins), an <b>Anki</b> text export, or a two-column <b>Quizlet/Anki</b> file (front, back). Or a <b>cards file</b> (.txt) with every kind of card: <code>F: front | back</code>, <code>R:</code> reversed, <code>T:</code> type-in, <code>C: The {'{{c1::heart}}'} pumps…</code> cloze, <code>O: image-url | hide-one | Wing@x,y,w,h</code> occlusion, <code>Q: question | correct | wrong…</code> multiple choice. Use <code>#Set name</code> lines to choose the set. <b>Simulations</b>: drop a Three.js / HTML file (.html or .js starting with <code>/* flight-recall-sim */</code>) here too; the owner's upload goes straight to the 3D lab.</p>
-                  <label className="pickr"><input type="checkbox" checked={flipIn} onChange={ev => setFlipIn(ev.target.checked)} /><span>Two-column files become flip cards (otherwise multiple choice with borrowed wrong answers)</span></label>
-                  <input type="file" accept=".csv,.tsv,.txt,.html,.htm,.js,text/html,text/javascript,text/csv,text/plain,text/tab-separated-values" multiple disabled={busy}
+                  <p className="ad-help">Bring cards in from a spreadsheet, Anki, Quizlet or a cards file.</p>
+                  <div className="ad-chips" aria-hidden><span>CSV</span><span>Anki</span><span>Quizlet</span><span>Cards file</span><span>3D sim</span></div>
+                  <label className="pickr"><input type="checkbox" checked={flipIn} onChange={ev => setFlipIn(ev.target.checked)} /><span>Two-column files become flip cards</span></label>
+                  <input type="file" className="ad-file" accept=".csv,.tsv,.txt,.html,.htm,.js,text/html,text/javascript,text/csv,text/plain,text/tab-separated-values" multiple disabled={busy}
                     onChange={async ev => {
                       const t = ev.target, fs = Array.from(t.files || []); t.value = ''; if (!fs.length) return;
                       setBusy(true); const out: string[] = []; let bad = false;
@@ -121,42 +129,56 @@ export function AddDialog({ open, onClose, onManage }: { open: boolean; onClose:
                       }
                       setBusy(false); say(out.join('\n'), bad ? 'err' : 'ok');
                     }} />
-                  <label>Export your library</label>
-                  <div className="row">
-                    <button type="button" className="ghost" onClick={() => downloadText('urdeck-cards.csv', cardsToCsv(e.Q), 'text/csv')}>Download CSV</button>
-                    <button type="button" className="ghost" onClick={() => downloadText('urdeck-cards.txt', cardsToCardsFile(e.Q))}>Download cards file</button>
-                    <button type="button" className="ghost" onClick={async () => { const txt = cardsToCardsFile(e.Q); try { const f = new File([txt], 'urdeck-cards.txt', { type: 'text/plain' }); if ((navigator as any).canShare?.({ files: [f] })) { await navigator.share({ files: [f], title: 'UrDeck cards' }); return; } await navigator.share?.({ title: 'UrDeck cards', text: txt.slice(0, 60000) }); if (!navigator.share) downloadText('urdeck-cards.txt', txt); } catch { /* cancelled */ } }}>Share (Telegram, WhatsApp…)</button>
-                    <button type="button" className="ghost" onClick={() => downloadText('urdeck-anki.txt', cardsToAnki(e.Q))}>Download for Anki</button>
+                  <details className="ad-more"><summary>Cards file format</summary>
+                    <ul className="ad-ref">
+                      <li><code>#Set name</code> starts a set</li>
+                      <li><code>Q: question | correct | wrong…</code> multiple choice</li>
+                      <li><code>F: front | back</code> flip, <code>R:</code> reversed, <code>T:</code> type-in</li>
+                      <li><code>C: The {'{{c1::heart}}'} pumps…</code> cloze</li>
+                      <li><code>O: image-url | hide-one | Wing@x,y,w,h</code> occlusion</li>
+                      <li>Simulations: an .html/.js starting with <code>/* flight-recall-sim */</code> (owner only)</li>
+                    </ul></details>
+                  <details className="ad-more"><summary>Export your library</summary>
+                  <div className="ad-btns">
+                    <button type="button" className="ghost" onClick={() => downloadText('urdeck-cards.csv', cardsToCsv(e.Q), 'text/csv')}>CSV</button>
+                    <button type="button" className="ghost" onClick={() => downloadText('urdeck-cards.txt', cardsToCardsFile(e.Q))}>Cards file</button>
+                    <button type="button" className="ghost" onClick={async () => { const txt = cardsToCardsFile(e.Q); try { const f = new File([txt], 'urdeck-cards.txt', { type: 'text/plain' }); if ((navigator as any).canShare?.({ files: [f] })) { await navigator.share({ files: [f], title: 'UrDeck cards' }); return; } await navigator.share?.({ title: 'UrDeck cards', text: txt.slice(0, 60000) }); if (!navigator.share) downloadText('urdeck-cards.txt', txt); } catch { /* cancelled */ } }}>Share…</button>
+                    <button type="button" className="ghost" onClick={() => downloadText('urdeck-anki.txt', cardsToAnki(e.Q))}>Anki</button>
                   </div>
-                  <p className="n">CSV keeps pictures and pins. Anki import: File → Import, choose the .txt, tick "Allow HTML in fields".</p>
+                  <p className="ad-help">CSV keeps pictures and pins. Anki import: File → Import, choose the .txt, tick "Allow HTML in fields".</p>
+                  </details>
                 </div>
               ) : tab === 'F' ? (
                 <div>
-                  <label>Folder name, or a path like <b>Materials/Chapter 1</b> (missing folders are created automatically)</label>
-                  <input type="text" value={fname} onChange={ev => setFname(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter') mkFolder(); }} placeholder="e.g. Materials/Chapter 1" maxLength={120} autoComplete="off" />
+                  <label className="ad-l">Folder name</label>
+                  <input type="text" value={fname} onChange={ev => setFname(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter') mkFolder(); }} placeholder="Chapter 1" maxLength={120} autoComplete="off" />
+                  <p className="ad-help">Tip: write <b>Biology/Chapter 1</b> to make nested folders in one go.</p>
                   <div className="row"><button className="solid" type="button" onClick={mkFolder}>Create folder</button></div>
                 </div>
               ) : (
                 <div>
-                  <p className="n">Paste text: a <b>#2.5 Title</b> line, then one question per line as <b>question|correct|wrong1|wrong2|wrong3</b>. Cards are always added, never replaced. Each <b>#Title</b> becomes a card set inside the folder you picked.</p>
-                  <label>Extra sub-folders (optional), like <b>Chapter 2/Part A</b></label>
-                  <input type="text" value={cpath} onChange={ev => setCpath(ev.target.value)} placeholder="Created inside the folder above" maxLength={120} autoComplete="off" />
-                  <label>Tags (optional, comma separated)</label>
-                  <input type="text" value={ctags} onChange={ev => setCtags(ev.target.value)} placeholder="e.g. lift, forces, exam" maxLength={120} autoComplete="off" />
-                  <input type="file" accept=".txt,text/plain" multiple style={{ marginTop: 10 }} disabled={busy}
-                    onChange={async ev => { const t = ev.target; await upload(t.files); t.value = ''; }} />
+                  <p className="ad-help">One card per line: <code>question|correct|wrong1|wrong2</code>. Start a set with <code>#Set name</code>.</p>
                   <textarea value={paste} onChange={ev => setPaste(ev.target.value)} placeholder={'#2.5 Theory of Turn\nquestion|correct|wrong1|wrong2|wrong3'} />
+                  <details className="ad-more"><summary>More options</summary>
+                    <label className="ad-l">Sub-folders</label>
+                    <input type="text" value={cpath} onChange={ev => setCpath(ev.target.value)} placeholder="Chapter 2/Part A" maxLength={120} autoComplete="off" />
+                    <label className="ad-l">Tags</label>
+                    <input type="text" value={ctags} onChange={ev => setCtags(ev.target.value)} placeholder="lift, forces, exam" maxLength={120} autoComplete="off" />
+                  </details>
+                  <p className="ad-or">or add a .txt file</p>
+                  <input type="file" accept=".txt,text/plain" multiple className="ad-file" disabled={busy}
+                    onChange={async ev => { const t = ev.target; await upload(t.files); t.value = ''; }} />
                   <div className="row"><button className="solid" type="button" disabled={busy} onClick={addPasted}>{busy ? 'Adding…' : 'Add cards'}</button></div>
                 </div>
               )}
               <div id="imsg" className={msg.c}>{msg.t}</div>
               <div id="packs">
-                <p className="n" style={{ marginTop: 10 }}><b>Your library:</b> {e.Q.length} cards{e.syncingCloud ? ' · syncing…' : ''}.</p>
+                <p className="ad-lib"><b>Your library</b><span>{e.Q.length} cards{e.syncingCloud ? ' · syncing…' : ''}</span></p>
                 {packs.map(p => (
-                  <div className="pk2" key={p.id}><span>{p.name}<br /><small className="gm">{p.card_count} cards · added {new Date(p.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · shared deck</small></span></div>
+                  <div className="pk2" key={p.id}><span title={p.name}>{packLabel(p.name)}<br /><small className="gm">{p.card_count} cards · added {new Date(p.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · shared deck</small></span></div>
                 ))}
                 {e.DATA.packs.map((p, i) => (
-                  <div className="pk2" key={'l' + i}><span>{p.name}<br /><small className="gm">on this device only</small></span>
+                  <div className="pk2" key={'l' + i}><span title={p.name}>{packLabel(p.name)}<br /><small className="gm">on this device only</small></span>
                     <span><button type="button" className="ghost" onClick={() => { if (confirm('Remove "' + p.name + '" from this device?')) e.removeLocalPack(i); }}>Remove</button></span></div>
                 ))}
               </div>

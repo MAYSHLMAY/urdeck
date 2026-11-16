@@ -12,7 +12,7 @@ export function AiCards({ where, tags, onMsg }: { where: string; tags: string; o
   const e = useEngine(), ai = useAI();
   const [text, setText] = useState(''), [kind, setKind] = useState<GenKind>('F'), [n, setN] = useState(10), [set, setSet] = useState('');
   const [busy, setBusy] = useState(false), [prog, setProg] = useState(''), [list, setList] = useState<Gen[]>([]);
-  if (!ai) return <div className="aigen"><p className="n">Turn notes into cards with AI. Connect a free Groq key or an xAI key in Settings → AI helper first.</p></div>;
+  if (!ai) return <div className="aigen ad-empty"><b>Make cards from your notes</b><p>Paste text and get cards you can review before adding.</p><p className="ad-help">Needs a free AI key. Settings → AI helper takes about a minute.</p></div>;
   const go = async () => {
     if (text.trim().length < 80) { onMsg('Paste a bit more text (at least a few sentences).', 'err'); return; }
     setBusy(true); setList([]); onMsg('', '');
@@ -30,7 +30,7 @@ export function AiCards({ where, tags, onMsg }: { where: string; tags: string; o
   };
   return (
     <div className="aigen">
-      <textarea value={text} onChange={ev => setText(ev.target.value)} placeholder="Paste notes or a chapter here. Cards are made only from this text." disabled={busy} />
+      <textarea value={text} onChange={ev => setText(ev.target.value)} placeholder="Paste your notes here" disabled={busy} />
       <div className="row">
         <select value={kind} onChange={ev => setKind(ev.target.value as GenKind)} disabled={busy} aria-label="Card type">{KINDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
         <select value={n} onChange={ev => setN(+ev.target.value)} disabled={busy} aria-label="How many">{[5, 10, 20, 30].map(x => <option key={x} value={x}>about {x}</option>)}</select>
@@ -38,7 +38,7 @@ export function AiCards({ where, tags, onMsg }: { where: string; tags: string; o
       </div>
       <div className="row"><button className="solid" type="button" disabled={busy || !text.trim()} onClick={go}>{busy ? prog || 'Working…' : 'Make cards'}</button></div>
       {list.length > 0 && <>
-        <p className="n"><b>{on.length}</b> of {list.length} selected. Check them before adding; AI can be wrong.</p>
+        <p className="ad-help"><b>{on.length}</b> of {list.length} selected. Check them first, AI can be wrong.</p>
         <ul className="agl">{list.map((g, i) => <li key={i}><label><input type="checkbox" checked={g.on} onChange={() => setList(l => l.map((x, j) => j === i ? { ...x, on: !x.on } : x))} /> <span>{g.label}{g.back ? <small> → {g.back}</small> : null}</span></label></li>)}</ul>
         <div className="row"><button className="solid" type="button" disabled={busy || !on.length} onClick={add}>Add {on.length} cards</button><button className="ghost" type="button" onClick={() => setList([])}>Discard</button></div>
       </>}

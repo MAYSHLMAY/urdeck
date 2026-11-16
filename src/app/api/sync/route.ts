@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin } from '@/lib/server/supabase';
+import { claim, gate } from '@/lib/server/owner';
 
 export const dynamic = 'force-dynamic';
 const fail = (m: string, s = 400) => NextResponse.json({ error: m }, { status: s });
@@ -10,6 +11,7 @@ export async function GET(req: Request) {
   try {
     const u = new URL(req.url), space = u.searchParams.get('space') || '', after = Math.max(0, Number(u.searchParams.get('after')) || 0);
     if (!SPACE.test(space)) return fail('Bad sync code.');
+    const g = await gate(req, space); if (g) return g;
     const r = await admin().from('sync_ops').select('rk,t,d,seq').eq('space', space).gt('seq', after).order('seq', { ascending: true }).limit(300);
     if (r.error) throw r.error;
     return NextResponse.json({ rows: r.data || [] });
@@ -22,6 +24,8 @@ export async function POST(req: Request) {
     const raw = await req.text(); if (raw.length > 2_000_000) return fail('Too much at once.', 413);
     const b = JSON.parse(raw), space = String(b.space || '');
     if (!SPACE.test(space)) return fail('Bad sync code.');
+    if (b.claim || b.release) return claim(req, space, !!b.release);
+    const g = await gate(req, space); if (g) return g;
     const ops = (Array.isArray(b.ops) ? b.ops : []).slice(0, 300).filter((o: any) => o && typeof o.rk === 'string' && o.rk.length <= 64 && typeof o.t === 'string' && o.t.length <= 48 && typeof o.d === 'string' && o.d.length <= 300_000)
       .map((o: any) => ({ rk: o.rk, t: o.t, d: o.d }));
     if (!ops.length) return NextResponse.json({ ok: true, n: 0 });

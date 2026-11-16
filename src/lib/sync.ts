@@ -11,7 +11,7 @@
 import { apiUrl } from '@/lib/base';
 import { engine } from './engine';
 import { notes } from './notes';
-import { api } from './api';
+import { auth } from './auth';
 
 const K_CFG = 'fr-sync-cfg-v1', K_META = 'fr-sync-meta-v1', K_CUR = 'fr-sync-cur-v1', K_OUT = 'fr-sync-out-v1';
 const A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -117,6 +117,17 @@ class Sync {
     } catch (e: any) { this.set({ state: navigator.onLine === false ? 'offline' : 'error', err: String(e?.message || e).slice(0, 160) }); }
     finally { this.busy = false; this.save(); if (this.again) setTimeout(() => this.run(), 400); }
   }
+  /** When signed in, requests carry the account's login so a space the account has claimed accepts them. */
+  private async uh(): Promise<Record<string, string>> { const t = await auth.token(); return t ? { 'x-user-token': t } : {}; }
+  private async call(body: object) {
+    const r = await fetch(apiUrl('/api/sync'), { method: 'POST', headers: { 'content-type': 'application/json', ...(await this.uh()) }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Could not reach sync.'); return j;
+  }
+  /** Protect this device's space with the signed-in account ('' = done, otherwise the reason it did not work). */
+  async protect(on = true): Promise<string> {
+    if (!this.cfg) return 'Turn on sync first.';
+    try { await this.call({ space: this.cfg.space, [on ? 'claim' : 'release']: true }); return ''; } catch (e: any) { return e.message || 'Could not protect sync.'; }
+  }
   private async push() {
     const cur = this.collect();
     while (this.out.size) {
@@ -127,13 +138,13 @@ class Sync {
         if (m[2] === 0 && !c) { this.out.delete(k); continue; }   // vanished between scan and push; the next scan makes a tombstone
         ops.push({ rk: await this.rk(k), t: m[0], d: await this.seal({ k, v: m[2] ? null : c!.v }) }); sent.push(k);
       }
-      if (ops.length) await api('/api/sync', { space: this.cfg!.space, ops });
+      if (ops.length) await this.call({ space: this.cfg!.space, ops });
       sent.forEach(k => this.out.delete(k)); this.save(); this.set({ pending: this.out.size });
     }
   }
   private async pull() {
     for (let guard = 0; guard < 60; guard++) {
-      const r = await fetch(apiUrl(`/api/sync?space=${this.cfg!.space}&after=${this.cur}`), { cache: 'no-store' });
+      const r = await fetch(apiUrl(`/api/sync?space=${this.cfg!.space}&after=${this.cur}`), { cache: 'no-store', headers: await this.uh() });
       const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Could not reach sync.');
       const rows: { rk: string; t: string; d: string; seq: number }[] = j.rows || []; if (!rows.length) return;
       const got: { k: string; t: string; v: any }[] = [];

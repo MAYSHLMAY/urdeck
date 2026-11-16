@@ -16,7 +16,7 @@ const nextConfig = {
         // the Android app runs on https://localhost and calls these routes; no cookies are used (the owner token is sent as a header)
         { key: 'Access-Control-Allow-Origin', value: '*' },
         { key: 'Access-Control-Allow-Methods', value: 'GET,POST,OPTIONS' },
-        { key: 'Access-Control-Allow-Headers', value: 'content-type,authorization,x-ai-key' },
+        { key: 'Access-Control-Allow-Headers', value: 'content-type,authorization,x-ai-key,x-user-token' },
         { key: 'Access-Control-Max-Age', value: '86400' }
       ];
       return [
