@@ -36,7 +36,7 @@ export const HOME_SECTIONS: [string, string, string][] = [
 ];
 export const SHORTCUTS: [string, string][] = [
   ['study', 'Study'], ['sprint', 'Quick sprint'], ['exam', 'Exam mode'], ['listen', 'Listen'],
-  ['quiz', 'Live quiz'], ['lab', '3D lab'], ['duel', 'Challenge'], ['host', 'Host']
+  ['quiz', 'Live quiz'], ['lab', '3D lab'], ['duel', 'Challenge'], ['leech', 'Leech Lab'], ['host', 'Host']
 ];
 export interface HomeCfg { order: string[]; hidden: string[]; hero: 'deck' | 'compact'; qa: 'grid' | 'row'; short: string[]; cols: 1 | 2; tip: boolean }
 const ALL = HOME_SECTIONS.map(x => x[0]), SC = SHORTCUTS.map(x => x[0]);
@@ -56,12 +56,12 @@ export function getHome(): HomeCfg {
   return {
     order, hidden: (Array.isArray(j.hidden) ? j.hidden : []).filter((x: string) => ALL.includes(x)),
     hero: j.hero === 'compact' ? 'compact' : 'deck', qa: j.qa === 'row' ? 'row' : 'grid',
-    short: Array.isArray(j.short) ? j.short.filter((x: string) => SC.includes(x)) : SC, cols: j.cols === 2 ? 2 : 1, tip: j.tip !== false
+    short: Array.isArray(j.short) ? [...j.short.filter((x: string) => SC.includes(x)), ...(j.sv === 2 || j.short.includes('leech') ? [] : ['leech'])] : SC, cols: j.cols === 2 ? 2 : 1, tip: j.tip !== false
   };
 }
 export function setHome(h: Partial<HomeCfg>) {
   const n = { ...getHome(), ...h };
-  try { localStorage.setItem(KH, JSON.stringify(n)); } catch { /* ignore */ }
+  try { localStorage.setItem(KH, JSON.stringify({ ...n, sv: 2 })); } catch { /* ignore */ }
   try { dispatchEvent(new Event('ud-home')); } catch { /* ignore */ }
 }
 export const resetHome = () => { try { localStorage.removeItem(KH); } catch { /* ignore */ } try { dispatchEvent(new Event('ud-home')); } catch { /* ignore */ } };

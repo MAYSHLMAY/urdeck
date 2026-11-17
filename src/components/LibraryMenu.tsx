@@ -4,8 +4,25 @@ import { foldList, gOrder2 } from '@/lib/tree';
 import { isOwner } from '@/lib/api';
 import { splitPath } from '@/lib/engine';
 import { ask, askPassword, esc, Sheet, SheetFrame, useEngine, Ic } from './ui';
+import { KGlyph, TYPES } from './TypePicker';
+import { kindOf, type Kind } from '@/lib/kind';
+import type { EditorState } from './CardEditor';
 
-export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+const KC: Record<string, string> = Object.fromEntries(TYPES.map(t => [t.k, t.c]));
+const KN: Record<string, string> = { mc: 'Multiple choice', f: 'Flashcards', c: 'Cloze', t: 'Type-in', o: 'Image occlusion' };
+type KM = Partial<Record<Kind, number>>;
+let _kv = -1, _km = new Map<string, KM>();
+/** How many cards of each type every set holds (cached until the cards change). */
+function kindMap(e: any): Map<string, KM> {
+  if (_kv === e.qver && _km.size) return _km;
+  const m = new Map<string, KM>(); e.Q.forEach((q: any) => { const k = kindOf(q.q) as Kind, r = m.get(q.s) || {}; r[k] = (r[k] || 0) + 1; m.set(q.s, r); });
+  _kv = e.qver; _km = m; return m;
+}
+const addKm = (a: KM, b: KM) => { (Object.keys(b) as Kind[]).forEach(k => { a[k] = (a[k] || 0) + (b[k] || 0); }); return a; };
+const main = (r: KM): Kind | 'all' => { const ks = (Object.keys(r) as Kind[]).filter(k => r[k]); return ks.length === 1 ? ks[0] : 'all'; };
+const Kinds = ({ r }: { r: KM }) => <span className="kchips">{(Object.keys(r) as Kind[]).filter(k => r[k]).map(k => <span key={k} className="kchip" style={{ ['--c' as any]: KC[k] }} title={KN[k]}><KGlyph k={k} />{r[k]}</span>)}</span>;
+
+export function LibraryMenu({ open, onClose, onNew }: { open: boolean; onClose: () => void; onNew?: (st: EditorState) => void }) {
   const e = useEngine();
   const pushed = useRef(false), skipPop = useRef(false);
   const prev = useRef({ br: 'root', n: 0 });
@@ -44,6 +61,7 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
   const S = e.S, FT = e.FT, BR = e.BR, own = isOwner(), cmp = gOrder2(FT);
   const U = e.menuStats(), cnt = { weak: 0, marked: 0, leech: 0 };
   e.Q.forEach(q => { const c = S.cards[q.id]; if (c) { if (e.inSel(q, 'weak', c)) cnt.weak++; if (c.mark) cnt.marked++; if (e.isLeech(c)) cnt.leech++; } });
+  const KM = kindMap(e), kindsOf = (id: string) => { const r: KM = {}; (FT.secs.get(id) || new Set<string>()).forEach(x => { if (KM.get(x)) addKm(r, KM.get(x)!); }); return r; };
   const sum = (id: string) => { let c = 0, d = 0, m = 0; (FT.secs.get(id) || new Set<string>()).forEach(s => { const u = U.get(s); if (u) { c += u.c; d += u.d; m += u.m; } }); return { c, d, m }; };
   const nPE = e.Q.filter(q => q.p).length, nHard = e.Q.filter(q => q.g === 'hard').length, nNew = e.Q.filter(q => e.isNewPE(q)).length;
 
@@ -141,6 +159,9 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
             <button className={'frow' + (S.sec === 'f:' + BR ? ' on' : '')} onClick={() => study('f:' + BR)}>
               <span className="ic"><Ic n="play" /></span><span className="tx"><b>Study this whole folder</b><small>{s.c} cards{s.d ? ' · ' + s.d + ' due' : ''}</small></span>
             </button>); })()}
+          {onNew && <div className="newrow" aria-label="Create here"><span>New here</span>
+            {(['mc', 'f', 'c', 't', 'o'] as Kind[]).map(k => <button key={k} type="button" style={{ ['--c' as any]: KC[k] }} onClick={() => onNew({ mode: 'add', kind: k, folder: BR === 'root' ? undefined : BR, section: secs[0] })}><KGlyph k={k} />{KN[k]}</button>)}
+          </div>}
           {kids.map(id => {
             const s = sum(id), nk = (FT.kids.get(id) || []).length, ns = (FT.direct.get(id) || []).length;
             return (
@@ -149,7 +170,7 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
                 onKeyDown={ev => { if (ev.key === 'Enter') e.navTo(id); }}>
                 <span className="ic"><Ic n="folder" /></span>
                 <span className="tx"><b>{FT.name.get(id) || '?'}</b>
-                  <small>{nk ? nk + ' folder' + (nk > 1 ? 's' : '') + ' · ' : ''}{ns ? ns + ' set' + (ns > 1 ? 's' : '') + ' · ' : ''}{s.c} cards{s.d ? <> · <span style={{ color: 'var(--warm)' }}>{s.d} due</span></> : null}</small></span>
+                  <small>{nk ? nk + ' folder' + (nk > 1 ? 's' : '') + ' · ' : ''}{ns ? ns + ' set' + (ns > 1 ? 's' : '') + ' · ' : ''}{s.c} cards{s.d ? <> · <span style={{ color: 'var(--warm)' }}>{s.d} due</span></> : null}</small><Kinds r={kindsOf(id)} /></span>
                 <button className="go" onClick={ev => { ev.stopPropagation(); study('f:' + id); }}>Study</button>
                 {own && <button className="go mgr" aria-label="Folder options" onClick={ev => { ev.stopPropagation(); folderMenu(id); }}><Ic n="dots" /></button>}
               </div>
@@ -159,9 +180,10 @@ export function LibraryMenu({ open, onClose }: { open: boolean; onClose: () => v
             const u = U.get(s) || { c: 0, d: 0 }, inf = FT.secInfo.get(s) || { t: s, n: '' };
             return (
               <div key={s} className={'frow' + (S.sec === s ? ' on' : '')} role="button" tabIndex={0} onClick={() => study(s)} onKeyDown={ev => { if (ev.key === 'Enter') study(s); }}>
-                <span className="ic"><Ic n="file" /></span>
+                <span className="ic kt" style={{ ['--c' as any]: KC[main(KM.get(s) || {})] }}><KGlyph k={main(KM.get(s) || {})} /></span>
                 <span className="tx"><b>{(inf.n ? inf.n + ' · ' : '') + inf.t}</b>
                   <small>{u.c} cards{u.d ? <> · <span style={{ color: 'var(--warm)' }}>{u.d} due</span></> : null}</small>
+                  <Kinds r={KM.get(s) || {}} />
                   {(FT.tags.get(s) || []).map(t => <span className="tg" key={t}>#{t}</span>)}</span>
                 {own && <button className="go mgr" aria-label="Set options" onClick={ev => { ev.stopPropagation(); setMenu(s); }}><Ic n="dots" /></button>}
               </div>

@@ -3,7 +3,7 @@ const V = 'fr-shell-v4';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
-  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/play', '/exam', '/duel', '/icon-192.png', '/manifest.webmanifest'].map(u => c.add(u).catch(() => {})))));
+  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/play', '/exam', '/duel', '/leeches', '/icon-192.png', '/manifest.webmanifest'].map(u => c.add(u).catch(() => {})))));
 });
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {

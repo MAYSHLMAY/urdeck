@@ -4,14 +4,15 @@ export const M = 60000, D = 86400000;
 export const DEF = {
   steps: '1 10', relearn: '10', wrongMin: 1, wrongMax: 4, grad: 1, easyIv: 4, startEase: 2.5, easyBonus: 1.3,
   hardIv: 1.2, ivMod: 1, maxIv: 3650, lapseNew: 50, leech: 8, leechSusp: false, learnAhead: 2, rollover: 4,
-  newOrder: 'seq', mix: 'after', maxRev: 200, fuzz: true, autoGood: false, vib: true, sound: false, smart: true, dailyGoal: 20, remind: '', theme: 'auto', size: 'm', exam: '', conf: true, readable: false, contrast: false
+  newOrder: 'seq', mix: 'after', maxRev: 200, fuzz: true, autoGood: false, vib: true, sound: false, smart: true, dailyGoal: 20, remind: '', theme: 'auto', size: 'm', exam: '', conf: true, readable: false, contrast: false,
+  revOrder: 'due', lapseMin: 1, retention: 90, examCap: true, examPace: false
 };
 export type Opts = typeof DEF;
 
 export interface CS {
   t: 'new' | 'learn' | 'review' | 'relearn';
   step: number; iv: number; ease: number; due: number; lapses: number; reps: number;
-  a?: number; k?: number; mark?: number; susp?: number; by?: number;
+  a?: number; k?: number; mark?: number; susp?: number; by?: number; hl?: number;
 }
 
 export const ymd = (d: Date) => d.toLocaleDateString('en-CA');
@@ -34,16 +35,28 @@ export const fz = (id: string, n: number) => {
   return ((h >>> 0) % 2001) / 1000 - 1;
 };
 
+/** Days left until the exam minus one (0 when there is no exam date, it has passed, or the cap is off). */
+export function examDays(x: Opts, now = Date.now()) {
+  if (!x.exam || !x.examCap) return 0;
+  const t = new Date(x.exam + 'T23:59:59').getTime(); if (isNaN(t)) return 0;
+  const d = Math.ceil((t - now) / D) - 1; return d >= 1 ? d : 0;
+}
+/** Anki-style leech test: at the threshold, then again every half threshold after that. */
+export const leechHit = (lapses: number, th: number) => lapses >= th && (lapses - th) % Math.max(1, Math.ceil(th / 2)) === 0;
+
 export function revIv(id: string, c: CS, g: number, x: Opts) {
   const late = Math.max(0, Math.floor((Date.now() - c.due) / D)), iv = Math.max(1, c.iv || 1);
+  const mod = x.ivMod * Math.log(Math.min(0.99, Math.max(0.5, x.retention / 100))) / Math.log(0.9);   // target recall: 90 % = 1, higher recall = shorter intervals
+  const cap = examDays(x);
   const f = (v: number) => {
-    v = Math.round(v * x.ivMod);
+    v = Math.round(v * mod);
     if (x.fuzz && v >= 3) v = Math.round(v * (1 + .05 * fz(id, c.reps || 0)));
     return v;
   };
   let h = f((iv + late / 4) * x.hardIv), gd = f((iv + late / 2) * c.ease), e = f((iv + late) * c.ease * x.easyBonus);
   h = Math.max(1, h); gd = Math.max(gd, h + 1); e = Math.max(e, gd + 1);
-  return Math.min(x.maxIv, g === 1 ? h : g === 2 ? gd : e);
+  const out = Math.min(x.maxIv, g === 1 ? h : g === 2 ? gd : e);
+  return cap ? Math.max(1, Math.min(out, cap)) : out;   // with an exam date set, nothing is scheduled beyond the day before it
 }
 
 /** Next state of a card for grade g (0 again, 1 hard, 2 good, 3 easy). */
@@ -52,7 +65,7 @@ export function nxt(id: string, c0: CS, g: number, x: Opts): CS {
   if (g === 0) {
     if (c.t === 'review') {
       c.lapses = (c.lapses || 0) + 1; c.ease = Math.max(1.3, c.ease - .2);
-      c.iv = Math.max(1, Math.round(c.iv * x.lapseNew / 100)); c.t = 'relearn';
+      c.iv = Math.max(1, x.lapseMin || 1, Math.round(c.iv * x.lapseNew / 100)); c.t = 'relearn';
     } else if (c.t === 'new') c.t = 'learn';
     c.step = 0;
     c.due = now + (x.wrongMin + Math.random() * Math.max(0, x.wrongMax - x.wrongMin)) * M;

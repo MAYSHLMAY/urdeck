@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { AccountCard } from './Welcome';
 import { Appearance } from './Appearance';
 import { useRef, useState } from 'react';
@@ -20,7 +21,9 @@ const BASIC: [string, string, F[]][] = [
     ['mix', 'Show new cards', 'sel', [['after', 'After reviews'], ['mixed', 'Mixed with reviews'], ['first', 'Before reviews']]],
     ['conf', 'Ask how sure I am before answering', 'chk'],
     ['dailyGoal', 'Daily goal (answers)', 'num', 5, 500, 5, '', 'The ring on Home fills as you answer'],
-    ['exam', 'Exam date', 'date', 0, 0, 0, '', 'Shows a countdown and a daily pace']]],
+    ['exam', 'Exam date', 'date', 0, 0, 0, '', 'Shows a countdown and a daily pace'],
+    ['examCap', 'Keep every review before the exam date', 'chk', '', '', 0, '', 'Intervals are shortened so no card is scheduled past the day before the exam'],
+    ['examPace', 'Raise new cards per day to finish before the exam', 'chk', '', '', 0, '', 'Uses the pace shown on Home as your new-card limit when it is higher']]],
   ['Look', 'palette', [
     ['theme', 'Theme', 'sel', [['auto', 'Match device'], ['light', 'Light'], ['dark', 'Dark']]],
     ['size', 'Text size', 'sel', [['s', 'Small'], ['m', 'Medium'], ['l', 'Large'], ['xl', 'Extra large']]],
@@ -43,11 +46,13 @@ const ADVANCED: [string, F[]][] = [
     ['startEase', 'Starting ease', 'num', 1.3, 4, .05],
     ['easyBonus', 'Easy bonus', 'num', 1, 2, .05],
     ['hardIv', 'Hard interval', 'num', 1, 2, .05],
-    ['ivMod', 'Interval modifier', 'num', .5, 2, .05, '', 'Below 1 shows cards more often'],
+    ['retention', 'Target recall (%)', 'num', 70, 97, 1, '', 'How sure you want to be of remembering when a card returns. Higher means shorter intervals and more reviews. 90 is standard'],
+    ['revOrder', 'Review order', 'sel', [['due', 'Most overdue first'], ['rand', 'Random'], ['ivl', 'Shortest interval first'], ['ease', 'Lowest ease first']]],
+    ['lapseMin', 'Minimum interval after a lapse (days)', 'num', 1, 30, 1],
     ['maxIv', 'Maximum interval (days)', 'num', 7, 36500, 1],
     ['lapseNew', 'Interval kept after a lapse (%)', 'num', 0, 100, 5],
     ['leech', 'Leech threshold (lapses)', 'num', 2, 30, 1],
-    ['leechSusp', 'Suspend leeches', 'chk'],
+    ['leechSusp', 'Suspend leeches automatically', 'chk', '', '', 0, '', 'Found again every half threshold. Treat them in the Leech Lab'],
     ['learnAhead', 'Learn-ahead (minutes)', 'num', 0, 60, 1, '', 'Show a learning card early only if it is due within this time. 0 = always wait the full step'],
     ['fuzz', 'Slightly randomise long intervals', 'chk'],
     ['autoGood', 'Quick rating: correct counts as Good', 'chk', '', '', 0, '', 'Hard and Easy stay available as small buttons']]]
@@ -189,6 +194,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
 
           <details className="scard adv"><summary><Ic n="sliders" />Advanced</summary>
             {ADVANCED.map(([g, fs]) => <div key={g}><h5>{g}</h5>{fs.map(field)}</div>)}
+            <div className="f"><label>Leech Lab<small>{e.leeches().length} stuck card{e.leeches().length === 1 ? '' : 's'} right now</small></label><Link className="solid" href="/leeches" onClick={onClose} style={{ textAlign: "center", textDecoration: "none" }}>Open</Link></div>
             <h5>Section titles</h5>
             <p className="n">Titles come from your upload headers (for example <b>#2.4 Steady State Flights &amp; Performance</b>). Renames are saved on this device.</p>
             <div id="ttl">

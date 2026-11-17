@@ -11,7 +11,7 @@ import { kindOf, withKind, clozeCards, clozeNums, distractors, type Kind } from 
 const raw = (q: string) => String(q || '').replace(/<!--(?:img|k|occ|src):[^>]*-->/g, '');
 const KINDS: [Kind | 'r', string, string][] = [['mc', 'Multiple choice', 'Pick the right answer'], ['f', 'Flip card', 'Front and back, like Anki'], ['r', 'Reversed', 'Two flip cards, both directions'], ['t', 'Type answer', 'You type it, then compare'], ['c', 'Cloze', 'Hide words in a sentence'], ['o', 'Image occlusion', 'Cover parts of a picture']];
 
-export type EditorState = { mode: 'edit' | 'add'; id?: string; section?: string } | null;
+export type EditorState = { mode: 'edit' | 'add'; id?: string; section?: string; kind?: Kind | 'r'; folder?: string } | null;
 
 /** Owner: changes are saved for everyone. Everyone else: changes are private, kept on this device only. */
 export function CardEditor({ state, onClose }: { state: EditorState; onClose: () => void }) {
@@ -37,7 +37,11 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
     if (state.mode === 'edit') {
       const card = state.id ? e.qById(state.id) : null;
       if (card) { setS(card.s); setQ(card.q); setC(card.c); setW(card.w.length ? [...card.w] : ['']); setP(!!card.p); setKind(kindOf(card.q)); }
-    } else { setS(state.section && e.Q.some(x => x.s === state.section) ? state.section : (e.cur ? e.cur.s : '')); setQ(''); setC(''); setW(['', '', '']); setP(false); setKind('mc'); setMasks([]); setOmode('o'); }
+    } else {
+      const own = state.section && e.Q.some(x => x.s === state.section) ? state.section : '';
+      setS(own || (state.folder ? '__new' : (e.cur ? e.cur.s : ''))); if (!own && state.folder) setNs('New set');
+      setQ(''); setC(''); setW(['', '', '']); setP(false); setKind(state.kind || 'mc'); setMasks([]); setOmode('o');
+    }
     // eslint-disable-next-line
   }, [state]);
 
@@ -47,6 +51,7 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
   const nums = clozeNums(raw(q));
   const ok = (kind === 'o' && !edit ? hasImg && masks.length > 0 && masks.every(m => m.t.trim()) : raw(q).trim() && (kind === 'c' ? nums.length > 0 : c.trim())) && (flip || wrong.length >= 1) && (edit || setName);
 
+  const finish = () => { if (!edit && state?.folder && s === '__new' && setName) e.foldOp([{ t: 'setPlace', key: setName, value: state.folder }]); onClose(); };
   async function save() {
     if (!ok || busy) return;
     setBusy(true); setErr('');
@@ -57,7 +62,7 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
       if (occNew) {
         const imgTok = (q.match(/<!--img:[^>]*-->/) || [''])[0], boxes = masks.map(({ x, y, w, h }) => ({ x, y, w, h })), txt0 = raw(q).trim() || 'What is hidden under the box?';
         list = masks.map((m, i) => ({ q: txt0 + imgTok + occToken({ mode: omode, idx: i, boxes }), c: m.t.trim() }));
-      } else if (kind === 'c') { const all = clozeCards(txt); list = edit ? [all[0]] : all; }
+      } else if (kind === 'c') { const all = clozeCards(txt).map(x => ({ ...x, q: x.q + img })); list = edit ? [all[0]] : all; }
       else if (kind === 'r' && !edit) list = [{ q: txt + img, c: c.trim() }, { q: c.trim(), c: txt }];
       else list = [{ q: txt + img, c: c.trim() }];
       const k: Kind = kind === 'r' ? 'f' : kind;
@@ -66,20 +71,20 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
         const sib = occNew ? masks.filter((_, j) => j !== i).map(m => ({ c: m.t.trim() })) : [];
         const w3 = distractors(list[i].c, sib, 3).filter(x => sib.some(y => y.c === x)).concat();
         const row = { q: withKind(list[i].q, k), c: list[i].c, w: [...w3, ...distractors(list[i].c, [...pool, ...sib], 3).filter(x => !w3.includes(x))].slice(0, 3), p };
-        m = priv ? (edit ? e.myEditCard(state!.id!, row) : e.myAddCard({ s: setName, ...row })) : edit ? await e.editCard(state!.id!, row) : await e.addOneCard({ s, ...row });
+        m = priv ? (edit ? e.myEditCard(state!.id!, row) : e.myAddCard({ s: setName, ...row })) : edit ? await e.editCard(state!.id!, row) : await e.addOneCard({ s: setName, ...row });
       }
       setBusy(false); if (m) { setErr(m); return; }
-      e.toast(list.length > 1 ? list.length + ' cards added' : edit ? 'Card saved' : 'Card added'); onClose(); return;
+      e.toast(list.length > 1 ? list.length + ' cards added' : edit ? 'Card saved' : 'Card added'); finish(); return;
     }
     if (priv) {
       const m = edit ? e.myEditCard(state!.id!, { q: q.trim(), c: c.trim(), w: wrong, p }) : e.myAddCard({ s: setName, q: q.trim(), c: c.trim(), w: wrong, p });
       setBusy(false); if (m) { setErr(m); return; }
-      e.toast(edit ? 'Saved for you' : 'Card added for you'); onClose(); return;
+      e.toast(edit ? 'Saved for you' : 'Card added for you'); finish(); return;
     }
-    const m = edit ? await e.editCard(state!.id!, { q: q.trim(), c: c.trim(), w: wrong, p }) : await e.addOneCard({ s, q: q.trim(), c: c.trim(), w: wrong, p });
+    const m = edit ? await e.editCard(state!.id!, { q: q.trim(), c: c.trim(), w: wrong, p }) : await e.addOneCard({ s: setName, q: q.trim(), c: c.trim(), w: wrong, p });
     setBusy(false);
     if (m) { setErr(m); return; }
-    e.toast(edit ? 'Card saved' : 'Card added'); onClose();
+    e.toast(edit ? 'Card saved' : 'Card added'); finish();
   }
   async function remove() {
     if (!state?.id || busy) return;
@@ -106,11 +111,10 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
             : <>
               <label className="cl">Add to card set</label>
               <select value={s} onChange={ev => setS(ev.target.value)}>
-                {!sets.length && !priv && <option value="">No card sets yet</option>}
-                {sets.map(x => <option key={x.s} value={x.s}>{x.label}</option>)}
-                {priv && <option value="__new">New set of my own…</option>}
+                                {sets.map(x => <option key={x.s} value={x.s}>{x.label}</option>)}
+                <option value="__new">{priv ? 'New set of my own…' : 'New set…'}</option>
               </select>
-              {s === '__new' && <input type="text" value={ns} onChange={ev => setNs(ev.target.value)} maxLength={80} placeholder="Name of your set, e.g. My weak spots" />}
+              {s === '__new' && <input type="text" value={ns} onChange={ev => setNs(ev.target.value)} maxLength={80} placeholder="Name of the new set, e.g. Chapter 1" />}
               {priv && <p className="n">Private: stays on this device and is never uploaded.</p>}
             </>}
           {!edit && <div className="kinds" role="tablist" aria-label="Card type">
@@ -122,7 +126,7 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
             <button type="button" className="ghost" onClick={() => { const t = raw(q), n = clozeNums(t).length + 1; setQ(t + ' {{c' + n + '::answer}}' + (q.match(/<!--(?:img|k|occ|src):[^>]*-->/g) || []).join('')); }}>+ Add a hidden word</button>
             <small>{nums.length ? nums.length + ' card' + (nums.length > 1 ? 's' : '') + ' will be made (one per number)' : 'Add at least one {{c1::…}}'}</small>
           </div>}
-          {kind !== 'c' && <div className={occNew ? 'nopins' : ''}><ImageField value={q} onChange={setQ} forceLocal={priv} /></div>}
+          {<div className={occNew || kind === 'c' ? 'nopins' : ''}><ImageField value={q} onChange={setQ} forceLocal={priv} /></div>}
           {occNew && <OccEditor value={q} masks={masks} setMasks={setMasks} mode={omode} setMode={setOmode} />}
           {kind !== 'c' && !occNew && <><label className="cl">{flip ? 'Back' : 'Correct answer'}</label>
           <input type="text" value={c} onChange={ev => setC(ev.target.value)} maxLength={3900} placeholder={flip ? 'The answer' : 'The right choice'} /></>}

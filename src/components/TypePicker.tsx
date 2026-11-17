@@ -11,6 +11,7 @@ const GL: Record<K, JSX.Element> = {
   o: <><rect x="3" y="4" width="18" height="16" rx="3" /><rect x="8" y="9" width="8" height="5" rx="1.2" /></>,
   all: <><rect x="4" y="4" width="7" height="7" rx="2" /><rect x="13" y="4" width="7" height="7" rx="2" /><rect x="4" y="13" width="7" height="7" rx="2" /><rect x="13" y="13" width="7" height="7" rx="2" /></>
 };
+export const KGlyph = ({ k }: { k: K }) => <svg viewBox="0 0 24 24" aria-hidden>{GL[k]}</svg>;
 export const TYPES: { k: K; t: string; d: string; c: string }[] = [
   { k: 'mc', t: 'Multiple choice', d: 'Pick the right answer from options.', c: '#5B5BD6' },
   { k: 'f', t: 'Flashcards', d: 'Flip the card, then grade yourself.', c: '#E5533C' },
@@ -50,5 +51,6 @@ export function TypePicker() {
 
 export function TypeChip() {
   const e = useEngine();
-  return <button type="button" className="tp-chip" onClick={() => { e.resetType(); e.emit(); }}><span>Type</span><b>{typeName(e.kindSel)}</b><span className="tp-x">Change</span></button>;
+  const c = TYPES.find(x => x.k === e.kindSel)?.c;
+  return <button type="button" className="tp-chip" style={{ ['--c' as any]: c }} onClick={() => { e.resetType(); e.emit(); }}><span className="tp-g2"><KGlyph k={e.kindSel} /></span><b>{typeName(e.kindSel)}</b><span className="tp-x">Change</span></button>;
 }

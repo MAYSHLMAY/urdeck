@@ -68,9 +68,10 @@ export default function Home() {
   const tod = hr < 12 ? 'morning' : hr < 18 ? 'day' : 'evening', first = me ? me.name.split(' ')[0] : '';
   const TIPS = ['Short sessions beat long ones. Ten minutes a day wins.', 'Say the answer out loud before you flip the card.', 'Sleep after studying locks memories in.', 'Mix topics: it feels harder and works better.', 'Wrong answers teach the most. Keep them.', 'Explain a card to an imaginary friend.', 'Start with your weakest topic while you are fresh.'];
   const tip = TIPS[Math.floor(now / 864e5) % TIPS.length];
+  const nLeech = e.leeches().length;
   const COL = ['#5B5BD6', '#E5533C', '#16A064', '#E2A21B'];
   const plainQ = (q: string) => { let t = stripKind(q); if (kindOf(q) === 'c') t = clozeFront(t, activeCloze(t), '____'); t = t.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); return t.length > 84 ? t.slice(0, 81).trim() + '...' : t; };
-  const deckCards = e.pool().slice(0, 4).map((q, i) => ({ id: q.id, lab: q.s || q.t || 'Card', text: plainQ(q.q) || 'Picture card', col: COL[i] }));
+  const deckCards = e.upNext(4).map((q, i) => ({ id: q.id, lab: q.s || q.t || 'Card', text: plainQ(q.q) || 'Picture card', col: COL[i] }));
   const greet = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
   const card = (x: any, cls: string) => {
     const inner = <><span className="uc-i"><Ic n={x.ic} /></span>{x.b && <span className="uc-b">{x.b}</span>}<b className="uc-t">{x.t}</b><span className="uc-d">{x.d}</span><Ic n={x.ic} className="uc-wm" /></>;
@@ -87,6 +88,7 @@ export default function Home() {
     { id: 'quiz', t: 'Live quiz', d: 'Play along with friends', b: 'Live', c: '#0B7BC4', ic: 'play', href: '/play' },
     { id: 'lab', t: '3D lab', d: 'Models and simulations', b: 'New', c: '#8250DF', ic: 'cube', href: '/lab' },
     { id: 'duel', t: 'Challenge', d: 'Duel a friend on your cards', b: 'Hot', c: '#E5533C', ic: 'trophy', href: '/duel' },
+    { id: 'leech', t: 'Leech Lab', d: nLeech ? nLeech + ' stuck card' + (nLeech === 1 ? '' : 's') + ' to treat' : 'Fix cards that keep slipping', b: nLeech ? String(nLeech) : 'Fix', c: '#F07B2B', ic: 'flag', href: '/leeches' },
     ...(isOwner() ? [{ id: 'host', t: 'Host', d: 'Run a live game', b: 'Owner', c: '#E2A21B', ic: 'star', href: '/host' }] : [])
   ].filter(x => home.short.includes(x.id));
   const SEC: Record<string, React.ReactNode> = {
@@ -102,11 +104,11 @@ export default function Home() {
           <h1 className="dk-h">Your memory is on <em>deck</em> today.</h1>
           <p className="dk-sub">{todo > 0 ? <><b>{todo}</b> card{todo === 1 ? '' : 's'} to review. </> : 'Nothing due right now. '}{msg}</p>
           {home.hero === 'deck' && (
-            <Link href="/study" className="dk-fan" aria-label={todo > 0 ? 'Start reviewing your cards' : 'Open study'}>
+            <div className="dk-fan">
               {deckCards.length ? deckCards.map((d, i) => (
-                <div key={d.id} className={'dk-c c' + i} style={{ ['--c' as any]: d.col }}><small>{d.lab}</small><b>{d.text}</b><span>Card {i + 1} of {Math.max(todo, deckCards.length)}</span></div>
-              )) : <div className="dk-c c0" style={{ ['--c' as any]: COL[0] }}><small>Your deck</small><b>Add your first cards to start studying.</b><span>Card 1 of 1</span></div>}
-            </Link>
+                <button type="button" key={d.id} className={'dk-c c' + i} style={{ ['--c' as any]: d.col }} aria-label={'Study this card: ' + d.text} onClick={() => { e.openCard(d.id); router.push('/study'); }}><small>{d.lab}</small><b>{d.text}</b><span>Card {i + 1} of {Math.max(todo, deckCards.length)}</span></button>
+              )) : <Link href="/study" className="dk-c c0" style={{ ['--c' as any]: COL[0] }}><small>Your deck</small><b>Add your first cards to start studying.</b><span>Card 1 of 1</span></Link>}
+            </div>
           )}
           <div className="dk-bar">
             <Link className="dk-go" href="/study">{todo > 0 ? (tc > 0 ? 'Continue' : 'Start') : 'Browse cards'} <Ic n="arrowR" /></Link>

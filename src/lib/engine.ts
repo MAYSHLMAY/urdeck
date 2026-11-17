@@ -6,7 +6,7 @@ import { replaceCard, type BatchOp } from './batch';
 import { fnv } from './fnv';
 import { kindOf, type Kind } from './kind';
 import { parsePack, parseRaw, ready, cook } from './parse';
-import { DEF, M, D, addDays, dayStart, fmtIv, lab as labFn, nxt, steps, ymd, type CS, type Opts } from './srs';
+import { DEF, M, D, examDays, leechHit, addDays, dayStart, fmtIv, lab as labFn, nxt, steps, ymd, type CS, type Opts } from './srs';
 import { applyMut, buildTree, emptyTree, fpath, type Tree } from './tree';
 import { spillAll, spillDel, spillPut, freeSpace } from './spill';
 import { emptyMeta, fetchMeta, readCache, saveCards, syncCards, type Meta } from './library';
@@ -309,6 +309,13 @@ export class Engine {
   isNew = (c?: CS) => !c || c.t === 'new';
   isLrn = (c?: CS) => !!c && (c.t === 'learn' || c.t === 'relearn');
   isLeech = (c?: CS) => !!c && (c.lapses || 0) >= this.O.leech;
+  /** Every card that is a leech right now (suspended ones included), worst first. */
+  leeches(): QCard[] { return this.Q.filter(q => this.isLeech(this.S.cards[q.id])).sort((a, b) => (this.S.cards[b.id].lapses || 0) - (this.S.cards[a.id].lapses || 0)); }
+  /** Give a leech a fresh start: lapses cleared, relearn from the first step, unsuspended. */
+  healLeech(id: string) {
+    const c = this.get(id); this.setCard(id, { lapses: 0, t: 'relearn', step: 0, ease: Math.max(c.ease || 2.5, 2.3), iv: 1, due: Date.now() + 10 * M, susp: 0, hl: (c.hl || 0) + 1 });
+    this.later = {}; this.toast('Leech healed. It comes back in 10 minutes.'); this.emit();
+  }
   isNewPE = (q: QCard) => !!q.p && !this.PE.seen[q.id];
   lab = (id: string, c: CS, g: number) => labFn(id, c, g, this.O);
   fmtIv = fmtIv;
@@ -416,23 +423,49 @@ export class Engine {
     let a = L.filter(q => S.cards[q.id].due <= now && okc(q)); if (a.length) return from(a);
     const lim = addDays(this.dayStart(now), 1 + this.ahead);
     const R = (!x.maxRev || S.revToday < x.maxRev || this.ahead) ? P.filter(q => { const c = S.cards[q.id]; return c && c.t === 'review' && c.due < lim && okc(q); }) : [];
-    const N = S.newToday < S.limit ? P.filter(q => this.isNew(S.cards[q.id]) && okc(q)) : [];
+    const N = S.newToday < this.newLimit() ? P.filter(q => this.isNew(S.cards[q.id]) && okc(q)) : [];
     const useNew = N.length && (!R.length || x.mix === 'first' || (x.mix === 'mixed' && Math.random() < N.length / (N.length + R.length)));
-    if (R.length && !useNew) return from(R);
+    if (R.length && !useNew) {
+      if (x.revOrder === 'rand') return from(R);
+      const key = (q: QCard) => { const c = S.cards[q.id]; return x.revOrder === 'ivl' ? c.iv : x.revOrder === 'ease' ? c.ease : c.due; };   // oldest due, shortest interval or lowest ease first
+      const srt = R.slice().sort((p, r) => key(p) - key(r)); const b = srt.filter(q => q.id !== this.last); return (b.length ? b : srt)[0];
+    }
     if (N.length) return x.newOrder === 'rand' ? rnd(N) : N[0];
     a = L.filter(q => S.cards[q.id].due <= now + x.learnAhead * M && okc(q)).sort((p, r) => S.cards[p.id].due - S.cards[r.id].due); if (a.length) return a[0];
-    a = P.filter(q => { const z = S.cards[q.id]; return !okc(q) && ((this.isNew(z) && S.newToday < S.limit) || this.isLrn(z) || (z && z.t === 'review' && z.due < lim)); });
+    a = P.filter(q => { const z = S.cards[q.id]; return !okc(q) && ((this.isNew(z) && S.newToday < this.newLimit()) || this.isLrn(z) || (z && z.t === 'review' && z.due < lim)); });
     if (a.length) return from(a);
     return null;
   }
 
+  /** New cards allowed today. With "match exam pace" on, it rises so every unseen card is met before the exam. */
+  newLimit() {
+    const base = this.S.limit, x = this.O; if (!x.examPace || !x.exam) return base;
+    const t = new Date(x.exam + 'T23:59:59').getTime(); if (isNaN(t)) return base;
+    const days = Math.ceil((t - Date.now()) / D) - 1; if (days < 1) return base;
+    const left = this.Q.filter(q => !q.p && this.isNew(this.S.cards[q.id]) && !(this.S.cards[q.id] && this.S.cards[q.id].susp)).length + this.S.newToday;
+    return Math.max(base, Math.ceil(left / days));
+  }
+  /** The next cards the study loop would show (learning due, then reviews due, then new), without touching anything. */
+  upNext(n: number): QCard[] {
+    const now = Date.now(), S = this.S, P = this.pool().filter(q => this.live(q, now)), lim = addDays(this.dayStart(now), 1);
+    const L = P.filter(q => this.isLrn(S.cards[q.id]) && S.cards[q.id].due <= now + this.O.learnAhead * M).sort((a, b) => S.cards[a.id].due - S.cards[b.id].due);
+    const R = P.filter(q => { const c = S.cards[q.id]; return c && c.t === 'review' && c.due < lim; }).sort((a, b) => S.cards[a.id].due - S.cards[b.id].due);
+    const N = S.newToday < this.newLimit() ? P.filter(q => this.isNew(S.cards[q.id])) : [];
+    let out = [...L, ...R, ...(this.O.mix === 'first' ? [] : N)]; if (this.O.mix === 'first') out = [...L, ...N, ...R];
+    if (out.length < n) { const seen = new Set(out.map(q => q.id)); out = out.concat(P.filter(q => !seen.has(q.id) && S.cards[q.id] && S.cards[q.id].t === 'review').sort((a, b) => S.cards[a.id].due - S.cards[b.id].due)); }
+    return out.slice(0, n);
+  }
+  /** Start studying from exactly this card (used by the hero cards on Home). */
+  openCard(id: string) {
+    this.kindSel = 'all'; this.typeChosen = true; this.cram = false; this.speed = null; this.later = {}; this.forced = id; this.show();
+  }
   private cc: { v: number; r: any } | null = null;
   counts() {
     if (this.cc && this.cc.v === this.ver) return this.cc.r;
     const now = Date.now(), x = this.O, S = this.S, P = this.pool().filter(q => this.live(q, now)), lim = addDays(this.dayStart(now), 1 + this.ahead);
     let n = 0, l = 0, d = 0, m = 0, r = 0;
     P.forEach(q => { const c = S.cards[q.id]; if (this.isNew(c)) { n++; return; } if (c.t === 'review') { r++; if (c.iv >= 21) m++; if (c.due < lim) d++; } else l++; });
-    const res = { n, l, d, m, r, tot: P.length, nToday: Math.max(0, Math.min(n, S.limit - S.newToday)), dToday: x.maxRev ? Math.min(d, Math.max(0, x.maxRev - S.revToday)) : d };
+    const res = { n, l, d, m, r, tot: P.length, nToday: Math.max(0, Math.min(n, this.newLimit() - S.newToday)), dToday: x.maxRev ? Math.min(d, Math.max(0, x.maxRev - S.revToday)) : d };
     this.cc = { v: this.ver, r: res };
     return res;
   }
@@ -526,7 +559,7 @@ export class Engine {
     if (this.pend) { this.pushU(this.pend); this.pend = null; }
     const n: any = nxt(id, c, g, x); n.a = (c.a || 0) + 1; if (g > 0) n.k = (c.k || 0) + 1;
     if (was === 'new') S.newToday++; else if (was === 'review') S.revToday++;
-    if (g === 0 && was === 'review' && x.leechSusp && n.lapses === x.leech) { n.susp = 1; this.toast('Leech: card suspended'); }
+    if (g === 0 && was === 'review' && leechHit(n.lapses, x.leech)) { if (x.leechSusp) { n.susp = 1; this.toast('Leech found and suspended. Treat it in the Leech Lab.'); } else this.toast('Leech found. Treat it in the Leech Lab.'); }
     this.logAns(g > 0, was === 'review'); S.cards[id] = n; this.last = id; this.save();
   }
   grade(g: number) {

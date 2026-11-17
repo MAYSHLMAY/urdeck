@@ -120,7 +120,7 @@ export default function App() {
         <p className="hint">Keys: 1–4 answer · 1/2/3 Hard, Good, Easy · Enter continue · L later · D don’t know · Z undo · M mark · R reference PDF · / search</p>
       </div>
 
-      <LibraryMenu open={dlg === 'menu'} onClose={close} />
+      <LibraryMenu open={dlg === 'menu'} onClose={close} onNew={st => { close(); setTimeout(() => setEditor(st), 120); }} />
       <Search open={dlg === 'browse'} onClose={close} onStudy={() => close()} onOpenFolder={() => { e.openMenu(true); setDlg('menu'); }} />
       <Stats open={dlg === 'stats'} onClose={close} />
       <Settings open={dlg === 'set'} onClose={() => { close(); if (e.phase === 'done') e.show(); else e.emit(); }} />

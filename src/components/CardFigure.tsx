@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { parseImg, type CardImg } from '@/lib/cardimg';
 import { parseOcc, parseOccBody, type Occ } from '@/lib/occ';
 
@@ -20,13 +21,18 @@ export function QImg({ src, occ, className, style, reveal }: { src: string; occ?
 /** A card's diagram with numbered pins. Tap a pin to reveal its name; after the answer every name is shown. */
 export function CardFigure({ q, img, reveal, compact }: { q?: string; img?: CardImg | null; reveal?: boolean; compact?: boolean }) {
   const im = img ?? (q ? parseImg(q) : null), occ = q ? parseOcc(q) : null;
-  const [open, setOpen] = useState<Record<number, 1>>({}), [zoom, setZoom] = useState(false);
+  const [open, setOpen] = useState<Record<number, 1>>({}), [zoom, setZoom] = useState(false), [z2, setZ2] = useState(false), sc = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!zoom) { setZ2(false); return; }
+    const k = (ev: KeyboardEvent) => { if (ev.key === 'Escape') setZoom(false); }; addEventListener('keydown', k); return () => removeEventListener('keydown', k);
+  }, [zoom]);
+  useEffect(() => { const el = sc.current; if (el && z2) { el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2; el.scrollTop = (el.scrollHeight - el.clientHeight) / 2; } }, [z2]);
   if (!im) return null;
   const shown = (i: number) => !!reveal || !!open[i];
   const fig = (big: boolean) => (
     <div className={'cfig' + (big ? ' big' : '') + (compact ? ' sm' : '')}>
       <div className="cfi">
-        <img src={im.src} alt="Diagram for this question" draggable={false} onClick={() => !big && setZoom(true)} />
+        <img src={im.src} alt="Diagram for this question" draggable={false} style={big && z2 ? { maxWidth: 'none', maxHeight: 'none', width: 'min(230vw, 2200px)', cursor: 'zoom-out' } : big ? { cursor: 'zoom-in' } : undefined} onClick={() => big ? setZ2(v => !v) : setZoom(true)} />
         {occ && <OccMasks occ={occ} reveal={reveal} />}
         {im.pins.map((p, i) => (
           <button key={i} type="button" className={'cpin' + (shown(i) ? ' on' : '')} style={{ left: p.x * 100 + '%', top: p.y * 100 + '%' }} aria-label={shown(i) ? p.t : 'Pin ' + (i + 1) + ', tap to reveal'}
@@ -41,7 +47,12 @@ export function CardFigure({ q, img, reveal, compact }: { q?: string; img?: Card
   return (
     <>
       {fig(false)}
-      {zoom && <div className="clight" role="dialog" aria-modal onClick={() => setZoom(false)}><div onClick={e => e.stopPropagation()}>{fig(true)}</div><button className="ghost" onClick={() => setZoom(false)}>Close</button></div>}
+      {zoom && typeof document !== 'undefined' && createPortal(
+        <div className="clight" role="dialog" aria-modal="true" aria-label="Picture" onClick={() => setZoom(false)}>
+          <div className={'clight-in' + (z2 ? ' z2' : '')} ref={sc} onClick={e => e.stopPropagation()}>{fig(true)}</div>
+          <p className="clight-h">{z2 ? 'Scroll to look around. Tap the picture to fit the screen.' : 'Tap the picture to zoom in.'}</p>
+          <button type="button" className="clight-x" onClick={() => setZoom(false)}>Close</button>
+        </div>, document.body)}
     </>
   );
 }
