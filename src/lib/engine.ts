@@ -4,9 +4,11 @@
  */
 import { replaceCard, type BatchOp } from './batch';
 import { fnv } from './fnv';
+import { kindOf, type Kind } from './kind';
 import { parsePack, parseRaw, ready, cook } from './parse';
 import { DEF, M, D, addDays, dayStart, fmtIv, lab as labFn, nxt, steps, ymd, type CS, type Opts } from './srs';
 import { applyMut, buildTree, emptyTree, fpath, type Tree } from './tree';
+import { spillAll, spillDel, spillPut, freeSpace } from './spill';
 import { emptyMeta, fetchMeta, readCache, saveCards, syncCards, type Meta } from './library';
 import { api, isOwner } from './api';
 import { setSound, sfx } from './game/sound';
@@ -63,6 +65,8 @@ export class Engine {
   /* session */
   counter = 0; later: Record<string, number> = {}; last: string | null = null;
   cur: QCard | null = null; phase = ''; curOpts: { t: string; ok: number }[] = []; chosen: number | null = null;
+  /** Which kind of card to study ('all' = every type) and whether the person has picked yet this visit. */
+  kindSel: 'all' | Kind = 'all'; typeChosen = false;
   forced: string | null = null; cram = false; ahead = 0; pend: any = null; showN = 0;
   U: any[] = [];
 
@@ -90,10 +94,13 @@ export class Engine {
     this.NOTES = jget(K_NOTES) || {};
     { const a = jget('fr-aux-v1') || {}; this.AUX = { mn: a.mn || {}, oc: a.oc || {} }; }
     if (typeof window !== 'undefined') {
+      for (const k of [...this.DATAKEYS, K_PROG]) { try { const r = localStorage.getItem(k); if (r) this.seen[k] = r; } catch { /* ignore */ } }
       addEventListener('pagehide', () => this.flushAll());
+      addEventListener('storage', ev => { if (ev.key && this.DATAKEYS.includes(ev.key)) this.resync(false); });
+      addEventListener('pageshow', ev => { if ((ev as PageTransitionEvent).persisted) this.resync(true); });
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) this.flushAll();
-        else if (this.phase === 'done') this.show();
+        else { this.resync(true); if (this.phase === 'done') this.show(); }
       });
       addEventListener('beforeunload', e => { if (this.cloudQ.length || this.cloudBusy || this.cardsBusy) { e.preventDefault(); e.returnValue = ''; } });
     }
@@ -102,18 +109,62 @@ export class Engine {
   get O(): Opts { return this.S.opt; }
 
   /* ---------- storage ---------- */
+  private spilled = new Set<string>(); private warned = false;
+  /** Write one value. If localStorage is full: drop rebuildable caches and retry, then keep the data in IndexedDB so nothing is lost. */
+  private put(key: string, val: string): boolean {
+    try { localStorage.setItem(key, val); if (this.spilled.delete(key)) spillDel(key); return true; }
+    catch {
+      freeSpace();
+      try { localStorage.setItem(key, val); if (this.spilled.delete(key)) spillDel(key); return true; } catch { /* still full */ }
+      this.spilled.add(key); spillPut(key, val);
+      if (!this.warned) { this.warned = true; this.toast('Phone storage is almost full. Your changes are still saved, but download a backup soon.'); }
+      return true;
+    }
+  }
+  /** Put one stored value back into memory (used at start, when another tab changed it, and when this tab comes back). */
+  private adopt(key: string, raw: string | null) {
+    let o: any = null; try { o = raw ? JSON.parse(raw) : null; } catch { return false; }
+    if (!o) return false;
+    switch (key) {
+      case K_MINE: this.DATA.packs = o.packs || []; this.DATA.titles = o.titles || {}; return true;
+      case K_SH: this.SH = o; return true;
+      case K_MIS: this.MIS = o; return true;
+      case K_MY: this.MY = { cards: o.cards || [], edits: o.edits || {} }; return true;
+      case K_FOLD: this.LF = { folders: o.folders || [], place: o.place || {} }; return true;
+      case K_NOTES: this.NOTES = o; return true;
+      case K_PROG: if (o.S) { this.S = Object.assign(this.S, { cards: {}, log: {} }, o.S); this.S.opt = Object.assign({}, DEF, this.S.opt); if (o.PE) Object.assign(this.PE, o.PE); return true; } return false;
+    }
+    return false;
+  }
+  private DATAKEYS = [K_MINE, K_SH, K_MIS, K_MY, K_FOLD, K_NOTES];
+  /** Another tab (or an older copy of this one) may have saved newer data: re-read it so this tab never overwrites it with stale memory. */
+  resync(withProgress: boolean) {
+    if (typeof localStorage === 'undefined') return;
+    let ch = false;
+    for (const k of this.DATAKEYS) { if (this.spilled.has(k)) continue; let raw: string | null = null; try { raw = localStorage.getItem(k); } catch { /* ignore */ } if (raw && raw !== this.seen[k]) { if (this.adopt(k, raw)) ch = true; this.seen[k] = raw; } }
+    if (withProgress && !this.saveT && !this.spilled.has(K_PROG)) { let raw: string | null = null; try { raw = localStorage.getItem(K_PROG); } catch { /* ignore */ } if (raw && raw !== this.seen[K_PROG]) { if (this.adopt(K_PROG, raw)) ch = true; this.seen[K_PROG] = raw; } }
+    if (ch) { this.rebuild(); this.later = {}; this.emit(); }
+  }
+  private seen: Record<string, string> = {};
+  private mark(key: string, val: string) { this.seen[key] = val; }
+  /** Called once at start: anything that did not fit in localStorage last time is restored from IndexedDB. */
+  private async restoreSpill() {
+    const all = await spillAll(); let ch = false;
+    for (const [k, v] of Object.entries(all)) {
+      if (!this.adopt(k, v)) continue; ch = true; this.spilled.add(k);
+      try { localStorage.setItem(k, v); this.spilled.delete(k); spillDel(k); } catch { /* still full: stays in IndexedDB */ }
+    }
+    if (ch) { this.rebuild(); this.emit(); }
+  }
   persist() { clearTimeout(this.saveT); this.saveT = setTimeout(() => this.flushSave(), 350); return true; }
   flushSave() {
     clearTimeout(this.saveT); this.saveT = 0;
-    try { localStorage.setItem(K_PROG, JSON.stringify({ S: this.S, PE: this.PE })); } catch { this.toast('Storage is full. Download a backup.'); }
+    const v = JSON.stringify({ S: this.S, PE: this.PE }); this.mark(K_PROG, v); this.put(K_PROG, v);
   }
   flushAll() { if (this.saveT) this.flushSave(); if (this.cloudQ.length) this.flushCloud(); }
-  persistMine() {
-    try { localStorage.setItem(K_MINE, JSON.stringify({ packs: this.DATA.packs, titles: this.DATA.titles })); return true; }
-    catch { this.toast('Storage is full. Download a backup.'); return false; }
-  }
-  saveNotes() { try { localStorage.setItem(K_NOTES, JSON.stringify(this.NOTES)); } catch { this.toast('Could not save notes'); } }
-  saveLF() { try { localStorage.setItem(K_FOLD, JSON.stringify(this.LF)); } catch { /* ignore */ } }
+  persistMine() { const v = JSON.stringify({ packs: this.DATA.packs, titles: this.DATA.titles }); this.mark(K_MINE, v); return this.put(K_MINE, v); }
+  saveNotes() { const v = JSON.stringify(this.NOTES); this.mark(K_NOTES, v); this.put(K_NOTES, v); }
+  saveLF() { const v = JSON.stringify(this.LF); this.mark(K_FOLD, v); this.put(K_FOLD, v); }
   save() { this.persist(); }
 
   toast(m: string) {
@@ -126,6 +177,7 @@ export class Engine {
   private inited = false;
   async init() {
     if (this.inited) return; this.inited = true;
+    await this.restoreSpill();
     try {
       const c = await readCache();
       if (c.cards.length || c.meta) {
@@ -207,7 +259,7 @@ export class Engine {
       else if (t === 'pe') { this.PE.seen = this.PE.seen || {}; if (del) delete this.PE.seen[id]; else this.PE.seen[id] = v; }
     }
     this.flushSave(); this.saveMy(); this.saveLF(); this.saveAux();
-    try { localStorage.setItem(K_SH, JSON.stringify(this.SH)); localStorage.setItem(K_MIS, JSON.stringify(this.MIS)); } catch { /* ignore */ }
+    { const a = JSON.stringify(this.SH), b = JSON.stringify(this.MIS); this.mark(K_SH, a); this.mark(K_MIS, b); this.put(K_SH, a); this.put(K_MIS, b); }
     if (cards && this.ready) this.buildQ();
     this.emit();
   }
@@ -293,14 +345,28 @@ export class Engine {
     return v.startsWith('g:') && q.g === v.slice(2);
   }
   private _pl: QCard[] | null = null; private _plk = '';
+  private kf(a: QCard[]) { const k = this.kindSel; return k === 'all' ? a : a.filter(q => kindOf(q.q) === k); }
   pool(): QCard[] {
     const v = this.S.sec;
-    if (v === 'weak' || v === 'marked' || v === 'leech' || v === 'penew') return this.Q.filter(q => this.inSel(q, v, this.S.cards[q.id]));
-    const k = v + '|' + this.qver + '|' + this.ftver + '|' + this.poolVer;
+    if (v === 'weak' || v === 'marked' || v === 'leech' || v === 'penew') return this.kf(this.Q.filter(q => this.inSel(q, v, this.S.cards[q.id])));
+    const k = v + '|' + this.qver + '|' + this.ftver + '|' + this.poolVer + '|' + this.kindSel;
     if (this._pl && this._plk === k) return this._pl;
     this._plk = k;
-    return this._pl = this.Q.filter(q => this.inSel(q, v, this.S.cards[q.id]));
+    return this._pl = this.kf(this.Q.filter(q => this.inSel(q, v, this.S.cards[q.id])));
   }
+  /** How many cards of each type are in the current selection, and how many of them need attention today. */
+  kindCounts() {
+    const now = Date.now(), S = this.S, lim = addDays(this.dayStart(now), 1 + this.ahead), v = S.sec;
+    const out: Record<string, { n: number; due: number; fresh: number }> = { all: { n: 0, due: 0, fresh: 0 }, mc: { n: 0, due: 0, fresh: 0 }, f: { n: 0, due: 0, fresh: 0 }, c: { n: 0, due: 0, fresh: 0 }, t: { n: 0, due: 0, fresh: 0 }, o: { n: 0, due: 0, fresh: 0 } };
+    for (const q of this.Q) {
+      const c = S.cards[q.id]; if (!this.inSel(q, v, c) || !this.live(q, now)) continue;
+      const kk = kindOf(q.q); for (const t of [kk, 'all']) { const o = out[t]; o.n++; if (this.isNew(c)) o.fresh++; else if (c.t !== 'review' || c.due < lim) o.due++; }
+    }
+    return out;
+  }
+  setKind(k: 'all' | Kind) { this.kindSel = k; this.typeChosen = true; this._pl = null; this.cc = null; this.later = {}; this.last = null; this.cram = false; this.speed = null; this.show(); }
+  /** Back to the type chooser (also used when leaving study, so Home counts every type). */
+  resetType() { this.kindSel = 'all'; this.typeChosen = false; this._pl = null; this.cc = null; }
   live(q: QCard, now: number) { const c = this.S.cards[q.id]; return !(c && (c.susp || c.by > now)); }
   selLabel() {
     const v = this.S.sec, Q = this.Q;
@@ -316,7 +382,7 @@ export class Engine {
     return WORD.includes(v) || (v.startsWith('c:') && (!this.poolsLoaded || this.catSets.has(v.slice(2)))) || (v.startsWith('f:') && this.FT.name.has(v.slice(2))) || (v.startsWith('g:') && this.Q.some(q => q.g === v.slice(2))) || this.Q.some(q => q.s === v);
   }
   setSel(v: string) {
-    this.S.sec = v; this.speed = null; this.later = {}; this.last = null; this.cram = false; this.ahead = 0; this.save(); this.show();
+    this.S.sec = v; this.kindSel = 'all'; this.typeChosen = false; this.speed = null; this.later = {}; this.last = null; this.cram = false; this.ahead = 0; this.save(); this.show();
   }
 
   /* ---------- undo ---------- */
@@ -471,7 +537,7 @@ export class Engine {
   isShaky(id: string) { return !!this.SH[id]; }
   setShaky(id: string, on: boolean) {
     if (on) this.SH[id] = 1; else delete this.SH[id];
-    try { localStorage.setItem(K_SH, JSON.stringify(this.SH)); } catch { /* storage full: still works this session */ }
+    { const a = JSON.stringify(this.SH); this.mark(K_SH, a); this.put(K_SH, a); }
     this.emit();
   }
   /* ---------- mistake log ---------- */
@@ -480,10 +546,10 @@ export class Engine {
     if (good) m.r++; else { m.w++; m.r = 0; }
     m.t = Date.now();
     if (m.w === 0) delete this.MIS[id];
-    try { localStorage.setItem(K_MIS, JSON.stringify(this.MIS)); } catch { /* ignore */ }
+    { const a = JSON.stringify(this.MIS); this.mark(K_MIS, a); this.put(K_MIS, a); }
   }
   isMissed(id: string) { const m = this.MIS[id]; return !!m && m.w > 0 && m.r < 2; }
-  clearMissed(id: string) { delete this.MIS[id]; try { localStorage.setItem(K_MIS, JSON.stringify(this.MIS)); } catch { /* ignore */ } this.emit(); }
+  clearMissed(id: string) { delete this.MIS[id]; { const a = JSON.stringify(this.MIS); this.mark(K_MIS, a); this.put(K_MIS, a); } this.emit(); }
   /* ---------- speed round ---------- */
   startSpeed(ids: string[], secs: number) {
     if (!ids.length) return;
@@ -504,7 +570,7 @@ export class Engine {
     const a = ids.slice();
     for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
     if (!a.length) return;
-    this.deck = a; this.practiced = a.length; this.cram = true; this.later = {}; this.last = null; this.show();
+    this.typeChosen = true; this.deck = a; this.practiced = a.length; this.cram = true; this.later = {}; this.last = null; this.show();
   }
   /** Practice deck: the cards of the current selection that match `kind`, shuffled. Progress and schedule are never touched. */
   deck: string[] = []; practiced = 0;
@@ -522,7 +588,7 @@ export class Engine {
     const ok = (q: QCard) => { const c = S.cards[q.id]; return kind === 'all' ? true : kind === 'fresh' ? this.isNew(c) : kind === 'weak' ? !!c && (this.isLrn(c) || (c.lapses || 0) > 0) : !!c && !!c.mark; };
     const ids = this.pool().filter(q => this.live(q, now) && ok(q)).map(q => q.id);
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
-    this.deck = ids; this.practiced = ids.length; this.cram = true; this.later = {}; this.last = null; this.show();
+    this.typeChosen = true; this.deck = ids; this.practiced = ids.length; this.cram = true; this.later = {}; this.last = null; this.show();
   }
   exitPractice() { this.speed = null; this.cram = false; this.deck = []; this.show(); }
   learnMore() { this.S.limit = this.S.newToday + 10; this.save(); this.show(); }
@@ -701,8 +767,7 @@ export class Engine {
 
   /* ---------- private cards and edits (never leave this device) ---------- */
   saveMy(): boolean {
-    try { localStorage.setItem(K_MY, JSON.stringify(this.MY)); return true; }
-    catch { this.toast('Storage is full. Download a backup.'); return false; }
+    const v = JSON.stringify(this.MY); this.mark(K_MY, v); return this.put(K_MY, v);
   }
   isMine(id: string) { return this.MY.cards.some(c => c.id === id); }
   myChanges() {
@@ -754,6 +819,7 @@ export class Engine {
     let add = 0, dup = 0; const fresh: Card[] = [];
     cooked.cards.forEach(c => { const k = String(c.id); if (seen.has(k)) dup++; else { seen.add(k); add++; fresh.push(c); } });
     const skip = cooked.errs.length ? `\n${cooked.errs.length} bad line${cooked.errs.length > 1 ? 's' : ''} skipped:\n` + cooked.errs.slice(0, 6).join('\n') + (cooked.errs.length > 6 ? '\n…and ' + (cooked.errs.length - 6) + ' more' : '') : '';
+    if (!add) { if (mineOnly) { this.persistMine(); this.saveMy(); } this.saveLF(); }
     if (!add) return { ok: true, msg: `${name}: nothing new. All ${dup} questions are already in your library.` + skip };
 
     // 1. show it straight away
@@ -840,8 +906,8 @@ export class Engine {
   restoreBackup(text: string) {
     const o = JSON.parse(text); if (o.app !== 'flight-recall') throw new Error('bad');
     const msg = this.mergeData({ packs: o.packs, titles: o.titles, progress: o.progress });
-    if (o.mistakes) { Object.keys(o.mistakes).forEach(k => { if (!this.MIS[k]) this.MIS[k] = o.mistakes[k]; }); try { localStorage.setItem(K_MIS, JSON.stringify(this.MIS)); } catch { /* ignore */ } }
-    if (o.shaky) { Object.keys(o.shaky).forEach(k => { this.SH[k] = 1; }); try { localStorage.setItem(K_SH, JSON.stringify(this.SH)); } catch { /* ignore */ } }
+    if (o.mistakes) { Object.keys(o.mistakes).forEach(k => { if (!this.MIS[k]) this.MIS[k] = o.mistakes[k]; }); { const a = JSON.stringify(this.MIS); this.mark(K_MIS, a); this.put(K_MIS, a); } }
+    if (o.shaky) { Object.keys(o.shaky).forEach(k => { this.SH[k] = 1; }); { const a = JSON.stringify(this.SH); this.mark(K_SH, a); this.put(K_SH, a); } }
     if (o.my) {
       const ids = new Set(this.MY.cards.map(c => c.id));
       (o.my.cards || []).forEach((c: Card) => { if (c && c.id && !ids.has(c.id)) this.MY.cards.push(c); });

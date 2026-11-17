@@ -14,14 +14,14 @@
 @keyframes popj{from{opacity:0;transform:scale(.3) translateY(14px)}}
 
 /* top bar */
-.gtop{margin:10px 12px 0;border-radius:20px;border:0;background:color-mix(in srgb,var(--card) 86%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:var(--shadow);top:10px}
+.gtop{margin:10px 12px 0;border-radius:20px;border:0;background:color-mix(in srgb,var(--card) 97%,transparent);box-shadow:var(--shadow);top:10px}
 .gpill{border:0;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 90%,#fff),var(--acc));color:#fff;box-shadow:0 6px 14px -6px var(--acc)}
 .gwrap{gap:18px}
 .gwrap.hasdock{padding-bottom:130px}
 .gcard{border:0;border-radius:26px;box-shadow:var(--shadow)}
 .gbtn{border-radius:16px;box-shadow:0 8px 18px -8px color-mix(in srgb,var(--acc) 80%,transparent)}
 .gbtn.go{box-shadow:0 8px 18px -8px color-mix(in srgb,var(--ok) 80%,transparent)}
-.gbtn.ghost{box-shadow:none;border-color:transparent;background:color-mix(in srgb,var(--card) 90%,transparent)}
+.gbtn.ghost{box-shadow:none;border-color:transparent;background:color-mix(in srgb,var(--card) 97%,transparent)}
 .gtitle{font-weight:800!important;letter-spacing:-.03em}
 
 /* characters */
@@ -48,7 +48,7 @@
 .herochar .av{width:100%!important;height:100%!important}
 
 /* the character that lives at the bottom of the player's screen */
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:8;height:calc(98px + env(safe-area-inset-bottom));pointer-events:none;display:flex;justify-content:center;align-items:flex-end;background:linear-gradient(to top,color-mix(in srgb,var(--bg) 96%,transparent) 18%,transparent)}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:8;height:calc(98px + env(safe-area-inset-bottom));pointer-events:none;display:flex;justify-content:center;align-items:flex-end;background:linear-gradient(to top,color-mix(in srgb,var(--bg) 97%,transparent) 18%,transparent)}
 .dwrap{position:relative;width:132px;height:100%;display:flex;align-items:flex-end}
 .dchar{width:132px;height:132px;margin-bottom:calc(-14px + env(safe-area-inset-bottom));animation:peek .55s var(--ease) both}
 .dchar .av{width:100%!important;height:100%!important}
@@ -64,7 +64,7 @@
 /* player: question screen */
 .pq{gap:14px;padding:14px 14px 118px;max-width:720px}
 .pq .ans.full{min-height:260px}
-.qstat{background:color-mix(in srgb,var(--card) 80%,transparent);border-radius:22px;padding:8px 10px 8px 16px;box-shadow:var(--shadow)}
+.qstat{background:color-mix(in srgb,var(--card) 97%,transparent);border-radius:22px;padding:8px 10px 8px 16px;box-shadow:var(--shadow)}
 .dots{flex:1;display:flex;gap:4px;justify-content:center;min-width:0;flex-wrap:wrap}
 .dots i{width:7px;height:7px;border-radius:50%;background:var(--line);transition:background .3s,transform .3s}.dots i.d{background:var(--acc)}.dots i.n{background:var(--warm);transform:scale(1.5)}
 .qcard{border:0;border-radius:24px;box-shadow:var(--shadow)}
@@ -86,7 +86,7 @@
 .fb .ficon{background:rgba(255,255,255,.95);animation:pop .6s var(--ease) .15s both}
 @keyframes pop{from{transform:scale(0) rotate(-40deg)}}
 .fb .pts{font-weight:800;font-size:1.15rem;background:rgba(255,255,255,.2);padding:4px 16px;border-radius:99px}
-.rankbig{font-weight:800;background:color-mix(in srgb,var(--card) 85%,transparent);padding:6px 22px;border-radius:99px;box-shadow:var(--shadow)}
+.rankbig{font-weight:800;background:color-mix(in srgb,var(--card) 97%,transparent);padding:6px 22px;border-radius:99px;box-shadow:var(--shadow)}
 
 /* lobby faces */
 .lobbyfaces{display:flex;flex-wrap:wrap;gap:16px 14px;justify-content:center;max-width:560px;width:100%;padding:6px 0}
@@ -106,7 +106,7 @@
 .hist i{transform-origin:bottom;animation:barup .9s var(--ease) both;border-radius:14px 14px 0 0}
 @keyframes barup{from{transform:scaleY(0)}}
 .faces{display:flex;flex-direction:column;gap:12px;width:100%;max-width:900px}
-.facerow{display:flex;align-items:center;gap:14px;background:color-mix(in srgb,var(--card) 85%,transparent);border-radius:22px;padding:10px 16px;box-shadow:var(--shadow);text-align:left}
+.facerow{display:flex;align-items:center;gap:14px;background:color-mix(in srgb,var(--card) 97%,transparent);border-radius:22px;padding:10px 16px;box-shadow:var(--shadow);text-align:left}
 .facerow>b{flex:none;min-width:96px}
 .facerow>div{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .facerow span{animation:popj .5s var(--ease) both;animation-delay:calc(var(--i,0) * 70ms + .6s)}

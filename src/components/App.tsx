@@ -4,6 +4,7 @@ import { applyLook } from '@/lib/look';
 import { useEffect, useState } from 'react';
 import { useEngine, Icon, Ic, Sheet, SheetFrame, AskHost, Toast } from './ui';
 import { QuizContainer } from './QuizContainer';
+import { TypePicker, TypeChip } from './TypePicker';
 import Link from 'next/link';
 import { refs } from '@/lib/refs';
 import { usePoolSync } from './refHooks';
@@ -55,6 +56,7 @@ export default function App() {
       const tg = (ev.target as HTMLElement)?.tagName;
       if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') return;
       if (document.querySelector('dialog[open]')) return;
+      if (!e.typeChosen && e.kindCounts().all.n > 0 && ev.key !== '/') return;
       const k = ev.key, ph = e.phase;
       if (k === '/') { ev.preventDefault(); setDlg('browse'); return; }
       if ((k === 'r' || k === 'R') && e.cur) { refs().toggle(e.cur); return; }
@@ -114,7 +116,7 @@ export default function App() {
         </div>
         <SpeedBar />
         <div id="mode" className={e.cram && !e.speed ? 'on' : ''}><span>Practice: {e.deck.length} left · your schedule is not changed.</span><button className="ghost" onClick={() => e.exitPractice()}>Exit</button></div>
-        <QuizContainer onInfo={id => { setInfoId(id); setDlg('info'); }} onCard={(mode, id, section) => setEditor({ mode, id, section })} />
+        {!e.typeChosen && e.kindCounts().all.n > 0 ? <TypePicker /> : <>{e.kindCounts().all.n > 0 && !e.cram && <TypeChip />}<QuizContainer onInfo={id => { setInfoId(id); setDlg('info'); }} onCard={(mode, id, section) => setEditor({ mode, id, section })} /></>}
         <p className="hint">Keys: 1–4 answer · 1/2/3 Hard, Good, Easy · Enter continue · L later · D don’t know · Z undo · M mark · R reference PDF · / search</p>
       </div>
 

@@ -204,7 +204,7 @@ export function Welcome() {
   const sx = useRef<number | null>(null);
   useEffect(() => {
     auth.boot();
-    const start = (replay: boolean) => { setFirst(!replay); setPh(replay ? 'tour' : 'splash'); setI(0); setOpen(true); };
+    const start = (replay: boolean) => { setFirst(!replay); setPh('tour'); setI(0); setOpen(true); };
     try {
       const u = new URL(location.href);
       if (!seen() && !EXEMPT.test(location.pathname) && !u.searchParams.has('sync') && !u.searchParams.has('ud_auth')) {
@@ -271,7 +271,6 @@ export function AccountCard() {
         : (<><p className="wl-hint" style={{ textAlign: 'left' }}>Sign in with Google to back up progress and use it on any device. Optional.</p>
           <button className="wl-btn pri" disabled={busy || !auth.configured()} onClick={async () => { setBusy(true); setMsg(''); try { await auth.google(); } catch (x: any) { setMsg(x.message); } setBusy(false); }}>{busy ? 'Opening Google…' : 'Continue with Google'}</button></>)}
       {msg && <p className="wl-err">{msg}</p>}
-      <button className="wl-btn" style={{ marginTop: 10 }} onClick={() => dispatchEvent(new Event(TOUR_EVENT))}>Replay the tour</button>
     </section>
   );
 }

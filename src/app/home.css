@@ -13,7 +13,6 @@
 .cta{align-self:flex-start;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:14px;background:var(--acc);color:#fff;box-shadow:0 4px 14px var(--accbg)}
 .cta:hover{filter:brightness(1.06)}
 
-.hsec{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mute);margin:26px 2px 10px;font-weight:800}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
 .pcard{--pc:var(--acc);display:flex;flex-direction:column;border-radius:18px;background:var(--card);border:1.5px solid var(--line);box-shadow:var(--shadow);overflow:hidden;position:relative}
 .pcard::before{content:"";height:5px;background:var(--pc)}

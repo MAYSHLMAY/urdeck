@@ -47,11 +47,11 @@ dialog.sheet.browse{max-width:min(1100px,96vw);width:100%;height:92vh;max-height
 .bfoot{gap:8px}.bfoot .ghost{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .speedbar{display:none;align-items:center;gap:10px;margin:8px 0;padding:8px 12px;border:1.5px solid var(--acc);border-radius:14px;background:var(--card)}
 .speedbar.on{display:flex}
-.speedbar .tm{font:700 1.2rem Manrope,Inter,sans-serif;min-width:3.2ch;font-variant-numeric:tabular-nums}
+.speedbar .tm{font:700 1.2rem var(--sans);min-width:3.2ch;font-variant-numeric:tabular-nums}
 .speedbar .tr{flex:1;height:8px;border-radius:6px;background:var(--line);overflow:hidden}
 .speedbar .tr i{display:block;height:100%;background:var(--acc);transition:width .3s linear}
 .speedbar.low .tm{color:var(--bad)}.speedbar.low .tr i{background:var(--bad)}
 .speedbar small{color:var(--mute);white-space:nowrap}
 .sres{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
 .sres div{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 6px;text-align:center}
-.sres b{display:block;font:800 1.5rem Manrope,Inter,sans-serif}.sres small{color:var(--mute)}
+.sres b{display:block;font:800 1.5rem var(--sans)}.sres small{color:var(--mute)}

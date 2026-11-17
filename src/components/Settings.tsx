@@ -1,7 +1,6 @@
 'use client';
 import { AccountCard } from './Welcome';
 import { Appearance } from './Appearance';
-import { BuddyCard } from './Buddy';
 import { useRef, useState } from 'react';
 import { DEF, steps, ymd } from '@/lib/srs';
 import { api, isOwner, lock, unlock } from '@/lib/api';
@@ -139,7 +138,6 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
         <div className="sc setp">
           <AccountCard />
           <Appearance onArrange={onClose} />
-          <BuddyCard />
           {BASIC.map(([g, ic, fs]) => (
             <section className="scard" key={g}><h4><Ic n={ic} />{g}</h4>{g === 'Look' && <Swatches />}{g === 'Studying' && <Reminder />}{fs.map(field)}</section>
           ))}

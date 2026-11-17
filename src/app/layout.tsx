@@ -6,16 +6,6 @@ import '@fontsource/plus-jakarta-sans/latin-500.css';
 import '@fontsource/plus-jakarta-sans/latin-600.css';
 import '@fontsource/plus-jakarta-sans/latin-700.css';
 import '@fontsource/plus-jakarta-sans/latin-800.css';
-import '@fontsource/source-serif-4/latin-400.css';
-import '@fontsource/source-serif-4/latin-600.css';
-import '@fontsource/atkinson-hyperlegible/latin-400.css';
-import '@fontsource/atkinson-hyperlegible/latin-700.css';
-import '@fontsource/nunito/latin-400.css';
-import '@fontsource/nunito/latin-600.css';
-import '@fontsource/nunito/latin-800.css';
-import '@fontsource/inter/latin-400.css';
-import '@fontsource/inter/latin-500.css';
-import '@fontsource/inter/latin-700.css';
 import '@fontsource/noto-sans-ethiopic/ethiopic-400.css';
 import '@fontsource/noto-sans-ethiopic/ethiopic-600.css';
 import '@fontsource/noto-sans-ethiopic/ethiopic-700.css';
@@ -25,10 +15,10 @@ import './home.css';
 import './browse.css';
 import { OfflineBadge } from '@/components/OfflineBadge';
 import { SyncBoot } from '@/components/SyncBoot';
+import { SPLASH_BOOT, SPLASH_CSS, SPLASH_HTML } from '@/lib/splash';
+import { SplashBoot } from '@/components/SplashBoot';
 import { NativeBoot } from '@/components/NativeBoot';
 import { Welcome } from '@/components/Welcome';
-import { Buddy } from '@/components/Buddy';
-import { TabBar } from '@/components/SiteChrome';
 import './theme.css';
 import './app.css';
 import './welcome.css';
@@ -49,12 +39,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: LOOK_BOOT }} />
+        <script dangerouslySetInnerHTML={{ __html: LOOK_BOOT + SPLASH_BOOT }} />
+        <style dangerouslySetInnerHTML={{ __html: SPLASH_CSS }} />
       </head>
-      <body><NativeBoot /><SyncBoot />
+      <body><div id="ud-splash" role="dialog" aria-modal="true" aria-label="UrDeck is starting" dangerouslySetInnerHTML={{ __html: SPLASH_HTML }} /><SplashBoot /><NativeBoot /><SyncBoot />
         <Welcome />
-        <Buddy /><OfflineBadge />
-        <Listen />{children}<TabBar /></body>
+        <OfflineBadge />
+        <Listen />{children}</body>
     </html>
   );
 }

@@ -29,7 +29,10 @@ export function Stage({ onInfo, onCard }: { onInfo: (id: string) => void; onCard
 function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: CardAct }) {
   const e = useEngine(), R = useRefs(), cur = e.cur!, c = e.get(cur.id), x = e.O, ph = e.phase, i = e.chosen;
   const kind = kindOf(cur.q), flipK = kind !== 'mc', [rev, setRev] = useState(false);
-  const [menu, setMenu] = useState(false), [dx, setDx] = useState(0), sw = useRef<{ x: number; y: number; h: boolean | null } | null>(null);
+  const [menu, setMenu] = useState(false), sw = useRef<{ x: number; y: number; h: boolean | null } | null>(null);
+  /* the swipe moves the card by writing its transform directly (no React render per finger move), one write per frame */
+  const cardEl = useRef<HTMLDivElement>(null), dxR = useRef(0), raf = useRef(0);
+  const moveTo = (d: number, anim: boolean) => { dxR.current = d; cancelAnimationFrame(raf.current); raf.current = requestAnimationFrame(() => { const el = cardEl.current; if (!el) return; el.style.transition = anim ? 'transform .28s cubic-bezier(.2,.8,.2,1)' : 'none'; el.style.transform = d ? `translate3d(${d * 0.5}px,0,0) rotate(${d / 50}deg)` : ''; }); };
   const swipe = (dir: 1 | -1) => {
     if (dir === 1) { if (ph === 'ok') e.grade(2); else if (ph === 'bad' || ph === 'cr') e.show(); }
     else if (ph === 'q') e.laterQ(); else if (ph === 'ok' && !e.O.autoGood) e.grade(1);
@@ -55,16 +58,16 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
   const wm = x.wrongMin === x.wrongMax ? x.wrongMin : x.wrongMin + '–' + x.wrongMax;
 
   return (
-    <div className="card pop" key={e.showN}
+    <div className="card pop" key={e.showN} ref={cardEl}
       onTouchStart={ev => { const t = ev.touches[0]; sw.current = { x: t.clientX, y: t.clientY, h: null }; }}
       onTouchMove={ev => {
         const g = sw.current; if (!g) return; const t = ev.touches[0], mx = t.clientX - g.x, my = t.clientY - g.y;
         if (g.h === null && (Math.abs(mx) > 12 || Math.abs(my) > 12)) g.h = Math.abs(mx) > Math.abs(my) * 1.6 && !window.getSelection()?.toString();
-        if (g.h) setDx(Math.max(-140, Math.min(140, mx)));
+        if (g.h) moveTo(Math.max(-140, Math.min(140, mx)), false);
       }}
-      onTouchEnd={() => { const g = sw.current; sw.current = null; if (g?.h) { if (dx > 90) swipe(1); else if (dx < -90) swipe(-1); } setDx(0); }}
-      onTouchCancel={() => { sw.current = null; setDx(0); }}
-      style={dx ? { transform: `translateX(${dx * 0.5}px) rotate(${dx / 50}deg)`, transition: 'none' } : { transition: 'transform .3s cubic-bezier(.2,.8,.2,1)' }}>
+      onTouchEnd={() => { const g = sw.current, d = dxR.current; sw.current = null; moveTo(0, true); if (g?.h) { if (d > 90) swipe(1); else if (d < -90) swipe(-1); } }}
+      onTouchCancel={() => { sw.current = null; moveTo(0, true); }}
+      style={{ touchAction: 'pan-y', willChange: 'transform' }}>
       <div className="qhead">
         <span className="l">
           {cur.p ? <><b className="tag">PAST EXAM</b> </> : null}

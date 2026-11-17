@@ -1,11 +1,12 @@
 'use client';
-import { applyLook, getHome, setHome, HOME_SECTIONS } from '@/lib/look';
+import { applyLook, getHome, type HomeCfg } from '@/lib/look';
 import { useMe } from './Welcome';
 import { useSyncExternalStore } from 'react';
+import { HomeCustomize } from './HomeCustomize';
+import { clozeFront, activeCloze, stripKind, kindOf } from '@/lib/kind';
 
-let _hs = '', _hv = getHomeSafe();
-function getHomeSafe() { try { return getHome(); } catch { return { order: HOME_SECTIONS.map(x => x[0]), hidden: [] as string[] }; } }
-function useHomeCfg() {
+let _hs = '', _hv: HomeCfg = getHome();
+function useHomeCfg(): HomeCfg {
   const snap = () => { try { const j = JSON.stringify(getHome()); if (j !== _hs) { _hs = j; _hv = JSON.parse(j); } } catch { /* ignore */ } return _hv; };
   return useSyncExternalStore(f => { addEventListener('ud-home', f); return () => removeEventListener('ud-home', f); }, snap, () => _hv);
 }
@@ -29,11 +30,11 @@ export default function Home() {
   const e = useEngine(), R = usePoolSync(), router = useRouter();
   const [liveG, setLive] = useState<any[]>([]);
   useEffect(() => watchLobby(g => setLive(g)), []);
-  const home = useHomeCfg(), me = useMe(), [edit, setEdit] = useState(false);
-  useEffect(() => { const f = () => setEdit(true); addEventListener('ud-arrange', f); return () => removeEventListener('ud-arrange', f); }, []);
+  const home = useHomeCfg(), me = useMe(), [cz, setCz] = useState(false);
+  useEffect(() => { const f = () => setCz(true); addEventListener('ud-arrange', f); return () => removeEventListener('ud-arrange', f); }, []);
   const [mounted, setMounted] = useState(false), [set, setSet] = useState(false), [open, setOpen] = useState<string | null>(null);
 
-  useEffect(() => { setMounted(true); e.init(); if (new URLSearchParams(location.search).get('settings')) { setSet(true); history.replaceState(null, '', '/'); } }, []); // eslint-disable-line
+  useEffect(() => { setMounted(true); e.init(); if (e.typeChosen || e.kindSel !== 'all') e.resetType(); if (new URLSearchParams(location.search).get('settings')) { setSet(true); history.replaceState(null, '', '/'); } }, []); // eslint-disable-line
   const o = e.O;
   useEffect(() => {
     applyLook({ t: o.theme });
@@ -64,44 +65,71 @@ export default function Home() {
   const go = (sel: string) => { e.setSel(sel); router.push('/study'); };
   const cat = open ? R.category(open) : null;
 
-  const moveSec = (id: string, d: number) => { const o = [...home.order], i = o.indexOf(id), j = i + d; if (j < 0 || j >= o.length) return; [o[i], o[j]] = [o[j], o[i]]; setHome({ order: o, hidden: home.hidden }); };
-  const toggleSec = (id: string) => setHome({ order: home.order, hidden: home.hidden.includes(id) ? home.hidden.filter(x => x !== id) : [...home.hidden, id] });
   const tod = hr < 12 ? 'morning' : hr < 18 ? 'day' : 'evening', first = me ? me.name.split(' ')[0] : '';
   const TIPS = ['Short sessions beat long ones. Ten minutes a day wins.', 'Say the answer out loud before you flip the card.', 'Sleep after studying locks memories in.', 'Mix topics: it feels harder and works better.', 'Wrong answers teach the most. Keep them.', 'Explain a card to an imaginary friend.', 'Start with your weakest topic while you are fresh.'];
   const tip = TIPS[Math.floor(now / 864e5) % TIPS.length];
+  const COL = ['#5B5BD6', '#E5533C', '#16A064', '#E2A21B'];
+  const plainQ = (q: string) => { let t = stripKind(q); if (kindOf(q) === 'c') t = clozeFront(t, activeCloze(t), '____'); t = t.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); return t.length > 84 ? t.slice(0, 81).trim() + '...' : t; };
+  const deckCards = e.pool().slice(0, 4).map((q, i) => ({ id: q.id, lab: q.s || q.t || 'Card', text: plainQ(q.q) || 'Picture card', col: COL[i] }));
+  const greet = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
+  const card = (x: any, cls: string) => {
+    const inner = <><span className="uc-i"><Ic n={x.ic} /></span>{x.b && <span className="uc-b">{x.b}</span>}<b className="uc-t">{x.t}</b><span className="uc-d">{x.d}</span><Ic n={x.ic} className="uc-wm" /></>;
+    const st = { ['--c' as any]: x.c };
+    return x.href ? <Link key={x.id} href={x.href} className={'uc ' + cls} style={st}>{inner}</Link> : <button key={x.id} type="button" className={'uc ' + cls} style={st} onClick={x.fn}>{inner}</button>;
+  };
+  const MODES = [
+    { id: 'study', t: 'Study', d: 'Review what is due', c: '#5B5BD6', ic: 'cap', href: '/study' },
+    { id: 'sprint', t: 'Quick sprint', d: '5 minutes on weak spots', c: '#E2A21B', ic: 'bolt', fn: sprint },
+    { id: 'exam', t: 'Exam mode', d: 'Timed, no hints', c: '#E5533C', ic: 'clock', href: '/exam' },
+    { id: 'listen', t: 'Listen', d: 'Hear your cards read aloud', c: '#16A064', ic: 'play', fn: openListen }
+  ].filter(x => home.short.includes(x.id));
+  const MORE = [
+    { id: 'quiz', t: 'Live quiz', d: 'Play along with friends', b: 'Live', c: '#0B7BC4', ic: 'play', href: '/play' },
+    { id: 'lab', t: '3D lab', d: 'Models and simulations', b: 'New', c: '#8250DF', ic: 'cube', href: '/lab' },
+    { id: 'duel', t: 'Challenge', d: 'Duel a friend on your cards', b: 'Hot', c: '#E5533C', ic: 'trophy', href: '/duel' },
+    ...(isOwner() ? [{ id: 'host', t: 'Host', d: 'Run a live game', b: 'Owner', c: '#E2A21B', ic: 'star', href: '/host' }] : [])
+  ].filter(x => home.short.includes(x.id));
   const SEC: Record<string, React.ReactNode> = {
     today: (<>
-        <section className="today" data-tod={tod}>
-          <div>
-            <small>{todo > 0 ? 'Today' : 'Nothing due'}</small>
-            <h2>{todo > 0 ? <>{todo} card{todo === 1 ? '' : 's'}<br />to review</> : <>Come back<br />tomorrow</>}</h2>
-            <p className="tmsg">{msg}</p>
-            <Link className="go" href="/study">{todo > 0 ? (tc > 0 ? 'Continue' : 'Start') : 'Browse cards'} <Ic n="arrowR" /></Link>
+        <section className={'dk' + (home.hero === 'compact' ? ' compact' : '')} data-tod={tod}>
+          <div className="dk-top">
+            <p className="dk-hi">{greet}{first ? ', ' + first : ''}</p>
+            <div className="dk-tools">
+              <button type="button" className="dk-ib" onClick={() => setCz(true)} aria-label="Customize home"><Ic n="sliders" /></button>
+              <button type="button" className="dk-ib av" onClick={() => setSet(true)} aria-label="Settings">{me?.pic ? <img src={me.pic} alt="" referrerPolicy="no-referrer" /> : <svg viewBox="0 0 24 24" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21c1-4.5 4.5-6.5 8-6.5s7 2 8 6.5" /></svg>}</button>
+            </div>
           </div>
-          <div className={'ringw' + (gp >= 1 ? ' met' : '')} aria-label="Today's goal">
-            <svg viewBox="0 0 120 120" aria-hidden><circle cx="60" cy="60" r="50" className="rb" /><circle cx="60" cy="60" r="50" className="rf" strokeDasharray={2 * Math.PI * 50} strokeDashoffset={2 * Math.PI * 50 * (1 - gp)} /></svg>
-            <div className="rt">{gp >= 1 ? <b><Ic n="check" /></b> : <b>{tc}<span>/{goal}</span></b>}<small>{gp >= 1 ? 'goal met' : 'today'}</small></div>
+          <h1 className="dk-h">Your memory is on <em>deck</em> today.</h1>
+          <p className="dk-sub">{todo > 0 ? <><b>{todo}</b> card{todo === 1 ? '' : 's'} to review. </> : 'Nothing due right now. '}{msg}</p>
+          {home.hero === 'deck' && (
+            <Link href="/study" className="dk-fan" aria-label={todo > 0 ? 'Start reviewing your cards' : 'Open study'}>
+              {deckCards.length ? deckCards.map((d, i) => (
+                <div key={d.id} className={'dk-c c' + i} style={{ ['--c' as any]: d.col }}><small>{d.lab}</small><b>{d.text}</b><span>Card {i + 1} of {Math.max(todo, deckCards.length)}</span></div>
+              )) : <div className="dk-c c0" style={{ ['--c' as any]: COL[0] }}><small>Your deck</small><b>Add your first cards to start studying.</b><span>Card 1 of 1</span></div>}
+            </Link>
+          )}
+          <div className="dk-bar">
+            <Link className="dk-go" href="/study">{todo > 0 ? (tc > 0 ? 'Continue' : 'Start') : 'Browse cards'} <Ic n="arrowR" /></Link>
+            <div className={'dk-ring' + (gp >= 1 ? ' met' : '')} role="img" aria-label={"Today's goal: " + tc + ' of ' + goal}>
+              <svg viewBox="0 0 120 120" aria-hidden><circle cx="60" cy="60" r="50" className="rb" /><circle cx="60" cy="60" r="50" className="rf" strokeDasharray={2 * Math.PI * 50} strokeDashoffset={2 * Math.PI * 50 * (1 - gp)} /></svg>
+              <span>{gp >= 1 ? <Ic n="check" /> : <b>{tc}</b>}</span>
+            </div>
+            <div className="dk-gl"><b>{tc}<i>/{goal}</i></b><small>today</small></div>
+            <span className="dk-st"><Ic n="fire" /><b>{st.n}</b><small>day streak</small></span>
           </div>
+          {home.tip && <p className="dk-tip">{tip}</p>}
         </section>
     </>),
     stats: (<>
         <div className="tstats">
-          <div className="tstat n"><b>{c.nToday}</b><span>New</span></div>
-          <div className="tstat l"><b>{c.l}</b><span>Learning</span></div>
-          <div className="tstat d"><b>{c.dToday}</b><span>Due</span></div>
+          <div className="tstat n"><b>{c.nToday}</b><span>New</span><Ic n="sparkle" className="uc-wm" /></div>
+          <div className="tstat l"><b>{c.l}</b><span>Learning</span><Ic n="clock" className="uc-wm" /></div>
+          <div className="tstat d"><b>{c.dToday}</b><span>Due</span><Ic n="target" className="uc-wm" /></div>
         </div>
     </>),
     shortcuts: (<>
-        <nav className="qa" aria-label="Shortcuts">
-          <Link href="/study"><i><Ic n="cap" /></i>Study</Link>
-          <Link href="/play"><i><Ic n="play" /></i>Quiz</Link>
-          <Link href="/lab"><i><Ic n="cube" /></i>3D lab</Link>
-          <Link href="/exam"><i><Ic n="clock" /></i>Exam</Link>
-          <Link href="/duel"><i><Ic n="trophy" /></i>Challenge</Link>
-          <button onClick={sprint}><i><Ic n="bolt" /></i>5-min sprint</button>
-          <button onClick={openListen}><i><Ic n="bell" /></i>Listen</button>
-          {isOwner() && <Link href="/host"><i><Ic n="star" /></i>Host</Link>}
-        </nav>
+        {MODES.length > 0 && <><div className="shead"><h2>Study modes</h2></div><nav className={'modes' + (home.qa === 'row' ? ' row' : '')} aria-label="Study modes">{MODES.map(x => card(x, 'glow'))}</nav></>}
+        {MORE.length > 0 && <><div className="shead" style={{ marginTop: MODES.length ? 18 : 0 }}><h2>Explore</h2></div><nav className="more" aria-label="More">{MORE.map(x => card(x, ''))}</nav></>}
     </>),
     progress: (<>
         <section className="panel">
@@ -112,7 +140,7 @@ export default function Home() {
         </section>
     </>),
     mistakes: (<>
-        {overconfident(e).length > 0 && <div className="oc"><span><b>{overconfident(e).length}</b> card{overconfident(e).length === 1 ? '' : 's'} you were sure about but got wrong</span><button className="solid" onClick={() => { e.startPracticeIds(overconfident(e)); router.push('/study'); }}>Fix them</button></div>}
+        {overconfident(e).length > 0 && <div className="oc uc" style={{ ['--c' as any]: 'var(--bad)' }}><span className="uc-i"><Ic n="flag" /></span><span className="oc-t"><b>{overconfident(e).length} card{overconfident(e).length === 1 ? '' : 's'}</b> you were sure about but got wrong</span><button type="button" className="solid" onClick={() => { e.startPracticeIds(overconfident(e)); router.push('/study'); }}>Fix them</button><Ic n="flag" className="uc-wm" /></div>}
         {e.O.smart !== false && (() => { const pt = patterns(e, Object.keys(e.MIS)); return pt.length ? <>
           <div className="shead"><h2>Patterns in your mistakes</h2><span>Cards you confuse together</span></div>
           <div className="pats">{pt.map((p, k) => <button key={k} className="pat" onClick={() => { try { e.startPracticeIds(p.ids); } catch { e.toast('Could not start that practice.'); return; } router.push('/study'); }}><b>{p.label}</b><small>{p.ids.length} cards · practice together</small></button>)}</div>
@@ -142,6 +170,7 @@ export default function Home() {
                   <div><b>{k.name}</b><small>{pc.c} cards · {np} PDF{np === 1 ? '' : 's'} · {nm} model{nm === 1 ? '' : 's'}</small></div>
                 </button>
                 <button className="tbtn" disabled={!pc.c} onClick={() => go('c:' + k.id)}>Study <Ic n="arrowR" /></button>
+                <Ic n="layers" className="uc-wm" />
               </article>
             );
           })}
@@ -156,35 +185,17 @@ export default function Home() {
   return (
     <>
       <SiteNav owner={isOwner()} onSettings={() => setSet(true)} />
-      <main className={'hm' + (edit ? ' editing' : '')}>
-        <header className="hhead">
-          <div>
-            <p><span lang="am" className="geez">{hr < 12 ? 'እንደምን አደሩ' : hr < 18 ? 'እንደምን ዋሉ' : 'እንደምን አመሹ'}</span> · {hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'}{first ? ', ' + first : ''}</p>
-            <h1>{todo > 0 ? 'Ready to learn?' : 'All caught up'}</h1>
-            <p className="htip">{tip}</p>
-          </div>
-          <button className="avatar" onClick={() => setSet(true)} aria-label="Settings">{me?.pic ? <img src={me.pic} alt="" referrerPolicy="no-referrer" /> : <Ic n="sliders" />}</button>
-        </header>
-
+      <main className={'hm' + (home.cols === 2 ? ' two' : '')}>
         {liveG.length > 0 && liveG.slice(0, 2).map((g: any) => <Link key={g.pin} className="livebn" href={'/play?pin=' + g.pin}><i className="pulse" /><b>Live now: {g.title}</b><span>Join</span></Link>)}
 
         <div className="hsecs">
-          {home.order.map((id, ix) => {
-            const hidden = home.hidden.includes(id); if (hidden && !edit) return null;
-            return (
-              <div key={id} className={'hsec s-' + id + (hidden ? ' off' : '') + (edit ? ' edit' : '')} style={{ ['--i' as any]: ix }}>
-                {edit && <div className="hedit"><b>{HOME_SECTIONS.find(x => x[0] === id)![1]}</b>
-                  <button type="button" aria-label="Move up" disabled={ix === 0} onClick={() => moveSec(id, -1)}><Ic n="chevD" className="flipv" /></button>
-                  <button type="button" aria-label="Move down" disabled={ix === home.order.length - 1} onClick={() => moveSec(id, 1)}><Ic n="chevD" /></button>
-                  <button type="button" aria-label={hidden ? 'Show section' : 'Hide section'} className={hidden ? 'off' : ''} onClick={() => toggleSec(id)}>{hidden ? 'Show' : 'Hide'}</button></div>}
-                {SEC[id]}
-              </div>
-            );
-          })}
+          {home.order.map((id, ix) => home.hidden.includes(id) ? null : (
+            <div key={id} className={'hsx s-' + id} style={{ ['--i' as any]: ix }}>{SEC[id]}</div>
+          ))}
         </div>
-        {!edit && <button type="button" className="hcustom" onClick={() => setEdit(true)}><Ic n="sliders" /> Customize home</button>}
+        <button type="button" className="hcustom" onClick={() => setCz(true)}><Ic n="sliders" /> Customize home</button>
       </main>
-      {edit && <div className="arbar" role="toolbar" aria-label="Arranging home"><span>Arranging home</span><button type="button" onClick={() => setHome({ order: HOME_SECTIONS.map(x => x[0]), hidden: [] })}>Reset</button><button type="button" className="done" onClick={() => setEdit(false)}>Done</button></div>}
+      <HomeCustomize open={cz} onClose={() => setCz(false)} cfg={home} />
 
       <Sheet open={!!cat} onClose={() => setOpen(null)} className="sheet">
         {cat && (

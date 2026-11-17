@@ -1,9 +1,9 @@
 /* Offline support. App shell and static files are cached; Supabase data is cached by the app itself (IndexedDB). */
-const V = 'fr-shell-v3';
+const V = 'fr-shell-v4';
 
 self.addEventListener('install', e => {
   self.skipWaiting();
-  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/play', '/icon-192.png', '/manifest.webmanifest'].map(u => c.add(u).catch(() => {})))));
+  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/play', '/exam', '/duel', '/icon-192.png', '/manifest.webmanifest'].map(u => c.add(u).catch(() => {})))));
 });
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
@@ -24,11 +24,15 @@ self.addEventListener('fetch', e => {
     }));
     return;
   }
-  // pages and model files: network first, fall back to the cache when offline
+  // pages, page data and model files: answer from the cache at once (offline first), refresh it in the background.
+  // Only the very first visit to a page has to wait for the network.
   e.respondWith((async () => {
     const c = await caches.open(V);
-    try { const r = await fetch(req); if (r.ok) c.put(req, r.clone()); return r; }
-    catch (err) { const hit = await c.match(req) || (req.mode === 'navigate' ? await c.match('/') : null); if (hit) return hit; throw err; }
+    const hit = await c.match(req);
+    const net = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; });
+    if (hit) { e.waitUntil(net.catch(() => {})); return hit; }
+    try { return await net; }
+    catch (err) { const home = req.mode === 'navigate' ? await c.match('/') : null; if (home) return home; throw err; }
   })());
 });
 

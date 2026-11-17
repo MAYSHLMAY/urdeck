@@ -200,7 +200,17 @@ See `ANDROID.md`: push to GitHub and the included workflow builds `FlightRecall.
 - **Protected sync.** Run `supabase/sync-owner.sql` once. When you sign in, your sync space is claimed by your account: from then on the pairing code alone no longer opens it, sync requests must also carry your login (`x-user-token`, verified on the server and cached 5 minutes). Spaces nobody claimed keep working with the code only (guest mode). Signing out releases the claim so that device keeps syncing as a guest. Data was already end-to-end encrypted; this stops strangers from reading the encrypted blobs or writing junk into your space.
 
 ## Look and layout
-Settings → *Look and layout* changes the font (UrDeck, Clean, Rounded, Serif, Readable, System), spacing, corner style, the shortcut style and a two-column dashboard for wide screens, all saved on the device and applied before first paint. *Arrange home sections* (or the Customize home button at the bottom of Home) lets you move sections up or down and hide them.
+One fixed font (Plus Jakarta Sans) and one fixed card design for everyone (rounded card, hairline border, icon, title, description, badge, faded watermark bottom-right). Personal choices are accent colour, light/dark, and the home layout.
+Home: a hero ("Your memory is on deck today.") with a fanned stack of your real due cards, then sections you control in **Customize home** (Settings, or the sliders button on Home): presets, show/hide and order per section, hero style, daily tip, shortcuts, study-mode tiles or scroll row, one or two columns on wide screens. Stored on the device (`ud-home-v1`).
+Study: opening Study first shows a card-type chooser (Multiple choice, Flashcards, Cloze, Type-in, Image occlusion, All) with counts; pick one to start, "Change" returns to the chooser.
+
+## Splash screen
+Shown once per device before the app (inline markup in `src/lib/splash.ts`, behaviour in `src/components/SplashBoot.tsx`, flag `ud-splash-v1`; add `?splash=1` to a URL to replay). Generated chime (plays after the first tap, mute button remembered), CSS transform/opacity only, real work while it plays (font preload, local data, `/api/health` reachability with timeouts), progress bar if loading passes 1.2 s, Skip, Esc/Enter/Space, reduced-motion support, and a clear message plus automatic continue after 8 s if something stalls.
 
 ## Buddy
 A small animated companion (your own customizable character, no AI, works offline). It greets you, reacts to goals and streaks, answers simple questions by keyword, and **walks you through tasks**: it highlights the real button (works inside dialogs too) and waits for you to press it. Settings → Buddy: turn it on or off, rename it, shuffle or customize its look, pick a personality, move it to the other side, and optionally let it speak (browser voice on the web, the phone's voice through `@capacitor-community/text-to-speech` in the app; English works best). Drag it anywhere; "Put the buddy back" resets it. Voice input appears only where the browser supports it.
+
+## Speed and data safety
+- Pages, page data and models are served from the service-worker cache at once and refreshed in the background (offline first); only a first visit to a page waits for the network. Main routes are prefetched when idle. Blur effects are removed and tap delay is off.
+- Several tabs: when another tab saves cards, folders, notes or mistakes, this tab re-reads them (and again when it comes back to the foreground), so an old tab can no longer overwrite newer data with stale memory.
+- Full device storage: rebuildable caches are dropped first; if a save still does not fit, the data is kept in IndexedDB (`src/lib/spill.ts`) and restored on the next start, with a warning to download a backup.

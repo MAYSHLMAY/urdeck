@@ -1,5 +1,5 @@
 /* ===== UrDeck design layer: fonts, baseline controls, site chrome, home, footer. Loaded last. ===== */
-:root{--sans:Inter,"Noto Sans Ethiopic","Abyssinica SIL","Nyala","Avenir Next","Segoe UI",system-ui,sans-serif;--serif:"Source Serif 4","Noto Serif Ethiopic","Abyssinica SIL","Nyala",Charter,Georgia,serif;--r:16px;--eth-g:#078930;--eth-y:#FCDD09;--eth-r:#DA121A}
+:root{--sans:"Plus Jakarta Sans","Noto Sans Ethiopic","Abyssinica SIL",Nyala,system-ui,-apple-system,"Segoe UI",sans-serif;--serif:var(--sans);--r:16px;--eth-g:#078930;--eth-y:#FCDD09;--eth-r:#DA121A}
 body{font-family:var(--sans);display:flex;flex-direction:column;min-height:100dvh;line-height:1.5}
 
 h1,h2,h3{font-family:var(--serif);letter-spacing:-.02em}
@@ -29,7 +29,7 @@ details>summary{cursor:pointer;font-weight:650}
 .row>button:not([class]),.row>button.on{padding:8px 14px}
 hr{border:0;border-top:1.5px solid var(--line)}
 .info{color:var(--mute)}
-dialog.sheet::backdrop{background:rgba(30,18,8,.45);backdrop-filter:blur(3px)}
+dialog.sheet::backdrop{background:rgba(30,18,8,.45);}
 dialog.sheet{box-shadow:0 30px 80px -20px rgba(0,0,0,.45);background:var(--bg);color:var(--ink);border:1.5px solid var(--line)}
 .sheet header{border-bottom:1.5px solid var(--line);padding-bottom:10px;margin-bottom:6px}
 .sheet h3{font-family:var(--serif);font-size:1.2rem}
@@ -39,7 +39,7 @@ dialog.sheet{box-shadow:0 30px 80px -20px rgba(0,0,0,.45);background:var(--bg);c
 .stripe{height:4px;background:linear-gradient(90deg,var(--eth-g) 0 33.3%,var(--eth-y) 33.3% 66.6%,var(--eth-r) 66.6%)}
 
 /* ---- top navigation ---- */
-.snav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:10px max(18px,calc((100vw - 1120px)/2));background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1.5px solid var(--line)}
+.snav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:10px max(18px,calc((100vw - 1120px)/2));background:color-mix(in srgb,var(--bg) 97%,transparent);border-bottom:1.5px solid var(--line)}
 .sbrand{display:flex;align-items:center;gap:9px;font-family:var(--serif);font-weight:700;font-size:1.2rem;color:var(--ink);text-decoration:none}.sbrand svg{color:var(--acc)}
 .slinks{display:flex;gap:4px;margin-left:12px;flex:1}
 .slinks a{color:var(--mute);text-decoration:none;font-weight:600;padding:7px 12px;border-radius:10px;font-size:.92rem}.slinks a:hover{color:var(--ink);background:var(--accbg)}
@@ -49,10 +49,10 @@ dialog.sheet{box-shadow:0 30px 80px -20px rgba(0,0,0,.45);background:var(--bg);c
 /* ---- app-style bottom tab bar (phones) ---- */
 .tabbar{display:none}
 @media(max-width:640px){
-  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1.5px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in srgb,var(--card) 97%,transparent);border-top:1.5px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
   .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:14px;color:var(--mute);text-decoration:none;font-size:.7rem;font-weight:650}
   .tabbar a svg{width:23px;height:23px}.tabbar a.on{color:var(--acc);background:var(--accbg)}
-  body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+  body{padding-bottom:env(safe-area-inset-bottom)}
   #toast{bottom:calc(84px + env(safe-area-inset-bottom))}
 }
 
