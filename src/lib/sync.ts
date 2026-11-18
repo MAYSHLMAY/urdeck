@@ -6,12 +6,14 @@
  *    changed the same record, the newer stamp wins on every device, so they always end in the same state and nothing is lost
  *    for records only one device touched. Deleting is a stamped tombstone, so deletes sync too.
  *  - Nothing is sent that did not change; the server keeps only the newest version of each record.
- *  - Not synced: PDF files (they stay on the device they were added on), display settings, and the live quiz identity.
+ *  - Not synced: PDF files (they stay on the device they were added on), AI keys, reminders and the live quiz identity.
+ *    Study options, look, home layout, badges and 3D-lab progress do sync (lib/prefs.ts).
  */
 import { apiUrl } from '@/lib/base';
 import { engine } from './engine';
 import { notes } from './notes';
-import { auth } from './auth';
+import { auth, profile } from './auth';
+import { prefs } from './prefs';
 
 const K_CFG = 'fr-sync-cfg-v1', K_META = 'fr-sync-meta-v1', K_CUR = 'fr-sync-cur-v1', K_OUT = 'fr-sync-out-v1';
 const A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -53,7 +55,8 @@ class Sync {
   private arm() {
     if (this.armed) return; this.armed = true;
     const mark = () => { this.dirty = true; clearTimeout(this.deb); this.deb = setTimeout(() => this.run(), 1500); };
-    engine().subscribe(mark); notes().subscribe(mark);
+    engine().subscribe(mark); notes().subscribe(mark); prefs.subscribe(mark);
+    ['ud-look', 'ud-home'].forEach(ev => addEventListener(ev, mark));
     setInterval(() => { if (!document.hidden) this.run(); }, 7000);
     document.addEventListener('visibilitychange', () => this.run());
     addEventListener('online', () => this.run()); addEventListener('focus', () => this.run());
@@ -90,6 +93,7 @@ class Sync {
     const m = new Map<string, { v: any; ts?: number }>();
     engine().syncCollect(m);
     notes().syncCollect(m);
+    prefs.syncCollect(m);
     return m;
   }
   private scan() {
@@ -113,7 +117,7 @@ class Sync {
       this.set({ state: 'syncing', err: '' });
       if (wasDirty) this.scan(); this.save(); this.set({ pending: this.out.size });
       await this.push(); await this.pull();
-      this.set({ state: 'idle', last: Date.now(), pending: this.out.size });
+      this.set({ state: 'idle', last: Date.now(), pending: this.out.size }); profile.schedulePush();
     } catch (e: any) { this.set({ state: navigator.onLine === false ? 'offline' : 'error', err: String(e?.message || e).slice(0, 160) }); }
     finally { this.busy = false; this.save(); if (this.again) setTimeout(() => this.run(), 400); }
   }
@@ -150,15 +154,16 @@ class Sync {
       const got: { k: string; t: string; v: any }[] = [];
       for (const row of rows) { try { const o = await this.open(row.d); if (o && typeof o.k === 'string') got.push({ k: o.k, t: row.t, v: o.v }); } catch { /* not ours / corrupted: skip */ } }
       this.scan();   // stamp anything the user changed meanwhile, so it beats older remote data
-      const eng: [string, any][] = [], nts: [string, any][] = [];
+      const eng: [string, any][] = [], nts: [string, any][] = [], kvs: [string, any][] = [];
       for (const g of got) {
         this.seen(g.t); const m = this.meta[g.k];
         if (m && m[0] >= g.t) continue;            // we hold a newer (or the same) version
         this.meta[g.k] = [g.t, g.v == null ? '' : h53(stable(g.v)), g.v == null ? 1 : 0];
-        (g.k.startsWith('no:') ? nts : eng).push([g.k, g.v]);
+        (g.k.startsWith('no:') ? nts : g.k.startsWith('kv:') ? kvs : eng).push([g.k, g.v]);
       }
       if (eng.length) engine().syncApply(eng);
       if (nts.length) notes().syncApply(nts);
+      if (kvs.length) prefs.syncApply(kvs);
       this.cur = rows[rows.length - 1].seq; this.save();
       if (rows.length < 300) return;
     }

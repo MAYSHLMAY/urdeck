@@ -52,3 +52,4 @@ a.frow{text-decoration:none;color:inherit}
 .cedit textarea,.cedit input[type=text],.cedit select{width:100%;box-sizing:border-box;font:inherit;padding:9px 10px;border-radius:11px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)}
 .cedit .wrow{display:flex;gap:6px}.cedit .wrow input{flex:1;min-width:0}
 .cedit .ghost.danger{margin-right:auto;color:var(--bad);border-color:var(--bad)}
+.acc-list{list-style:none;margin:0 0 6px;padding:0}.acc-list li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:.86rem}.acc-list li span{color:var(--mute)}.acc-list li b{font-variant-numeric:tabular-nums}

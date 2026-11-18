@@ -11,6 +11,7 @@ import { usePoolSync } from './refHooks';
 import { HighlightTools } from './Highlights';
 import { LibraryMenu } from './LibraryMenu';
 import { Search } from './Search';
+import { FieldPill } from './Fields';
 import { Stats } from './Stats';
 import { Settings } from './Settings';
 import { AddDialog } from './AddDialog';
@@ -29,6 +30,7 @@ export default function App() {
   usePoolSync();
   const [mounted, setMounted] = useState(false);
   const [dlg, setDlg] = useState<Dlg>('');
+  const [sf, setSf] = useState('all');
   const [infoId, setInfoId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditorState>(null);
   const close = () => setDlg('');
@@ -58,7 +60,7 @@ export default function App() {
       if (document.querySelector('dialog[open]')) return;
       if (!e.typeChosen && e.kindCounts().all.n > 0 && ev.key !== '/') return;
       const k = ev.key, ph = e.phase;
-      if (k === '/') { ev.preventDefault(); setDlg('browse'); return; }
+      if (k === '/') { ev.preventDefault(); setSf('all'); setDlg('browse'); return; }
       if ((k === 'r' || k === 'R') && e.cur) { refs().toggle(e.cur); return; }
       if (k === 'z' || k === 'Z') { e.doUndo(); return; }
       if ((k === 'm' || k === 'M') && e.cur && ph !== 'done') { e.toggleFlag(e.cur.id, 'mark'); return; }
@@ -95,7 +97,7 @@ export default function App() {
           <h1><Link href="/" className="homeln" aria-label="Home" title="Home">{PLANE}UrDeck</Link></h1>
           <div className="tools">
             <button className="ico" disabled={!e.U.length} onClick={() => e.doUndo()} aria-label="Undo" title="Undo (Z)"><Icon n="undo" /></button>
-            <button className="ico" onClick={() => setDlg('browse')} aria-label="Search" title="Search (/)"><Icon n="search" /></button>
+            <button className="ico" onClick={() => { setSf('all'); setDlg('browse'); }} aria-label="Search" title="Search (/)"><Icon n="search" /></button>
             <button className="ico" onClick={() => setDlg('stats')} aria-label="Statistics"><Icon n="chart" /></button>
             <button className="ico" onClick={() => setDlg('models')} aria-label="3D models" title="3D models"><Icon n="cube" /></button>
             <button className="ico" onClick={() => setDlg('set')} aria-label="Settings"><Icon n="set" /></button>
@@ -109,6 +111,7 @@ export default function App() {
           <div className="cn d"><b>{c.dToday}</b><small>Due</small></div>
         </div>
         <div className="stats2"><b>{c.m}</b> mastered of {c.tot} · <b>{S.done}</b> answered today{S.done ? ' (' + Math.round(S.ok / S.done * 100) + '% right)' : ''}</div>
+        <FieldPill className="st-field" />
         <div className="pickrow">
           <button className="pick" onClick={() => { e.openMenu(); setDlg('menu'); }} aria-haspopup="dialog"><span className="pk">Studying</span><b>{e.selLabel()}</b><span aria-hidden="true"><Ic n="chevD" /></span></button>
           <button className="plus alt" onClick={() => setDlg('grid')} aria-label="Browse many cards at once" title="Browse many cards at once"><Ic n="grid" /></button>
@@ -121,8 +124,8 @@ export default function App() {
       </div>
 
       <LibraryMenu open={dlg === 'menu'} onClose={close} onNew={st => { close(); setTimeout(() => setEditor(st), 120); }} />
-      <Search open={dlg === 'browse'} onClose={close} onStudy={() => close()} onOpenFolder={() => { e.openMenu(true); setDlg('menu'); }} />
-      <Stats open={dlg === 'stats'} onClose={close} />
+      <Search open={dlg === 'browse'} init={sf} onClose={close} onStudy={() => close()} onOpenFolder={() => { e.openMenu(true); setDlg('menu'); }} />
+      <Stats open={dlg === 'stats'} onClose={close} onSearch={f => { setSf(f); setDlg('browse'); }} />
       <Settings open={dlg === 'set'} onClose={() => { close(); if (e.phase === 'done') e.show(); else e.emit(); }} />
       <AddDialog open={dlg === 'add'} onClose={close} onManage={() => setTimeout(() => setDlg('manage'), 80)} />
       <ModelsDialog open={dlg === 'models'} onClose={close} />

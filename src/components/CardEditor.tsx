@@ -51,7 +51,7 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
   const nums = clozeNums(raw(q));
   const ok = (kind === 'o' && !edit ? hasImg && masks.length > 0 && masks.every(m => m.t.trim()) : raw(q).trim() && (kind === 'c' ? nums.length > 0 : c.trim())) && (flip || wrong.length >= 1) && (edit || setName);
 
-  const finish = () => { if (!edit && state?.folder && s === '__new' && setName) e.foldOp([{ t: 'setPlace', key: setName, value: state.folder }]); onClose(); };
+  const finish = () => { const dest = state?.folder || (e.fieldOk() ? e.field : ''); if (!edit && dest && s === '__new' && setName) e.foldOp([{ t: 'setPlace', key: setName, value: dest }]); onClose(); };
   async function save() {
     if (!ok || busy) return;
     setBusy(true); setErr('');
@@ -121,7 +121,7 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
             {KINDS.map(([k, l, d]) => <button key={k} type="button" role="tab" aria-selected={kind === k} className={'kb' + (kind === k ? ' on' : '')} onClick={() => setKind(k)}><b>{l}</b><small>{d}</small></button>)}
           </div>}
           {!occNew && <label className="cl">{kind === 'c' ? 'Text (wrap hidden words like {{c1::this}})' : flip ? 'Front' : 'Question'}</label>}
-          <textarea value={raw(q)} onChange={ev => setQ(ev.target.value + ((q.match(/<!--(?:img|k|occ|src):[^>]*-->/g) || []).join('')))} rows={3} maxLength={3900} placeholder={kind === 'c' ? 'The {{c1::heart}} pumps {{c2::blood}}.' : 'Type the question'} />
+          <textarea className="ced-ta" value={raw(q)} onChange={ev => setQ(ev.target.value + ((q.match(/<!--(?:img|k|occ|src):[^>]*-->/g) || []).join('')))} rows={3} maxLength={3900} placeholder={kind === 'c' ? 'The {{c1::heart}} pumps {{c2::blood}}.' : 'Type the question'} />
           {kind === 'c' && <div className="clzbar">
             <button type="button" className="ghost" onClick={() => { const t = raw(q), n = clozeNums(t).length + 1; setQ(t + ' {{c' + n + '::answer}}' + (q.match(/<!--(?:img|k|occ|src):[^>]*-->/g) || []).join('')); }}>+ Add a hidden word</button>
             <small>{nums.length ? nums.length + ' card' + (nums.length > 1 ? 's' : '') + ' will be made (one per number)' : 'Add at least one {{c1::…}}'}</small>
@@ -129,7 +129,7 @@ export function CardEditor({ state, onClose }: { state: EditorState; onClose: ()
           {<div className={occNew || kind === 'c' ? 'nopins' : ''}><ImageField value={q} onChange={setQ} forceLocal={priv} /></div>}
           {occNew && <OccEditor value={q} masks={masks} setMasks={setMasks} mode={omode} setMode={setOmode} />}
           {kind !== 'c' && !occNew && <><label className="cl">{flip ? 'Back' : 'Correct answer'}</label>
-          <input type="text" value={c} onChange={ev => setC(ev.target.value)} maxLength={3900} placeholder={flip ? 'The answer' : 'The right choice'} /></>}
+          {flip ? <textarea className="ced-ta back" value={c} onChange={ev => setC(ev.target.value)} rows={3} maxLength={3900} placeholder="The answer" /> : <input type="text" value={c} onChange={ev => setC(ev.target.value)} maxLength={3900} placeholder="The right choice" />}</>}
           {flip && <p className="n">Quiz, exam and browse use this card too: wrong choices are borrowed from other cards in the set automatically.</p>}
           {!flip && <label className="cl">Wrong answers <small>({wrong.length} of 5)</small></label>}
           {!flip && w.map((x, i) => (

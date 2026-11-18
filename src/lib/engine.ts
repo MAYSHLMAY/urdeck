@@ -7,7 +7,7 @@ import { fnv } from './fnv';
 import { kindOf, type Kind } from './kind';
 import { parsePack, parseRaw, ready, cook } from './parse';
 import { DEF, M, D, examDays, leechHit, addDays, dayStart, fmtIv, lab as labFn, nxt, steps, ymd, type CS, type Opts } from './srs';
-import { applyMut, buildTree, emptyTree, fpath, type Tree } from './tree';
+import { applyMut, buildTree, emptyTree, fpath, FD, isField, type Tree } from './tree';
 import { spillAll, spillDel, spillPut, freeSpace } from './spill';
 import { emptyMeta, fetchMeta, readCache, saveCards, syncCards, type Meta } from './library';
 import { api, isOwner } from './api';
@@ -310,7 +310,7 @@ export class Engine {
   isLrn = (c?: CS) => !!c && (c.t === 'learn' || c.t === 'relearn');
   isLeech = (c?: CS) => !!c && (c.lapses || 0) >= this.O.leech;
   /** Every card that is a leech right now (suspended ones included), worst first. */
-  leeches(): QCard[] { return this.Q.filter(q => this.isLeech(this.S.cards[q.id])).sort((a, b) => (this.S.cards[b.id].lapses || 0) - (this.S.cards[a.id].lapses || 0)); }
+  leeches(): QCard[] { return this.QF.filter(q => this.isLeech(this.S.cards[q.id])).sort((a, b) => (this.S.cards[b.id].lapses || 0) - (this.S.cards[a.id].lapses || 0)); }
   /** Give a leech a fresh start: lapses cleared, relearn from the first step, unsuspended. */
   healLeech(id: string) {
     const c = this.get(id); this.setCard(id, { lapses: 0, t: 'relearn', step: 0, ease: Math.max(c.ease || 2.5, 2.3), iv: 1, due: Date.now() + 10 * M, susp: 0, hl: (c.hl || 0) + 1 });
@@ -337,15 +337,16 @@ export class Engine {
     return { c: this.Q.filter(q => st.has(q.s)).length, sets: st.size };
   }
   inSel(q: QCard, v: string, c?: any): boolean {
-    if (v === 'all' || q.s === v) return true;
+    if (v === 'all') return this.inField(q);
+    if (q.s === v) return true;
     switch (v) {
-      case 'hard': return q.g === 'hard';
-      case 'book': return !q.p;
-      case 'pe': return !!q.p;
-      case 'penew': return this.isNewPE(q);
-      case 'weak': return !!c && ((c.lapses || 0) > 0 || ((c.a || 0) >= 3 && (c.k || 0) / c.a < .6));
-      case 'marked': return !!c && !!c.mark;
-      case 'leech': return this.isLeech(c);
+      case 'hard': return q.g === 'hard' && this.inField(q);
+      case 'book': return !q.p && this.inField(q);
+      case 'pe': return !!q.p && this.inField(q);
+      case 'penew': return this.isNewPE(q) && this.inField(q);
+      case 'weak': return !!c && ((c.lapses || 0) > 0 || ((c.a || 0) >= 3 && (c.k || 0) / c.a < .6)) && this.inField(q);
+      case 'marked': return !!c && !!c.mark && this.inField(q);
+      case 'leech': return this.isLeech(c) && this.inField(q);
     }
     if (v.startsWith('c:')) { const st = this.catSets.get(v.slice(2)); return !!st && st.has(q.s); }
     if (v.startsWith('f:')) { const st = this.FT.secs.get(v.slice(2)); return !!st && st.has(q.s); }
@@ -377,7 +378,7 @@ export class Engine {
   live(q: QCard, now: number) { const c = this.S.cards[q.id]; return !(c && (c.susp || c.by > now)); }
   selLabel() {
     const v = this.S.sec, Q = this.Q;
-    const W: Record<string, string> = { all: 'All cards (' + Q.length + ')', book: 'Study-book cards', hard: 'Hard questions', pe: 'Past exam questions', penew: 'Past exam: unseen only', weak: 'Weak spots', marked: 'Marked cards', leech: 'Leeches' };
+    const W: Record<string, string> = { all: (this.fieldOk() ? (this.FT.name.get(this.field) || '') + ' (' + this.QF.length + ')' : 'All cards (' + Q.length + ')'), book: 'Study-book cards', hard: 'Hard questions', pe: 'Past exam questions', penew: 'Past exam: unseen only', weak: 'Weak spots', marked: 'Marked cards', leech: 'Leeches' };
     if (W[v]) return W[v];
     if (v.startsWith('c:')) return 'Pool: ' + (this.catNames.get(v.slice(2)) || 'Pool');
     if (v.startsWith('f:')) return fpath(this.FT, v.slice(2)).join(' › ') || 'Library';
@@ -388,6 +389,73 @@ export class Engine {
   validSel(v: string) {
     return WORD.includes(v) || (v.startsWith('c:') && (!this.poolsLoaded || this.catSets.has(v.slice(2)))) || (v.startsWith('f:') && this.FT.name.has(v.slice(2))) || (v.startsWith('g:') && this.Q.some(q => q.g === v.slice(2))) || this.Q.some(q => q.s === v);
   }
+  /* ---------- fields of study: top-level containers ---------- */
+  /** The field you are working in ('' = all fields). Search, statistics, counts and the study pool follow it. */
+  field = (typeof localStorage !== 'undefined' && localStorage.getItem('ud-field-v1')) || '';
+  fieldOk() { return !!this.field && isField(this.field) && this.FT.name.has(this.field); }
+  inField(q: QCard) { if (!this.fieldOk()) return true; const st = this.FT.secs.get(this.field); return !st || st.has(q.s); }
+  private _fq: QCard[] | null = null; private _fqk = '';
+  /** The cards of the active field (all cards when no field is active). */
+  get QF(): QCard[] {
+    if (!this.fieldOk()) return this.Q;
+    const k = this.field + '|' + this.ftver + '|' + this.qver;
+    if (this._fq && this._fqk === k) return this._fq;
+    this._fqk = k; return this._fq = this.Q.filter(q => this.inField(q));
+  }
+  setField(id: string) {
+    this.field = id; try { localStorage.setItem('ud-field-v1', id); } catch { /* ignore */ }
+    this.S.sec = 'all'; this.kindSel = 'all'; this.typeChosen = false; this.speed = null; this.later = {}; this.last = null; this.cram = false; this.ahead = 0; this._pl = null; this.cc = null;
+    this.save(); this.show(); try { dispatchEvent(new Event('ud-field')); } catch { /* ignore */ }
+  }
+  /** Every field, with how many cards, folders and due cards it holds. */
+  fields() {
+    const FT = this.FT, U = this.menuStats();
+    return (FT.kids.get('root') || []).filter(isField).map(id => {
+      let c = 0, d = 0; (FT.secs.get(id) || new Set<string>()).forEach(s => { const u = U.get(s); if (u) { c += u.c; d += u.d; } });
+      return { id, name: FT.name.get(id) || 'Field', color: FT.fcol.get(id) || '#5B5BD6', cards: c, due: d, folders: (FT.kids.get(id) || []).length + (FT.direct.get(id) || []).length };
+    }).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  }
+  /** The field a folder or set sits in ('' = unsorted). */
+  fieldOf(id: string): string { let c: string | undefined = id, n = 0; while (c && c !== 'root' && n++ < 30) { if (isField(c)) return c; c = this.FT.parent.get(c) || (this.FT.secOf.get(c)); } return ''; }
+  /** Things at the top of the library that are not in any field. */
+  unsorted(): { folders: string[]; sets: string[] } { const FT = this.FT; return { folders: (FT.kids.get('root') || []).filter(k => !isField(k)), sets: FT.direct.get('root') || [] }; }
+  private isLocalFolder(id: string) { return this.LF.folders.some(f => f.id === id); }
+  /** Whether this device may rename, recolor or delete the field (its own, or any when unlocked as owner). */
+  canEditField(id: string) { return isOwner() || this.isLocalFolder(id); }
+  /** Anyone can create a field. The owner's are shared with everyone; everyone else's stay with their account. */
+  addField(name: string, color: string): string {
+    const id = FD + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    this.foldOp([{ t: 'addFolder', id, name: name.trim().slice(0, 60) || 'Field', parent: 'root' }, { t: 'setPlace', key: 'fcol:' + id, value: color }]);
+    return id;
+  }
+  editField(id: string, name: string, color: string) {
+    const m: Mut[] = [{ t: 'renameFolder', id, name: name.trim().slice(0, 60) || 'Field' }, { t: 'setPlace', key: 'fcol:' + id, value: color }];
+    if (this.isLocalFolder(id)) this.foldOpLocal(m); else this.foldOp(m);
+  }
+  /** Put a folder, chapter or card set inside a field (or back to the top with '' / 'root'). Nothing is deleted. */
+  moveInto(ids: string[], parent: string) {
+    const to = parent || 'root', own = isOwner(), muts: Mut[] = [], loc: Mut[] = [];
+    ids.forEach(id => {
+      const isSet = this.FT.secInfo.has(id) && !this.FT.name.has(id);
+      if (isSet) muts.push({ t: 'setPlace', key: id, value: to });
+      else if (this.FT.virt.has(id)) muts.push({ t: 'setPlace', key: 'dir:' + id, value: to });
+      else if (this.isLocalFolder(id)) loc.push({ t: 'moveFolder', id, parent: to });
+      else if (own) muts.push({ t: 'moveFolder', id, parent: to });
+      else muts.push({ t: 'setPlace', key: 'dir:' + id, value: to });
+    });
+    if (loc.length) this.foldOpLocal(loc);
+    if (muts.length) this.foldOp(muts);
+  }
+  /** Delete a field only; what was inside goes back to the top (unsorted). */
+  async deleteField(id: string, password?: string): Promise<string | null> {
+    const wasActive = this.field === id;
+    if (this.isLocalFolder(id)) { this.foldOpLocal([{ t: 'delFolder', id, up: 'root' }]); }
+    else { const err = await this.deleteFolder(id, 'root', password || ''); if (err) return err; }
+    if (wasActive) this.setField('');
+    return null;
+  }
+  foldOpLocal(muts: Mut[]) { let n = 0; muts.forEach(m => { if (applyMut(this.LF, m)) n++; }); if (n) this.saveLF(); this.buildTree(); this.emit(); }
+
   setSel(v: string) {
     this.S.sec = v; this.kindSel = 'all'; this.typeChosen = false; this.speed = null; this.later = {}; this.last = null; this.cram = false; this.ahead = 0; this.save(); this.show();
   }
@@ -522,6 +590,14 @@ export class Engine {
     const c: any = this.get(id); this.setCard(id, { [k]: c[k] ? 0 : 1 });
     if (k === 'susp') { this.toast(c.susp ? 'Card unsuspended' : 'Card suspended'); if (this.cur && this.cur.id === id) this.show(); else this.emit(); }
     else { this.toast(c.mark ? 'Mark removed' : 'Card marked'); this.emit(); }
+  }
+  /** Change many cards at once (suspend, mark, ...): one save, one refresh. */
+  bulkSet(ids: string[], patch: Partial<CS>) {
+    ids.forEach(id => { this.S.cards[id] = { ...this.get(id), ...patch }; });
+    this.save(); const cur = this.cur && ids.some(i => String(i) === String(this.cur!.id)); if (cur) this.show(); else this.emit();
+  }
+  bulkReset(ids: string[]) {
+    ids.forEach(id => { delete this.S.cards[id]; }); this.save(); this.show();
   }
   buryCard(id: string) { this.setCard(id, { by: addDays(this.dayStart(Date.now()), 1) }); this.toast('Buried until tomorrow'); this.show(); }
   resetCard(id: string) { this.pushU(this.snap(id)); delete this.S.cards[id]; this.save(); this.emit(); }

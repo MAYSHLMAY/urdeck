@@ -5,6 +5,7 @@ import { createClient, type SupabaseClient, type User } from '@supabase/supabase
 import { isNative, siteOrigin } from './base';
 import { loadIdentity, saveIdentity } from './game/identity';
 import { engine } from './engine';
+import { labs } from './prefs';
 
 export const NATIVE_REDIRECT = 'app.urdeck.study://auth';
 const K_SEEN = 'ud-welcome-v1';
@@ -117,9 +118,16 @@ export const profile = {
   schedulePush() { if (!me) return; clearTimeout(pushT); pushT = setTimeout(() => { profile.push(); }, 4000); },
   async push() {
     const c = client(); if (!c || !me) return; const i = await loadIdentity(); if (!i) return;
-    const h = hashOf(i.name, i.av, goal(), i.id); if (rd().hash === h) return;
-    const { error } = await c.from('profiles').update({ name: i.name, avatar: i.av, goal: goal(), updated_at: new Date().toISOString() }).eq('id', me.id);
-    if (!error) wr({ hash: h });
+    const h = hashOf(i.name, i.av, goal(), i.id);
+    if (rd().hash !== h) {
+      const { error } = await c.from('profiles').update({ name: i.name, avatar: i.av, goal: goal(), updated_at: new Date().toISOString() }).eq('id', me.id);
+      if (!error) wr({ hash: h });
+    }
+    /* small summary for the account (separate call: it must never block the profile if scale.sql is not installed yet) */
+    try {
+      const e = engine(), sm = { streak: e.S.streak || 0, best: e.S.best || 0, cards: Object.keys(e.S.cards).length, mine: e.MY.cards.length, models: labs.seen() }, sh = JSON.stringify(sm);
+      if ((rd() as any).sum !== sh) { const r = await c.from('profiles').update({ summary: sm }).eq('id', me.id); if (!r.error) wr({ sum: sh }); }
+    } catch { /* optional */ }
   },
   /** Lifetime game stats, cached for 30 minutes so opening the profile does not hit the server every time. */
   async stats(force = false): Promise<Stats | null> {
@@ -132,7 +140,7 @@ export const profile = {
   }
 };
 const hashOf = (n: string, a: string, g: number, p: string) => [n, a, g, p].join('|');
-if (typeof window !== 'undefined') addEventListener('ud-identity', () => profile.schedulePush());
+if (typeof window !== 'undefined') { addEventListener('ud-identity', () => profile.schedulePush()); addEventListener('ud-lab', () => profile.schedulePush()); }
 
 /* first-run flag */
 export const seen = () => { try { return localStorage.getItem(K_SEEN) === '1'; } catch { return true; } };

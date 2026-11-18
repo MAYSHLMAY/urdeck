@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { foldList, gOrder2 } from '@/lib/tree';
+import { foldList, gOrder2, isField } from '@/lib/tree';
+import { Mono, openFields } from './Fields';
 import { isOwner } from '@/lib/api';
 import { splitPath } from '@/lib/engine';
 import { ask, askPassword, esc, Sheet, SheetFrame, useEngine, Ic } from './ui';
@@ -69,7 +70,8 @@ export function LibraryMenu({ open, onClose, onNew }: { open: boolean; onClose: 
   const Chip = ({ v, l, n }: { v: string; l: string; n: number }) => <button className={'chip' + (S.sec === v ? ' on' : '')} onClick={() => study(v)}>{l}<small>{n}</small></button>;
 
   const trail: string[] = []; { let c: string | undefined = BR, n = 0; while (c && n++ < 30) { trail.unshift(c); if (c === 'root') break; c = FT.parent.get(c) || 'root'; } }
-  const kids = (FT.kids.get(BR) || []).slice().sort(cmp);
+  const allKids = (FT.kids.get(BR) || []).slice().sort(cmp), atRoot = BR === 'root', fl = atRoot ? e.fields() : [];
+  const kids = atRoot ? allKids.filter(k => !isField(k)) : allKids;
   const secs = (FT.direct.get(BR) || []).slice().sort((a, b) => String((FT.secInfo.get(a) || {} as any).n || a).localeCompare(String((FT.secInfo.get(b) || {} as any).n || b), undefined, { numeric: true }));
   const paths: string[] = []; const walk = (id: string, pre: string) => { (FT.kids.get(id) || []).forEach(k => { const pt = pre + (FT.name.get(k) || '?'); paths.push(pt); walk(k, pt + '/'); }); }; walk('root', '');
 
@@ -84,14 +86,15 @@ export function LibraryMenu({ open, onClose, onNew }: { open: boolean; onClose: 
 
   async function folderMenu(id: string) {
     const nm = e.FT.name.get(id)!, V = e.FT.virt.has(id);
-    const r = await ask({ title: nm, acts: [{ k: 'ren', l: 'Rename' }, { k: 'mov', l: 'Move to another folder' }].concat(V ? [] : [{ k: 'del', l: 'Delete folder (keeps its contents)' }]) });
+    const mine = isOwner() || V || e.LF.folders.some(f => f.id === id);
+    const r = await ask({ title: nm, acts: ([] as { k: string; l: string }[]).concat(mine ? [{ k: 'ren', l: 'Rename' }] : [], [{ k: 'mov', l: 'Move into a field or folder' }], V || !mine ? [] : [{ k: 'del', l: 'Delete folder (keeps its contents)' }]) });
     if (!r) return;
     if (r.act === 'ren') {
       const x = await ask({ title: 'Rename folder', text: nm, ok: 'Save' });
-      if (x && x.text) { e.foldOp([V ? { t: 'setPlace', key: 'name:' + id, value: x.text } : { t: 'renameFolder', id, name: x.text }]); e.toast('Renamed'); }
+      if (x && x.text) { if (V) e.foldOp([{ t: 'setPlace', key: 'name:' + id, value: x.text }]); else if (e.LF.folders.some(f => f.id === id)) e.foldOpLocal([{ t: 'renameFolder', id, name: x.text }]); else e.foldOp([{ t: 'renameFolder', id, name: x.text }]); e.toast('Renamed'); }
     } else if (r.act === 'mov') {
       const x = await ask({ title: 'Move “' + nm + '” to', sel: foldList(e.FT, id), selv: e.FT.parent.get(id) || 'root', ok: 'Move' });
-      if (x && x.sel && x.sel !== id) { e.foldOp([V ? { t: 'setPlace', key: 'dir:' + id, value: x.sel } : { t: 'moveFolder', id, parent: x.sel }]); e.toast('Moved'); }
+      if (x && x.sel && x.sel !== id) { e.moveInto([id], x.sel); e.toast('Moved'); }
     } else if (r.act === 'del') {
       const own = isOwner();
       const pw = own ? await askPassword('Delete “' + nm + '”?', 'Enter the owner password to delete this folder. Sub-folders and card sets move up one level; no cards are deleted.') : 'local';
@@ -107,11 +110,11 @@ export function LibraryMenu({ open, onClose, onNew }: { open: boolean; onClose: 
   }
   async function setMenu(s: string) {
     const inf = e.FT.secInfo.get(s) || { t: s, n: '' };
-    const r = await ask({ title: inf.t, acts: [{ k: 'mov', l: 'Move to another folder' }, { k: 'tag', l: 'Edit tags' }] });
+    const r = await ask({ title: inf.t, acts: [{ k: 'mov', l: 'Move into a field or folder' }, { k: 'tag', l: 'Edit tags' }] });
     if (!r) return;
     if (r.act === 'mov') {
       const x = await ask({ title: 'Move “' + inf.t + '” to', sel: foldList(e.FT), selv: e.FT.secOf.get(s) || 'root', ok: 'Move' });
-      if (x && x.sel) { e.foldOp([{ t: 'setPlace', key: s, value: x.sel }]); e.toast('Moved'); }
+      if (x && x.sel) { e.moveInto([s], x.sel); e.toast('Moved'); }
     } else {
       const x = await ask({ title: 'Tags for “' + inf.t + '”', msg: 'Separate with commas. Search finds them with #tag.', text: (e.FT.tags.get(s) || []).join(', '), ok: 'Save' });
       if (x) { e.foldOp([x.text ? { t: 'setPlace', key: 'tags:' + s, value: x.text } : { t: 'delPlace', key: 'tags:' + s }]); e.toast('Tags saved'); }
@@ -138,7 +141,7 @@ export function LibraryMenu({ open, onClose, onNew }: { open: boolean; onClose: 
             if (Math.abs(dy) < 45 && Math.abs(dx) > 85) { if (dx > 0) { if (!e.navBack()) e.navUp(); } else e.navFwd(); }
           }}>
           <div className="chips">
-            <Chip v="all" l="All cards" n={e.Q.length} />
+            <Chip v="all" l={e.fieldOk() ? 'All in ' + (FT.name.get(e.field) || 'field') : 'All cards'} n={e.QF.length} />
             {nHard ? <Chip v="hard" l="Hard only" n={nHard} /> : null}
             {nPE ? <Chip v="pe" l="Past exam" n={nPE} /> : null}
             {nNew ? <Chip v="penew" l="Unseen exam" n={nNew} /> : null}
@@ -162,6 +165,20 @@ export function LibraryMenu({ open, onClose, onNew }: { open: boolean; onClose: 
           {onNew && <div className="newrow" aria-label="Create here"><span>New here</span>
             {(['mc', 'f', 'c', 't', 'o'] as Kind[]).map(k => <button key={k} type="button" style={{ ['--c' as any]: KC[k] }} onClick={() => onNew({ mode: 'add', kind: k, folder: BR === 'root' ? undefined : BR, section: secs[0] })}><KGlyph k={k} />{KN[k]}</button>)}
           </div>}
+          {atRoot && <>
+            <div className="fd-sec"><span>Fields of study</span><button type="button" onClick={() => openFields('new')}>New field</button></div>
+            {!fl.length && <div className="fd-first"><b>Start with a field</b><p>A field is the big container for a subject, like Aeronautics or Biology. Your folders and sets live inside it, and Home, Study and Search can focus on one field at a time.</p><button type="button" className="solid" onClick={() => openFields('new')}>Create your first field</button></div>}
+            {fl.map(f => (
+              <div key={f.id} className={'fd-tile' + (e.field === f.id ? ' on' : '')} style={{ ['--c' as any]: f.color }} role="button" tabIndex={0}
+                onClick={() => { e.navTo(f.id); const b = document.getElementById('mbody'); if (b) b.scrollTop = 0; }} onKeyDown={ev => { if (ev.key === 'Enter') e.navTo(f.id); }}>
+                <Mono name={f.name} color={f.color} />
+                <span className="tx"><b><span className="fd-nm">{f.name}</span>{e.field === f.id && <span className="fd-act">Active</span>}</b><small>{f.cards} cards{f.due ? <> · <span style={{ color: 'var(--warm)' }}>{f.due} due</span></> : null} · {f.folders} item{f.folders === 1 ? '' : 's'}</small></span>
+                <button className="go" onClick={ev => { ev.stopPropagation(); study('f:' + f.id); }}>Study</button>
+                {e.canEditField(f.id) && <button className="go mgr" aria-label={'Edit ' + f.name} onClick={ev => { ev.stopPropagation(); openFields('edit', f.id); }}><Ic n="dots" /></button>}
+              </div>
+            ))}
+            {(kids.length > 0 || secs.length > 0) && <div className="fd-sec"><span>Unsorted</span>{fl.length > 0 && <button type="button" onClick={() => openFields('sort')}>Sort into a field</button>}</div>}
+          </>}
           {kids.map(id => {
             const s = sum(id), nk = (FT.kids.get(id) || []).length, ns = (FT.direct.get(id) || []).length;
             return (
@@ -172,7 +189,7 @@ export function LibraryMenu({ open, onClose, onNew }: { open: boolean; onClose: 
                 <span className="tx"><b>{FT.name.get(id) || '?'}</b>
                   <small>{nk ? nk + ' folder' + (nk > 1 ? 's' : '') + ' · ' : ''}{ns ? ns + ' set' + (ns > 1 ? 's' : '') + ' · ' : ''}{s.c} cards{s.d ? <> · <span style={{ color: 'var(--warm)' }}>{s.d} due</span></> : null}</small><Kinds r={kindsOf(id)} /></span>
                 <button className="go" onClick={ev => { ev.stopPropagation(); study('f:' + id); }}>Study</button>
-                {own && <button className="go mgr" aria-label="Folder options" onClick={ev => { ev.stopPropagation(); folderMenu(id); }}><Ic n="dots" /></button>}
+                {<button className="go mgr" aria-label="Folder options" onClick={ev => { ev.stopPropagation(); folderMenu(id); }}><Ic n="dots" /></button>}
               </div>
             );
           })}
@@ -185,11 +202,11 @@ export function LibraryMenu({ open, onClose, onNew }: { open: boolean; onClose: 
                   <small>{u.c} cards{u.d ? <> · <span style={{ color: 'var(--warm)' }}>{u.d} due</span></> : null}</small>
                   <Kinds r={KM.get(s) || {}} />
                   {(FT.tags.get(s) || []).map(t => <span className="tg" key={t}>#{t}</span>)}</span>
-                {own && <button className="go mgr" aria-label="Set options" onClick={ev => { ev.stopPropagation(); setMenu(s); }}><Ic n="dots" /></button>}
+                {<button className="go mgr" aria-label="Set options" onClick={ev => { ev.stopPropagation(); setMenu(s); }}><Ic n="dots" /></button>}
               </div>
             );
           })}
-          {!kids.length && !secs.length && <p className="empty">This folder is empty.<br />Use the + button on the main screen to add a folder or cards here.</p>}
+          {!kids.length && !secs.length && !fl.length && <p className="empty">This folder is empty.<br />Use the + button on the main screen to add a folder or cards here.</p>}
         </div>
       </SheetFrame>
     </Sheet>

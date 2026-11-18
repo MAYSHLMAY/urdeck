@@ -5,7 +5,7 @@ import { fpath } from '@/lib/tree';
 import type { QCard } from '@/lib/types';
 import { Sheet, SheetFrame, esc, useEngine, Ic } from './ui';
 
-const BF: [string, string][] = [['all', 'All'], ['new', 'New'], ['learn', 'Learning'], ['due', 'Due'], ['mature', 'Mastered'], ['susp', 'Suspended'], ['mark', 'Marked'], ['leech', 'Leech']];
+const BF: [string, string][] = [['all', 'All'], ['new', 'New'], ['learn', 'Learning'], ['due', 'Due'], ['young', 'Young'], ['mature', 'Mastered'], ['susp', 'Suspended'], ['mark', 'Marked'], ['leech', 'Leech']];
 const HAY = new WeakMap<QCard, string>();
 
 function hl(html: string, toks: string[]) {
@@ -14,23 +14,25 @@ function hl(html: string, toks: string[]) {
   return html.replace(/(<[^>]+>)|([^<]+)/g, (m, tag, txt) => tag ? tag : txt.replace(rx, '<mark>$1</mark>'));
 }
 
-export function Search({ open, onClose, onStudy, onOpenFolder }: { open: boolean; onClose: () => void; onStudy: () => void; onOpenFolder: () => void }) {
+export function Search({ open, onClose, onStudy, onOpenFolder, init }: { open: boolean; onClose: () => void; onStudy: () => void; onOpenFolder: () => void; init?: string }) {
   const e = useEngine();
   const [f, setF] = useState('all'), [sel, setSel] = useState(false), [n, setN] = useState(40), [txt, setTxt] = useState(''), [openId, setOpenId] = useState<string | null>(null);
   const [typed, setTyped] = useState('');
-  const sc = useRef<HTMLDivElement>(null);
+  const sc = useRef<HTMLDivElement>(null), [act, setAct] = useState(false);
+  useEffect(() => { if (open) { setF(init || 'all'); setN(40); setAct(false); } }, [open, init]);
 
   useEffect(() => { const t = setTimeout(() => { setTxt(typed); setN(40); setOpenId(null); }, 120); return () => clearTimeout(t); }, [typed]);
   useEffect(() => { if (open && matchMedia('(pointer:fine)').matches) setTimeout(() => (document.getElementById('qin') as HTMLInputElement)?.focus(), 30); }, [open]);
 
   const toks = txt.toLowerCase().split(/\s+/).filter(Boolean), ptoks = toks.map(t => t.replace(/^#/, '')).filter(Boolean);
-  const { rows, more } = useMemo(() => {
-    if (!open) return { rows: [] as QCard[], more: false };
+  /** Every card that matches the filter, the search words and the folder choice (not limited to what is on screen). */
+  const matchIds = (limit: number): QCard[] => {
     const S = e.S, FT = e.FT, pool = sel ? new Set(e.pool().map(q => q.id)) : null, CM = new Map<string, string>(), out: QCard[] = [];
-    for (const q of e.Q) {
+    for (const q of e.QF) {
       if (pool && !pool.has(q.id)) continue;
       const c = S.cards[q.id], st = e.stateOf(q)[0];
       if (f === 'new' && st !== 'new') continue; if (f === 'learn' && st !== 'learn') continue; if (f === 'due' && st !== 'due') continue;
+      if (f === 'young' && st !== 'young') continue;
       if (f === 'mature' && st !== 'mature') continue; if (f === 'susp' && st !== 'susp') continue;
       if (f === 'mark' && !(c && c.mark)) continue; if (f === 'leech' && !e.isLeech(c)) continue;
       if (toks.length) {
@@ -41,9 +43,14 @@ export function Search({ open, onClose, onStudy, onOpenFolder }: { open: boolean
         const hay = hb + ' ' + cat;
         if (!toks.every(t => t[0] === '#' ? (t.length < 2 || cat!.includes(t.slice(1))) : hay.includes(t))) continue;
       }
-      out.push(q); if (out.length >= n + 1 && !openId) break;
+      out.push(q); if (out.length >= limit) break;
     }
-    return { rows: out.slice(0, n), more: out.length > n };
+    return out;
+  };
+  const { rows, more, total } = useMemo(() => {
+    if (!open) return { rows: [] as QCard[], more: false, total: 0 };
+    const filtered = toks.length > 0 || f !== 'all' || sel, all = matchIds(filtered ? Infinity : n + 1);
+    return { rows: all.slice(0, n), more: all.length > n, total: filtered ? all.length : 0 };
     // eslint-disable-next-line
   }, [open, e.ver, f, sel, n, txt, openId]);
 
@@ -81,7 +88,24 @@ export function Search({ open, onClose, onStudy, onOpenFolder }: { open: boolean
               })}
             </div><div className="sh">Questions</div>
           </> : null}
-          <div className="gm" style={{ margin: '0 2px 8px' }}>{toks.length || f !== 'all' || sel ? 'Showing ' + rows.length + (more ? '+' : '') + ' matches' : 'Type to search all ' + e.Q.length + ' questions'}</div>
+          <div className="gm" style={{ margin: '0 2px 8px' }}>{total ? total + ' match' + (total === 1 ? '' : 'es') + (more ? ', showing ' + rows.length : '') : toks.length || f !== 'all' || sel ? 'No matches' : 'Type to search ' + (e.fieldOk() ? 'all ' + e.QF.length + ' questions in ' + (e.FT.name.get(e.field) || 'this field') : 'all ' + e.Q.length + ' questions')}</div>
+          {total > 0 && <div className="sact">
+            <button type="button" className="solid" onClick={() => { const ids = matchIds(Infinity).filter(q => !(e.S.cards[q.id]?.susp)).map(q => String(q.id)); if (!ids.length) { e.toast('Every match is suspended'); return; } e.startPracticeIds(ids.slice(0, 200)); onStudy(); }}>Practice {Math.min(total, 200)}</button>
+            <button type="button" className="ghost" aria-expanded={act} onClick={() => setAct(v => !v)}>Do to all {total}</button>
+            {f === 'leech' && <a className="ghost" href="/leeches">Leech Lab</a>}
+            {act && <div className="sact-m" role="menu">
+              {(() => {
+                const run = (label: string, fn: (ids: string[]) => void, ask = false) => () => { const ids = matchIds(Infinity).map(q => String(q.id)); if (ask && !confirm(label + ' ' + ids.length + ' cards?')) return; fn(ids); setAct(false); e.toast(label + ': ' + ids.length + ' cards'); };
+                return <>
+                  <button type="button" onClick={run('Marked', ids => e.bulkSet(ids, { mark: 1 }))}>Mark all</button>
+                  <button type="button" onClick={run('Unmarked', ids => e.bulkSet(ids, { mark: 0 }))}>Unmark all</button>
+                  <button type="button" onClick={run('Suspended', ids => e.bulkSet(ids, { susp: 1 }), true)}>Suspend all</button>
+                  <button type="button" onClick={run('Unsuspended', ids => e.bulkSet(ids, { susp: 0 }))}>Unsuspend all</button>
+                  <button type="button" className="bad" onClick={run('Reset to new', ids => e.bulkReset(ids), true)}>Reset all to new</button>
+                </>;
+              })()}
+            </div>}
+          </div>}
           {rows.map(q => {
             const [s, sl] = e.stateOf(q), o = openId === String(q.id), c = S.cards[q.id], ht = ptoks;
             return (

@@ -16,6 +16,7 @@ import './browse.css';
 import { OfflineBadge } from '@/components/OfflineBadge';
 import { SyncBoot } from '@/components/SyncBoot';
 import { SPLASH_BOOT, SPLASH_CSS, SPLASH_HTML } from '@/lib/splash';
+import { FieldHost } from '@/components/Fields';
 import { SplashBoot } from '@/components/SplashBoot';
 import { NativeBoot } from '@/components/NativeBoot';
 import { Welcome } from '@/components/Welcome';
@@ -42,7 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: LOOK_BOOT + SPLASH_BOOT }} />
         <style dangerouslySetInnerHTML={{ __html: SPLASH_CSS }} />
       </head>
-      <body><div id="ud-splash" role="dialog" aria-modal="true" aria-label="UrDeck is starting" dangerouslySetInnerHTML={{ __html: SPLASH_HTML }} /><SplashBoot /><NativeBoot /><SyncBoot />
+      <body><div id="ud-splash" role="dialog" aria-modal="true" aria-label="UrDeck is starting" dangerouslySetInnerHTML={{ __html: SPLASH_HTML }} /><SplashBoot />
+        <FieldHost /><NativeBoot /><SyncBoot />
         <Welcome />
         <OfflineBadge />
         <Listen />{children}</body>

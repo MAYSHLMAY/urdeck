@@ -1,4 +1,6 @@
 'use client';
+import { labs } from '@/lib/prefs';
+import { FieldPill } from './Fields';
 import { applyLook, getHome, type HomeCfg } from '@/lib/look';
 import { useMe } from './Welcome';
 import { useSyncExternalStore } from 'react';
@@ -69,6 +71,7 @@ export default function Home() {
   const TIPS = ['Short sessions beat long ones. Ten minutes a day wins.', 'Say the answer out loud before you flip the card.', 'Sleep after studying locks memories in.', 'Mix topics: it feels harder and works better.', 'Wrong answers teach the most. Keep them.', 'Explain a card to an imaginary friend.', 'Start with your weakest topic while you are fresh.'];
   const tip = TIPS[Math.floor(now / 864e5) % TIPS.length];
   const nLeech = e.leeches().length;
+  const lastLab = (() => { const id = labs.recent(1)[0]; return id ? allModels.find(m => m.id === id) : undefined; })();
   const COL = ['#5B5BD6', '#E5533C', '#16A064', '#E2A21B'];
   const plainQ = (q: string) => { let t = stripKind(q); if (kindOf(q) === 'c') t = clozeFront(t, activeCloze(t), '____'); t = t.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); return t.length > 84 ? t.slice(0, 81).trim() + '...' : t; };
   const deckCards = e.upNext(4).map((q, i) => ({ id: q.id, lab: q.s || q.t || 'Card', text: plainQ(q.q) || 'Picture card', col: COL[i] }));
@@ -86,7 +89,7 @@ export default function Home() {
   ].filter(x => home.short.includes(x.id));
   const MORE = [
     { id: 'quiz', t: 'Live quiz', d: 'Play along with friends', b: 'Live', c: '#0B7BC4', ic: 'play', href: '/play' },
-    { id: 'lab', t: '3D lab', d: 'Models and simulations', b: 'New', c: '#8250DF', ic: 'cube', href: '/lab' },
+    { id: 'lab', t: '3D lab', d: lastLab ? 'Continue: ' + lastLab.name : 'Models and simulations', b: lastLab ? 'Resume' : 'New', c: '#8250DF', ic: 'cube', href: lastLab ? '/lab#' + encodeURIComponent(lastLab.id) : '/lab' },
     { id: 'duel', t: 'Challenge', d: 'Duel a friend on your cards', b: 'Hot', c: '#E5533C', ic: 'trophy', href: '/duel' },
     { id: 'leech', t: 'Leech Lab', d: nLeech ? nLeech + ' stuck card' + (nLeech === 1 ? '' : 's') + ' to treat' : 'Fix cards that keep slipping', b: nLeech ? String(nLeech) : 'Fix', c: '#F07B2B', ic: 'flag', href: '/leeches' },
     ...(isOwner() ? [{ id: 'host', t: 'Host', d: 'Run a live game', b: 'Owner', c: '#E2A21B', ic: 'star', href: '/host' }] : [])
@@ -101,6 +104,7 @@ export default function Home() {
               <button type="button" className="dk-ib av" onClick={() => setSet(true)} aria-label="Settings">{me?.pic ? <img src={me.pic} alt="" referrerPolicy="no-referrer" /> : <svg viewBox="0 0 24 24" aria-hidden><circle cx="12" cy="8" r="4" /><path d="M4 21c1-4.5 4.5-6.5 8-6.5s7 2 8 6.5" /></svg>}</button>
             </div>
           </div>
+          <FieldPill className="dk-field" />
           <h1 className="dk-h">Your memory is on <em>deck</em> today.</h1>
           <p className="dk-sub">{todo > 0 ? <><b>{todo}</b> card{todo === 1 ? '' : 's'} to review. </> : 'Nothing due right now. '}{msg}</p>
           {home.hero === 'deck' && (

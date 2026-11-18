@@ -221,3 +221,12 @@ Scheduling follows Anki's v2 model (learning steps, relearning, ease, hard/good/
 
 ## Library by type, picture viewer
 Every set in the Library shows an icon for its card type (multiple choice, flashcards, cloze, type-in, image occlusion; a mixed set shows the grid icon) and chips with how many cards of each type it holds, also on folders. The "New here" row creates a card of a chosen type directly in the current folder (a new set is created and placed there). Pictures can be added to every card type, cloze included. The picture viewer opens centred over the screen, fits it, and a tap zooms in to scroll around. On Home, the fanned cards are the next cards the study loop would show, and tapping one opens exactly that card.
+
+## Account sync, 3D lab and stats (update)
+- Signed in, sync is automatic and still offline first (saved on the device, sent when online). Besides progress, notes, cards and folders it now carries study settings, look, home layout, badges, PDF reader prefs and 3D-lab progress (`src/lib/prefs.ts`). Never synced: AI keys, reminders, vibration/sound, screen size, PDF files.
+- Run `supabase/scale.sql` (optional, additive): usage function, an index and a small `profiles.summary`. The API is stateless, so more server copies scale horizontally; the database is the only shared part.
+- 3D lab: same frame and cards as the app, model browser with favourites and recents, part quiz, flashcards from parts (join the normal review), slider positions remembered per model, Home tile resumes the last model.
+- Statistics: every number opens the matching cards in Search; Search results can be practiced or changed in bulk (mark, suspend, reset).
+
+## Fields of study
+A field is the top-level container for a subject. It is a folder whose id starts with `fd_`, so it needs no new database table: it syncs and shares like any other folder, and its color is a `fcol:<id>` entry in the folder place map. Anyone can create fields; the owner's are shared with everyone, other people's stay in their own account. Fields can only sit at the top of the library. Existing top-level folders stay under "Unsorted" until you move them (Sort into a field, or the options button on any folder or set). Deleting a field only returns its contents to Unsorted. The active field (a per-device choice, `ud-field-v1`) scopes the study pool, counts, Home hero cards, Search, Statistics and the Leech Lab. Your own arrangement of shared folders is kept as `dir:<id>` entries, so moving a folder into your field never changes what other people see.

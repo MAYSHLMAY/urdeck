@@ -10,11 +10,16 @@ export interface Tree {
   direct: Map<string, string[]>;
   secInfo: Map<string, { t: string; n: string }>;
   tags: Map<string, string[]>;
+  fcol: Map<string, string>;
 }
+
+/** A field of study is a top-level folder whose id starts with this. It can only sit at the top of the library. */
+export const FD = 'fd_';
+export const isField = (id: string) => id.startsWith(FD);
 
 export const emptyTree = (): Tree => ({
   kids: new Map(), name: new Map([['root', 'Library']]), parent: new Map(), secs: new Map(), secOf: new Map(),
-  virt: new Set(), direct: new Map(), secInfo: new Map(), tags: new Map()
+  virt: new Set(), direct: new Map(), secInfo: new Map(), tags: new Map(), fcol: new Map()
 });
 
 function isDesc2(par: Map<string, string>, id: string, start: string) {
@@ -40,8 +45,10 @@ export function buildTree(Q: QCard[], shared: FoldDB, local: FoldDB, gname: (k: 
   const fset = new Set(folders.map(f => f.id));
   folders.forEach(f => {
     name.set(f.id, f.name);
-    parent.set(f.id, f.parent && (f.parent === 'root' || name.has(f.parent) || fset.has(f.parent)) ? f.parent : 'root');
+    const want = place['dir:' + f.id] || f.parent;   // your own arrangement (dir:) wins over the shared one
+    parent.set(f.id, !isField(f.id) && want && want !== f.id && (want === 'root' || fset.has(want) || name.has(want)) ? want : 'root');
   });
+  parent.forEach((_, id) => { if (!virt.has(id)) { const pp = parent.get(id)!; if (pp !== 'root' && isDesc2(parent, id, pp)) parent.set(id, 'root'); } });
   virt.forEach(id => {
     const pp = parent.get(id)!;
     if ((pp !== 'root' && !name.has(pp)) || isDesc2(parent, id, pp)) parent.set(id, 'root');
@@ -74,7 +81,9 @@ export function buildTree(Q: QCard[], shared: FoldDB, local: FoldDB, gname: (k: 
       if (p) { const i = p.indexOf(id); if (i >= 0) p.splice(i, 1); }
     }
   });
-  return { kids, name, parent, secs, secOf, virt, direct, secInfo, tags };
+  const fcol = new Map<string, string>();
+  Object.keys(place).forEach(k => { if (k.startsWith('fcol:')) fcol.set(k.slice(5), String(place[k])); });
+  return { kids, name, parent, secs, secOf, virt, direct, secInfo, tags, fcol };
 }
 
 export const fpath = (FT: Tree, id: string) => {

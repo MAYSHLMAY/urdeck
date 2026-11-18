@@ -31,7 +31,7 @@ export function AddDialog({ open, onClose, onManage }: { open: boolean; onClose:
   useEffect(() => {
     if (!open) return;
     setOwn(isOwner()); setMsg({ t: '', c: '' });
-    setWhere(e.FT.name.has(e.BR) ? e.BR : 'root');
+    setWhere(e.BR !== 'root' && e.FT.name.has(e.BR) ? e.BR : e.fieldOk() ? e.field : 'root');
     // eslint-disable-next-line
   }, [open]);
 
