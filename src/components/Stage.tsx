@@ -108,7 +108,7 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
           {!R.open && R.auto && R.auto.qid === String(cur.id) && R.auto.state === 'working' && <span className="refready soft"> …</span>}
         </button>
       </Tools>
-      {!answered && !flipK && <div className="row"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button><button className="ghost" onClick={() => e.answer(-1)}>I don’t know</button></div>}
+      {!answered && !flipK && <div className="row two"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button><button className="ghost" onClick={() => e.answer(-1)}>I don’t know</button></div>}
       {!answered && flipK && !rev && <div className="row"><button className="ghost" onClick={() => e.laterQ()}>Ask me later</button></div>}
       <p className="swh">{!answered ? '← swipe left: ask me later' : ph === 'ok' && !x.autoGood ? '→ swipe right: Good · ← Hard' : '→ swipe right: continue'}</p>
       <div id="fb" ref={fbRef}>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ACCENTS } from '@/lib/look';
 import { isOwner } from '@/lib/api';
 import { askPassword, ask, Sheet, SheetFrame, useEngine, Ic } from './ui';
+import { refs } from '@/lib/refs';
 
 /* Fields of study: the top-level containers. One host (mounted once in the layout) shows every sheet; any button opens them by event. */
 type Ui = { type: 'switch' | 'new' | 'edit' | 'sort'; id?: string } | null;
@@ -38,7 +39,7 @@ export function FieldHost() {
 function Switcher({ open, onClose }: { open: boolean; onClose: () => void }) {
   const e = useEngine();
   if (!open) return <Sheet open={false} onClose={onClose}>{null}</Sheet>;
-  const list = e.fields(), un = e.unsorted(), nUn = un.folders.length + un.sets.length;
+  const list = e.fields(), un = e.unsorted(), R = refs(), nUn = un.folders.length + un.sets.length + [...R.pdfs, ...R.localPdfs].filter(p => e.itemAt('pdf:' + p.id) === 'root').length;
   const pick = (id: string) => { e.setField(id); onClose(); };
   return (
     <Sheet open={open} onClose={onClose}>
@@ -79,7 +80,7 @@ function FieldForm({ open, id, onClose }: { open: boolean; id?: string; onClose:
     if (id) { e.editField(id, name, col); e.toast('Saved'); onClose(); return; }
     const nid = e.addField(name, col); e.setField(nid); e.toast('Field created');
     const un = e.unsorted(); onClose();
-    if (un.folders.length + un.sets.length) setTimeout(() => openFields('sort', nid), 160);
+    if (un.folders.length + un.sets.length + refs().pdfs.length + refs().localPdfs.length) setTimeout(() => openFields('sort', nid), 160);
   };
   const del = async () => {
     const nm = e.FT.name.get(id!) || 'this field';
@@ -114,8 +115,10 @@ function Sorter({ open, pre, onClose }: { open: boolean; pre?: string; onClose: 
   const e = useEngine(), [sel, setSel] = useState<Set<string>>(new Set()), [to, setTo] = useState('');
   useEffect(() => { if (open) { setSel(new Set()); setTo(pre || e.field || e.fields()[0]?.id || ''); } }, [open, pre]); // eslint-disable-line
   if (!open) return <Sheet open={false} onClose={onClose}>{null}</Sheet>;
-  const FT = e.FT, un = e.unsorted(), fl = e.fields();
-  const rows = [...un.folders.map(id => ({ id, n: FT.name.get(id) || '?', k: 'Folder', c: [...(FT.secs.get(id) || [])].length })), ...un.sets.map(id => { const i = FT.secInfo.get(id) || { t: id, n: '' }; return { id, n: (i.n ? i.n + ' · ' : '') + i.t, k: 'Set', c: 0 }; })];
+  const FT = e.FT, un = e.unsorted(), fl = e.fields(), R = refs();
+  const docs = [...R.pdfs, ...R.localPdfs].filter(p => e.itemAt('pdf:' + p.id) === 'root'), mods: { id: string; name: string }[] = [];
+  const rows = [...un.folders.map(id => ({ id, n: FT.name.get(id) || '?', k: 'Folder', c: [...(FT.secs.get(id) || [])].length })),
+    ...docs.map(p => ({ id: 'pdf:' + p.id, n: p.title, k: 'PDF', c: 0 })), ...mods.map(m => ({ id: 'mdl:' + m.id, n: m.name, k: '3D model', c: 0 })), ...un.sets.map(id => { const i = FT.secInfo.get(id) || { t: id, n: '' }; return { id, n: (i.n ? i.n + ' · ' : '') + i.t, k: 'Set', c: 0 }; })];
   const tog = (id: string) => setSel(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const all = sel.size === rows.length && rows.length > 0;
   const go = () => { if (!sel.size || !to) return; e.moveInto([...sel], to); e.toast(sel.size + ' moved into ' + (FT.name.get(to) || 'field')); onClose(); };

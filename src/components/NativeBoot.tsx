@@ -1,6 +1,7 @@
 'use client';
 import { useEffect } from 'react';
 import { isNative } from '@/lib/base';
+import { bgHex } from '@/lib/look';
 
 /** Only does anything inside the Android app: system bars, splash, the back button, and the "feels like an app" CSS hook. */
 export function NativeBoot() {
@@ -13,14 +14,13 @@ export function NativeBoot() {
         const [{ StatusBar, Style }, { App }, { SplashScreen }] = await Promise.all([import('@capacitor/status-bar'), import('@capacitor/app'), import('@capacitor/splash-screen')]);
         const bars = () => {
           const dark = root.getAttribute('data-theme') === 'dark' || (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
-          const bg = getComputedStyle(document.body).backgroundColor || (dark ? '#0f1115' : '#f4f3fb');
-          const hex = (c: string) => { const m = /\d+/g, v = (c.match(m) || []).slice(0, 3).map(Number); return v.length === 3 ? '#' + v.map(n => n.toString(16).padStart(2, '0')).join('') : '#f4f3fb'; };
+          const hex = bgHex();
           StatusBar.setOverlaysWebView({ overlay: false }).catch(() => { /* ignore */ });
-          StatusBar.setBackgroundColor({ color: hex(bg) }).catch(() => { /* ignore */ });
+          StatusBar.setBackgroundColor({ color: hex }).catch(() => { /* ignore */ });
           StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light }).catch(() => { /* ignore */ });
         };
-        bars();
-        const mo = new MutationObserver(bars); mo.observe(root, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+        bars(); addEventListener('ud-look', bars);
+        const mo = new MutationObserver(bars); mo.observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-accent', 'class'] });
         const mq = matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener('change', bars);
         // hardware back: close an open dialog, then go back a page, and leave the app only from the home screen
         const h = await App.addListener('backButton', () => {

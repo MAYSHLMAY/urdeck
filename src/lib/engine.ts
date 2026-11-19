@@ -314,7 +314,7 @@ export class Engine {
   /** Give a leech a fresh start: lapses cleared, relearn from the first step, unsuspended. */
   healLeech(id: string) {
     const c = this.get(id); this.setCard(id, { lapses: 0, t: 'relearn', step: 0, ease: Math.max(c.ease || 2.5, 2.3), iv: 1, due: Date.now() + 10 * M, susp: 0, hl: (c.hl || 0) + 1 });
-    this.later = {}; this.toast('Leech healed. It comes back in 10 minutes.'); this.emit();
+    this.later = {}; this.logActivity('leech'); this.toast('Leech healed. It comes back in 10 minutes.'); this.emit();
   }
   isNewPE = (q: QCard) => !!q.p && !this.PE.seen[q.id];
   lab = (id: string, c: CS, g: number) => labFn(id, c, g, this.O);
@@ -419,6 +419,10 @@ export class Engine {
   fieldOf(id: string): string { let c: string | undefined = id, n = 0; while (c && c !== 'root' && n++ < 30) { if (isField(c)) return c; c = this.FT.parent.get(c) || (this.FT.secOf.get(c)); } return ''; }
   /** Things at the top of the library that are not in any field. */
   unsorted(): { folders: string[]; sets: string[] } { const FT = this.FT; return { folders: (FT.kids.get('root') || []).filter(k => !isField(k)), sets: FT.direct.get('root') || [] }; }
+  /** Folder that holds a PDF ('pdf:id') or a 3D model ('mdl:id'); 'root' when it was never put anywhere. */
+  itemAt(token: string) { return this.FT.item.get(token) || 'root'; }
+  /** Does this PDF or model belong to the active field? (Everything does when no field is active.) */
+  itemInField(token: string) { return !this.fieldOk() || this.fieldOf(this.itemAt(token)) === this.field; }
   private isLocalFolder(id: string) { return this.LF.folders.some(f => f.id === id); }
   /** Whether this device may rename, recolor or delete the field (its own, or any when unlocked as owner). */
   canEditField(id: string) { return isOwner() || this.isLocalFolder(id); }
@@ -436,8 +440,9 @@ export class Engine {
   moveInto(ids: string[], parent: string) {
     const to = parent || 'root', own = isOwner(), muts: Mut[] = [], loc: Mut[] = [];
     ids.forEach(id => {
-      const isSet = this.FT.secInfo.has(id) && !this.FT.name.has(id);
-      if (isSet) muts.push({ t: 'setPlace', key: id, value: to });
+      const isSet = this.FT.secInfo.has(id) && !this.FT.name.has(id), isItem = /^(pdf|mdl):/.test(id);
+      if (isItem) muts.push({ t: 'setPlace', key: id, value: to });
+      else if (isSet) muts.push({ t: 'setPlace', key: id, value: to });
       else if (this.FT.virt.has(id)) muts.push({ t: 'setPlace', key: 'dir:' + id, value: to });
       else if (this.isLocalFolder(id)) loc.push({ t: 'moveFolder', id, parent: to });
       else if (own) muts.push({ t: 'moveFolder', id, parent: to });
@@ -546,11 +551,12 @@ export class Engine {
   }
   /** Consecutive days with at least one answer, read from the daily log (the same data the week chart shows). */
   logStreak() {
-    const now = Date.now(), n = (k: number) => this.S.log?.[this.dayKey(addDays(this.dayStart(now), -k))]?.n || 0;
+    const now = Date.now(), n = (k: number) => { const l = this.S.log?.[this.dayKey(addDays(this.dayStart(now), -k))]; return l ? (l.n || 0) + (l.x || 0) : 0; };
     let k = n(0) > 0 ? 0 : 1, c = 0; while (k < 400 && n(k) > 0) { c++; k++; } return c;
   }
   streakTick() {
     const S = this.S, now = Date.now(), t = this.dayKey(now); if (S.last === t) return;
+    const fz0 = S.freeze || 0, sv0 = S.saved || 0;
     const yest = this.dayKey(addDays(this.dayStart(now), -1));
     if (S.last === yest) S.streak += 1;
     else {
@@ -559,7 +565,15 @@ export class Engine {
       if (S.last && S.streak > 0 && gap > 0 && gap <= (S.freeze || 0)) { S.freeze -= gap; S.streak += 1; S.saved = (S.saved || 0) + gap; } else S.streak = 1;
     }
     if (S.streak > 0 && S.streak % 7 === 0 && S.lastFz !== S.streak) { S.freeze = Math.min(2, (S.freeze || 0) + 1); S.lastFz = S.streak; }
-    S.streak = Math.max(S.streak, this.logStreak() + (S.log?.[t]?.n ? 0 : 1)); S.last = t; S.best = Math.max(S.best || 0, S.streak);
+    S.streak = Math.max(S.streak, this.logStreak() + (S.log?.[t]?.n || S.log?.[t]?.x ? 0 : 1)); S.last = t; S.best = Math.max(S.best || 0, S.streak);
+    if ((S.saved || 0) > sv0) this.toast('A streak freeze kept your streak alive.');
+    else if ((S.freeze || 0) > fz0) this.toast('You earned a streak freeze. It protects one missed day.');
+  }
+  /** Reading, a lab quiz or healing a leech also keeps the streak alive: once per kind per day, so it can't be farmed. */
+  logActivity(kind: 'read' | 'lab' | 'leech') {
+    const S = this.S, dk = this.dayKey(Date.now()), L = S.log[dk] || (S.log[dk] = { n: 0, k: 0, r: 0, rk: 0 });
+    L.ax = L.ax || {}; if (L.ax[kind]) return; L.ax[kind] = 1; L.x = (L.x || 0) + 1;
+    this.streakTick(); this.save(); this.emit();
   }
   logAns(good: boolean, wasReview: boolean) {
     const S = this.S, dk = this.dayKey(Date.now()), L = S.log[dk] || (S.log[dk] = { n: 0, k: 0, r: 0, rk: 0 });

@@ -6,6 +6,7 @@
 import { engine } from './engine';
 import { DEF } from './srs';
 import { applyLook } from './look';
+import { readerStore } from './reader';
 
 const jget = (k: string): any => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 const jset = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } };
@@ -49,6 +50,7 @@ export const prefs = {
       const home = sget('ud-home-v1'); if (home) m.set('kv:home', { v: home });
       const bd = jget('fr-badges-v1'); if (Array.isArray(bd) && bd.length) m.set('kv:badges', { v: [...bd].sort() });
       m.set('kv:ref', { v: { night: sget('fr-pdf-night', '0'), color: sget('fr-note-color', 'yellow'), marker: sget('fr-marker', '0') } });
+      readerStore().syncCollect(m);
       const L = labAll(); for (const id in L) m.set('kv:lab:' + id, { v: L[id], ts: L[id].t });
     } catch { /* a bad local value must never stop sync */ }
   },
@@ -63,6 +65,7 @@ export const prefs = {
       else if (n === 'home' && typeof v === 'string') { sset('ud-home-v1', v); home = true; }
       else if (n === 'badges' && Array.isArray(v)) { const have = new Set<string>(jget('fr-badges-v1') || []); v.forEach((x: string) => have.add(x)); jset('fr-badges-v1', [...have]); }
       else if (n === 'ref' && v && typeof v === 'object') { sset('fr-pdf-night', String(v.night ?? '0')); sset('fr-note-color', String(v.color ?? 'yellow')); sset('fr-marker', String(v.marker ?? '0')); }
+      else if (n.startsWith('rd:')) { readerStore().syncApply(n.slice(3), v); }
       else if (n.startsWith('lab:')) { const id = n.slice(4), m = labAll(); if (v == null) delete m[id]; else m[id] = v; lab = true; }
     }
     if (opts) { e.save(); e.emit(); }

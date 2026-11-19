@@ -2,17 +2,19 @@
 import { useEngine } from './ui';
 import type { Kind } from '@/lib/kind';
 
-type K = 'all' | Kind;
+type K = 'all' | Kind | 'pdf' | 'model';
 const GL: Record<K, JSX.Element> = {
   mc: <><circle cx="6" cy="7" r="2.2" /><circle cx="6" cy="17" r="2.2" /><path d="M11 7h9M11 17h9" /></>,
   f: <><rect x="3.5" y="5" width="17" height="14" rx="3" /><path d="M12 5v14" /></>,
   c: <><path d="M4 8h5M15 8h5M4 16h16" /><rect x="9.5" y="5.5" width="5" height="5" rx="1.4" /></>,
   t: <><rect x="3" y="6" width="18" height="12" rx="3" /><path d="M7 12h6M7 15h3" /></>,
   o: <><rect x="3" y="4" width="18" height="16" rx="3" /><rect x="8" y="9" width="8" height="5" rx="1.2" /></>,
+  pdf: <><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M8.5 13h7M8.5 16.5h5" /></>,
+  model: <><path d="M12 3 4 7.5v9L12 21l8-4.5v-9z" /><path d="M4 7.5 12 12l8-4.5M12 12v9" /></>,
   all: <><rect x="4" y="4" width="7" height="7" rx="2" /><rect x="13" y="4" width="7" height="7" rx="2" /><rect x="4" y="13" width="7" height="7" rx="2" /><rect x="13" y="13" width="7" height="7" rx="2" /></>
 };
 export const KGlyph = ({ k }: { k: K }) => <svg viewBox="0 0 24 24" aria-hidden>{GL[k]}</svg>;
-export const TYPES: { k: K; t: string; d: string; c: string }[] = [
+export const TYPES: { k: 'all' | Kind; t: string; d: string; c: string }[] = [
   { k: 'mc', t: 'Multiple choice', d: 'Pick the right answer from options.', c: '#5B5BD6' },
   { k: 'f', t: 'Flashcards', d: 'Flip the card, then grade yourself.', c: '#E5533C' },
   { k: 'c', t: 'Cloze', d: 'Fill in the hidden words in a sentence.', c: '#16A064' },

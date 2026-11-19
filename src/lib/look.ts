@@ -10,14 +10,26 @@ const DEF: Look = { a: 'indigo', t: 'auto' };
 export function getLook(): Look {
   try { const j = JSON.parse(localStorage.getItem(K) || '{}'); return { a: j.a || DEF.a, t: j.t || DEF.t }; } catch { return { ...DEF }; }
 }
+/** Browser/system bar colour = the page colour, so the top of the screen melts into the app. */
+export function bgHex(): string {
+  try {
+    // color-mix() computes to color(srgb …), so let a 1px canvas turn any CSS colour into plain rgb
+    const c = document.createElement('canvas'); c.width = c.height = 1; const x = c.getContext('2d')!;
+    x.fillStyle = '#000'; x.fillStyle = getComputedStyle(document.body).backgroundColor; x.fillRect(0, 0, 1, 1);
+    const d = x.getImageData(0, 0, 1, 1).data; return '#' + [d[0], d[1], d[2]].map(n => n.toString(16).padStart(2, '0')).join('');
+  } catch { return '#F3F5FB'; }
+}
+export function syncBars() {
+  const c = bgHex();
+  document.querySelectorAll('meta[name="theme-color"]').forEach(el => { el.removeAttribute('media'); el.setAttribute('content', c); });
+}
 export function applyLook(p?: Partial<Look>) {
   const n: Look = { ...getLook(), ...(p || {}) };
   try { localStorage.setItem(K, JSON.stringify(n)); } catch { /* ignore */ }
   const d = document.documentElement;
   d.dataset.accent = n.a; d.dataset.theme = n.t === 'auto' ? '' : n.t;
   ['font', 'density', 'corner', 'qa', 'layout'].forEach(x => d.removeAttribute('data-' + x));
-  const hex = (ACCENTS.find(x => x[0] === n.a) || ACCENTS[0])[2];
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', hex);
+  syncBars();
   try { dispatchEvent(new Event('ud-look')); } catch { /* ignore */ }
 }
 /** Inline script for <head>: applies the saved look before the first paint (no flash). */
@@ -36,7 +48,7 @@ export const HOME_SECTIONS: [string, string, string][] = [
 ];
 export const SHORTCUTS: [string, string][] = [
   ['study', 'Study'], ['sprint', 'Quick sprint'], ['exam', 'Exam mode'], ['listen', 'Listen'],
-  ['quiz', 'Live quiz'], ['lab', '3D lab'], ['duel', 'Challenge'], ['leech', 'Leech Lab'], ['host', 'Host']
+  ['read', 'Reader'], ['quiz', 'Live quiz'], ['lab', '3D lab'], ['duel', 'Challenge'], ['leech', 'Leech Lab'], ['host', 'Host']
 ];
 export interface HomeCfg { order: string[]; hidden: string[]; hero: 'deck' | 'compact'; qa: 'grid' | 'row'; short: string[]; cols: 1 | 2; tip: boolean }
 const ALL = HOME_SECTIONS.map(x => x[0]), SC = SHORTCUTS.map(x => x[0]);
@@ -56,12 +68,12 @@ export function getHome(): HomeCfg {
   return {
     order, hidden: (Array.isArray(j.hidden) ? j.hidden : []).filter((x: string) => ALL.includes(x)),
     hero: j.hero === 'compact' ? 'compact' : 'deck', qa: j.qa === 'row' ? 'row' : 'grid',
-    short: Array.isArray(j.short) ? [...j.short.filter((x: string) => SC.includes(x)), ...(j.sv === 2 || j.short.includes('leech') ? [] : ['leech'])] : SC, cols: j.cols === 2 ? 2 : 1, tip: j.tip !== false
+    short: Array.isArray(j.short) ? [...j.short.filter((x: string) => SC.includes(x)), ...(j.sv === 2 || j.short.includes('leech') ? [] : ['leech']), ...((j.sv || 0) >= 3 || j.short.includes('read') ? [] : ['read'])] : SC, cols: j.cols === 2 ? 2 : 1, tip: j.tip !== false
   };
 }
 export function setHome(h: Partial<HomeCfg>) {
   const n = { ...getHome(), ...h };
-  try { localStorage.setItem(KH, JSON.stringify({ ...n, sv: 2 })); } catch { /* ignore */ }
+  try { localStorage.setItem(KH, JSON.stringify({ ...n, sv: 3 })); } catch { /* ignore */ }
   try { dispatchEvent(new Event('ud-home')); } catch { /* ignore */ }
 }
 export const resetHome = () => { try { localStorage.removeItem(KH); } catch { /* ignore */ } try { dispatchEvent(new Event('ud-home')); } catch { /* ignore */ } };

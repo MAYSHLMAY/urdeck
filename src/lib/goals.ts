@@ -21,6 +21,9 @@ export function newBadges(e: Engine): Badge[] {
   if (fresh.length) try { localStorage.setItem('fr-badges-v1', JSON.stringify(have.map(b => b.id))); } catch { /* ignore */ }
   return seen.length || !fresh.length ? fresh : []; // first ever look: record quietly
 }
+/** Anything that keeps the streak alive today: answers, pages read, a lab quiz, a healed leech. */
+export function activeOn(e: Engine, dk: string) { const l = e.S.log?.[dk]; return l ? (l.n || 0) + (l.x || 0) : 0; }
+export function todayDid(e: Engine): { cards: number; read: boolean; lab: boolean; leech: boolean } { const l = e.S.log?.[e.dayKey(Date.now())] || {}; return { cards: l.n || 0, read: !!l.ax?.read, lab: !!l.ax?.lab, leech: !!l.ax?.leech }; }
 export function todayCount(e: Engine) { const l = e.S.log?.[e.dayKey(Date.now())]; return l ? l.n || 0 : 0; }
 
 export interface Weak { s: string; label: string; cards: number; tried: number; acc: number; missed: number }
@@ -51,8 +54,8 @@ export function sprintIds(e: Engine, n = 15): string[] {
 
 /** One honest streak number for the Home screen: log-based, but never lower than a freeze-protected streak. */
 export function streakInfo(e: Engine) {
-  const S = e.S, now = Date.now(), done = todayCount(e) > 0, y = e.dayKey(e.addDays(e.dayStart(now), -1));
+  const S = e.S, now = Date.now(), done = activeOn(e, e.dayKey(now)) > 0, y = e.dayKey(e.addDays(e.dayStart(now), -1));
   let live = false; for (let k = 0; k <= 1 + (S.freeze || 0); k++) if (S.last === e.dayKey(e.addDays(e.dayStart(now), -k))) live = true;
   const n = Math.max(e.logStreak(), live ? S.streak || 0 : 0);
-  return { n, done, atRisk: !done && n > 0, yest: !!S.log?.[y]?.n };
+  return { n, done, atRisk: !done && n > 0, yest: activeOn(e, y) > 0, freeze: S.freeze || 0, saved: S.saved || 0, toNext: 7 - ((S.streak || 0) % 7 || 0) || 7, best: S.best || 0 };
 }

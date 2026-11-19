@@ -229,7 +229,7 @@ export default function Lab() {
       setTimeout(() => {
         eachMat(m => m.emissive && m.emissive.setHex(0)); r.dirty = true; st.i++;
         if (st.i >= st.ids.length) {
-          r.quiz = null; labs.patch(selId, { best: Math.max(labs.rec(selId).best || 0, st.score), runs: (labs.rec(selId).runs || 0) + 1 });
+          r.quiz = null; labs.patch(selId, { best: Math.max(labs.rec(selId).best || 0, st.score), runs: (labs.rec(selId).runs || 0) + 1 }); e.logActivity('lab');
           setQuiz({ ids: st.ids, i: st.i, score: st.score, fb: '', done: true });
         } else { st.busy = false; setQuiz({ ids: st.ids, i: st.i, score: st.score, fb: '', done: false }); }
       }, 950);

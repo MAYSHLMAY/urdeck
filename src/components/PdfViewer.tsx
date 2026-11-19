@@ -5,12 +5,17 @@ import type { LocalNote } from '@/lib/notes';
 import { loadPdfjs } from '@/lib/pdfjs';
 
 export interface PdfViewerHandle {
-  scrollToPage(n: number, hi?: Hi | null): void;
+  scrollToPage(n: number, hi?: Hi | null, instant?: boolean): void;
   currentPage(): number;
   scroller(): HTMLDivElement | null;
   zoomBy(f: number): void;
   zoomTo(z: number): void;
   fit(): void;
+  /** zoom so that one whole page fits the pane */
+  fitPage(): void;
+  /** the pdf.js document (outline, thumbnails, page text) */
+  doc(): any;
+  zoom(): number;
 }
 export interface FindMark { page: number; rects: Hi[] }
 interface Props {
@@ -21,6 +26,8 @@ interface Props {
   finds?: FindMark[];
   findIdx?: number;
   night?: boolean;
+  tone?: 'sepia' | 'paper' | '';
+  onReady?: (doc: any) => void;
   onPage?: (n: number, total: number) => void;
   onZoom?: (z: number) => void;
   onNote?: (id: string, x: number, y: number) => void;
@@ -86,7 +93,7 @@ function wireTextLayer(tl: HTMLElement) {
   });
 }
 
-export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({ url, target, notes, pending, finds, findIdx = -1, night, onPage, onZoom, onNote }, ref) {
+export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({ url, target, notes, pending, finds, findIdx = -1, night, tone = '', onReady, onPage, onZoom, onNote }, ref) {
   const scroller = useRef<HTMLDivElement>(null), inner = useRef<HTMLDivElement>(null);
   const pages = useRef<(HTMLDivElement | null)[]>([]);
   const hosts = useRef<(HTMLDivElement | null)[]>([]);
@@ -96,6 +103,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
   const onPageRef = useRef(onPage); onPageRef.current = onPage;
   const onZoomRef = useRef(onZoom); onZoomRef.current = onZoom;
   const onNoteRef = useRef(onNote); onNoteRef.current = onNote;
+  const onReadyRef = useRef(onReady); onReadyRef.current = onReady;
   const notesRef = useRef(notes); notesRef.current = notes;
 
   const heightFor = (n: number) => { const s = st.current, sz = s.sizes.get(n); return (sz ? sz[1] / sz[0] : s.ratio) * s.width; };
@@ -107,6 +115,21 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
     s.rendered.delete(n);
     const h = hosts.current[n]; if (h) h.textContent = '';
   }, []);
+
+  /* at most two pages are drawn at a time, nearest to the reader first, so scrolling and zooming never stall on a long queue */
+  const q = useRef<{ want: Set<number>; run: number }>({ want: new Set(), run: 0 });
+  const renderRef = useRef<(n: number) => Promise<void>>(async () => {});
+  const pump = useCallback(() => {
+    const Q = q.current, s = st.current;
+    while (Q.run < 2 && Q.want.size) {
+      let best = -1, bd = Infinity;
+      Q.want.forEach(n => { if (!s.vis.has(n)) { Q.want.delete(n); return; } const d = Math.abs(n - s.cur); if (d < bd) { bd = d; best = n; } });
+      if (best < 0) break;
+      Q.want.delete(best); Q.run++;
+      renderRef.current(best).finally(() => { Q.run--; pump(); });
+    }
+  }, []);
+  const schedule = useCallback((n: number) => { q.current.want.add(n); pump(); }, [pump]);
 
   const render = useCallback(async (n: number) => {
     const s = st.current, doc = s.doc, key = String(Math.round(s.width));
@@ -134,7 +157,8 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
       if (tok !== s.token || !s.vis.has(n) || String(Math.round(s.width)) !== key) { s.rendered.delete(n); return; }
       const tl = document.createElement('div');
       tl.className = 'textLayer'; tl.style.setProperty('--scale-factor', String(vp.scale)); bindSelection();
-      host.textContent = ''; host.appendChild(canvas); host.appendChild(tl);
+      const first = !host.firstChild;
+      host.textContent = ''; host.classList.remove('stale'); host.classList.toggle('fresh', first); host.appendChild(canvas); host.appendChild(tl);
       const tc = await page.getTextContent();
       if (tok !== s.token || !s.vis.has(n)) return;
       await s.pdfjs.renderTextLayer({ textContentSource: tc, container: tl, viewport: vp, textDivs: [] }).promise;
@@ -145,6 +169,13 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
       s.rendered.delete(n);
     }
   }, []);
+
+  renderRef.current = render;
+  /* pages already on screen keep their old picture (stretched) until the sharp one replaces it: zoom and resize never flash white */
+  const restale = useCallback(() => {
+    const s = st.current;
+    s.vis.forEach((n: number) => { s.rendered.delete(n); const t = s.tasks.get(n); if (t) { try { t.cancel(); } catch { /* ignore */ } s.tasks.delete(n); } hosts.current[n]?.classList.add('stale'); schedule(n); });
+  }, [schedule]);
 
   /* load the document */
   useEffect(() => {
@@ -162,7 +193,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
         const p1 = await doc.getPage(1), v = p1.getViewport({ scale: 1 });
         s.doc = doc; s.ratio = v.height / v.width; s.sizes.set(1, [v.width, v.height]);
         s.base = Math.min(1100, Math.max(200, (scroller.current?.clientWidth || 360) - 16)); s.width = s.base * s.zoom;
-        setState({ s: 'ready', n: doc.numPages, err: '' });
+        setState({ s: 'ready', n: doc.numPages, err: '' }); onReadyRef.current?.(doc);
       } catch (e: any) {
         if (!dead) setState({ s: 'error', n: 0, err: e?.message || 'Could not open this PDF.' });
       }
@@ -177,10 +208,10 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
     const cx = fx ?? root.clientWidth / 2, cy = fy ?? root.clientHeight / 2;
     const px = (root.scrollLeft + cx) / Math.max(1, box.scrollWidth), py = (root.scrollTop + cy) / Math.max(1, box.scrollHeight);
     s.zoom = z; s.width = s.base * z; applySizes();
-    s.vis.forEach((n: number) => { unrender(n); render(n); });
+    restale();
     root.scrollLeft = px * box.scrollWidth - cx; root.scrollTop = py * box.scrollHeight - cy;
     onZoomRef.current?.(z);
-  }, [render, unrender]); // eslint-disable-line
+  }, [restale]); // eslint-disable-line
 
   /* observe pages, follow the scroll position, re-flow on resize, and handle zoom gestures */
   useEffect(() => {
@@ -191,7 +222,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
     const io = new IntersectionObserver(es => {
       es.forEach(e => {
         const n = +(e.target as HTMLElement).dataset.page!;
-        if (e.isIntersecting) { s.vis.add(n); render(n); } else { s.vis.delete(n); unrender(n); }
+        if (e.isIntersecting) { s.vis.add(n); schedule(n); } else { s.vis.delete(n); q.current.want.delete(n); unrender(n); }
       });
     }, { root, rootMargin: '220% 0px' });
     pages.current.forEach((el, i) => { if (el && i > 0) io.observe(el); });
@@ -213,8 +244,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
       if (w < 100 || Math.abs(w - s.base) < 4) return;
       clearTimeout(rt);
       rt = setTimeout(() => {
-        s.base = w; s.width = w * s.zoom; applySizes();
-        s.vis.forEach((n: number) => { unrender(n); render(n); });
+        s.base = w; s.width = w * s.zoom; applySizes(); restale();
       }, 160);
     });
     ro.observe(root);
@@ -274,7 +304,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
     // eslint-disable-next-line
   }, [state.s, state.n]);
 
-  const scrollToPage = useCallback(async (n: number, hi?: Hi | null) => {
+  const scrollToPage = useCallback(async (n: number, hi?: Hi | null, instant?: boolean) => {
     const s = st.current, root = scroller.current, doc = s.doc;
     if (!root || !doc) return;
     n = Math.min(Math.max(1, n), doc.numPages);
@@ -285,17 +315,18 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
     const go = () => root.scrollTo({
       top: el.offsetTop + (hi ? Math.max(0, hi.y * el.offsetHeight - root.clientHeight * 0.25) : 0) - 8,
       left: hi && s.zoom > 1.05 ? Math.max(0, el.offsetLeft + hi.x * el.offsetWidth - root.clientWidth * 0.2) : undefined,
-      behavior: 'smooth'
+      behavior: instant ? 'auto' : 'smooth'
     });
     go();
-    setTimeout(go, 450); // pages above may have changed height once drawn: aim again
+    setTimeout(go, instant ? 120 : 450); // pages above may have changed height once drawn: aim again
   }, []);
 
   const fit = useCallback(() => applyZoom(1), [applyZoom]);
+  const fitPage = useCallback(() => { const s = st.current, root = scroller.current; if (!root || !s.base) return; applyZoom(Math.min(1, Math.max(MIN_Z, (root.clientHeight - 20) / (s.base * s.ratio)))); }, [applyZoom]);
   useImperativeHandle(ref, () => ({
     scrollToPage, currentPage: () => st.current.cur, scroller: () => scroller.current,
-    zoomBy: (f: number) => applyZoom(st.current.zoom * f), zoomTo: (z: number) => applyZoom(z), fit
-  }), [scrollToPage, applyZoom, fit]);
+    zoomBy: (f: number) => applyZoom(st.current.zoom * f), zoomTo: (z: number) => applyZoom(z), fit, fitPage, doc: () => st.current.doc, zoom: () => st.current.zoom
+  }), [scrollToPage, applyZoom, fit, fitPage]);
 
   /* follow the auto-match target: page + highlight */
   useEffect(() => { if (state.s === 'ready' && target) scrollToPage(target.page, target.hi); }, [target, state.s, scrollToPage]);
@@ -333,7 +364,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer({
   }, [notes, target, finds, findIdx, pending]);
 
   return (
-    <div className={'pdf-scroll' + (night ? ' night' : '')} ref={scroller} tabIndex={0} aria-label="PDF pages">
+    <div className={'pdf-scroll' + (night ? ' night' : '') + (tone ? ' tone-' + tone : '')} ref={scroller} tabIndex={0} aria-label="PDF pages">
       {state.s === 'loading' && <p className="pdf-msg">Opening PDF…</p>}
       {state.s === 'error' && <div className="pdf-msg"><p>{state.err}</p><button className="ghost" onClick={() => setTryN(x => x + 1)}>Try again</button></div>}
       {state.s === 'idle' && <p className="pdf-msg">Choose a document to read.</p>}

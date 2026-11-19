@@ -11,6 +11,8 @@ export interface Tree {
   secInfo: Map<string, { t: string; n: string }>;
   tags: Map<string, string[]>;
   fcol: Map<string, string>;
+  /** Where each PDF ('pdf:<id>') and 3D model ('mdl:<id>') was put. Anything not listed is unsorted (top level). */
+  item: Map<string, string>;
 }
 
 /** A field of study is a top-level folder whose id starts with this. It can only sit at the top of the library. */
@@ -19,7 +21,7 @@ export const isField = (id: string) => id.startsWith(FD);
 
 export const emptyTree = (): Tree => ({
   kids: new Map(), name: new Map([['root', 'Library']]), parent: new Map(), secs: new Map(), secOf: new Map(),
-  virt: new Set(), direct: new Map(), secInfo: new Map(), tags: new Map(), fcol: new Map()
+  virt: new Set(), direct: new Map(), secInfo: new Map(), tags: new Map(), fcol: new Map(), item: new Map()
 });
 
 function isDesc2(par: Map<string, string>, id: string, start: string) {
@@ -83,7 +85,9 @@ export function buildTree(Q: QCard[], shared: FoldDB, local: FoldDB, gname: (k: 
   });
   const fcol = new Map<string, string>();
   Object.keys(place).forEach(k => { if (k.startsWith('fcol:')) fcol.set(k.slice(5), String(place[k])); });
-  return { kids, name, parent, secs, secOf, virt, direct, secInfo, tags, fcol };
+  const item = new Map<string, string>();
+  Object.keys(place).forEach(k => { if (k.startsWith('pdf:') || k.startsWith('mdl:')) { const at = String(place[k]); item.set(k, at === 'root' || name.has(at) ? at : 'root'); } });
+  return { kids, name, parent, secs, secOf, virt, direct, secInfo, tags, fcol, item };
 }
 
 export const fpath = (FT: Tree, id: string) => {

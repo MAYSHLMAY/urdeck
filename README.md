@@ -230,3 +230,28 @@ Every set in the Library shows an icon for its card type (multiple choice, flash
 
 ## Fields of study
 A field is the top-level container for a subject. It is a folder whose id starts with `fd_`, so it needs no new database table: it syncs and shares like any other folder, and its color is a `fcol:<id>` entry in the folder place map. Anyone can create fields; the owner's are shared with everyone, other people's stay in their own account. Fields can only sit at the top of the library. Existing top-level folders stay under "Unsorted" until you move them (Sort into a field, or the options button on any folder or set). Deleting a field only returns its contents to Unsorted. The active field (a per-device choice, `ud-field-v1`) scopes the study pool, counts, Home hero cards, Search, Statistics and the Leech Lab. Your own arrangement of shared folders is kept as `dir:<id>` entries, so moving a folder into your field never changes what other people see.
+
+## Reader (/read)
+A full-page PDF reading room, reachable from Home (Reader tile, "Resume" shows the last document and page) and from the Library (PDFs and 3D models now sit in the folder tree with type icons and Read/Open buttons; they can be moved into fields).
+- Tabs for several documents; library sheet with Continue reading, categories and "Add a PDF from this device" (stays on the device).
+- Remembers page and zoom per PDF (`ud-read-v1`, synced across devices as `kv:rd:<id>`), bookmarks, reading-time estimate.
+- Side panel: outline, lazy thumbnails, bookmarks and notes, search with match list.
+- Side by side (drag divider on wide screens, stacked on phones): Ask AI (uses your own Groq/xAI key, stored on device only, sees the current page and your selection), Web pane, Notes, or a second PDF. ChatGPT, Gemini and Claude refuse to be embedded, so they open in a window placed on the other half of the screen (on Android use system split-screen).
+- Themes (light, sepia, paper, night), brightness, fit width/page, read aloud, focus mode, marker mode, selection menu (highlight, underline, strike, note, define, find, Ask AI, Make card).
+- Keys: J/K page, +/- zoom, 0 fit, B bookmark, S panel, / find, G go to page, T theme, F focus, [ ] tabs, H highlight, N note.
+- Render queue and stretch-then-sharpen zoom keep scrolling smooth on large files.
+
+## One palette, app-style Home
+- All surfaces (page, hero, nav, splash, browser/system bars) come from the accent-tinted `--bg` / `--card` in `app.css`; the hero no longer has its own cream colours. The web splash uses the chosen accent; `theme-color` follows the page colour (`syncBars` in `look.ts`), and the Android status bar is re-applied whenever the accent or theme changes.
+- Phones: Home is three swipeable tabs (Today, Progress, Library) remembered per session, shortcuts and badges are horizontal carousels, and the card deck swipes. Wide screens keep the full page.
+- Native splash colour and web manifest colours changed: rebuild the APK to see them.
+
+## Study screen layout
+One compact sticky header (back, studying selector, undo, search, more menu), a stats row (New, Learning, Due, streak) over a thin progress line, then field and Add. Statistics, Browse, 3D models, Reader and Settings moved into the more menu. The whole question, options and actions fit one phone screen.
+
+## Streak: everything counts, freezes
+- A day keeps the streak if you answer a card, read 5 different pages in the Reader, finish a 3D lab quiz or heal a leech (`engine.logActivity`, once per kind per day; stored in `S.log[day].x/ax`, so it syncs with the daily log).
+- Streak freezes (already in the engine) are earned every 7 days in a row, up to 2, and cover a missed day automatically. New: a Streak panel (tap the flame on Home or Study) shows what counts today and your freezes, and toasts tell you when one is earned or used.
+
+## Real reading tracking
+A Reader page counts as read only after time on it that scales with its text (about words/12 seconds, between 7 and 28 s), only while the app is visible and you were active in the last minute (read-aloud counts as active). Skimming past pages counts nothing. Read pages are stored per PDF as ranges (`Prog.rd`) and merged across devices; five newly read pages in a day keep the streak. The Reader shows a progress bar under the page number, a check on counted pages, ticks in the thumbnails, "N of M pages read" in the library, and today's count toward the streak.

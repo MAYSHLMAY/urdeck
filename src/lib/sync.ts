@@ -56,7 +56,7 @@ class Sync {
     if (this.armed) return; this.armed = true;
     const mark = () => { this.dirty = true; clearTimeout(this.deb); this.deb = setTimeout(() => this.run(), 1500); };
     engine().subscribe(mark); notes().subscribe(mark); prefs.subscribe(mark);
-    ['ud-look', 'ud-home'].forEach(ev => addEventListener(ev, mark));
+    ['ud-look', 'ud-home', 'ud-read'].forEach(ev => addEventListener(ev, mark));
     setInterval(() => { if (!document.hidden) this.run(); }, 7000);
     document.addEventListener('visibilitychange', () => this.run());
     addEventListener('online', () => this.run()); addEventListener('focus', () => this.run());

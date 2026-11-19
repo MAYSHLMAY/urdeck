@@ -210,3 +210,11 @@ aside.refd.full .pdf-scroll{padding:14px 8px}
 .defcard .ft{margin-top:8px;font-size:.7rem;color:var(--mute)}
 .defcard .x{all:unset;position:absolute;top:8px;right:10px;cursor:pointer;color:var(--mute)}
 @media(max-width:700px){.selmenu{padding:6px;border-radius:14px}.selmenu .smc{gap:8px;padding-bottom:6px;margin-bottom:4px}.selmenu .smc .cdot{width:22px;height:22px}.selmenu .sma button{min-width:54px;padding:6px 2px;font-size:.66rem}.selmenu .sma button svg{width:18px;height:18px}}
+/* smooth reading: the old picture stays (stretched) until the sharp one is ready */
+.pdf-host canvas{width:100%!important;height:100%!important}
+.pdf-host.stale .textLayer{visibility:hidden}
+.pdf-host.fresh canvas{animation:pdfin .2s ease-out}@keyframes pdfin{from{opacity:0}to{opacity:1}}
+.pdf-scroll{scroll-behavior:auto;overflow-anchor:none}
+.pdf-scroll.tone-sepia .pdf-host canvas{filter:sepia(.45) saturate(.9) brightness(.97)}.pdf-scroll.tone-sepia{background:#d9ccb2}.pdf-scroll.tone-sepia .pdf-page{background:#f1e6cf}
+.pdf-scroll.tone-paper .pdf-host canvas{filter:contrast(1.05) brightness(.98)}.pdf-scroll.tone-paper{background:#e9e6df}
+@media (prefers-reduced-motion:reduce){.pdf-host.fresh canvas{animation:none}}

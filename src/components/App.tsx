@@ -12,6 +12,8 @@ import { HighlightTools } from './Highlights';
 import { LibraryMenu } from './LibraryMenu';
 import { Search } from './Search';
 import { FieldPill } from './Fields';
+import { openStreak } from './Streak';
+import { streakInfo } from '@/lib/goals';
 import { Stats } from './Stats';
 import { Settings } from './Settings';
 import { AddDialog } from './AddDialog';
@@ -32,6 +34,7 @@ export default function App() {
   const [dlg, setDlg] = useState<Dlg>('');
   const [sf, setSf] = useState('all');
   const [infoId, setInfoId] = useState<string | null>(null);
+  const [more, setMore] = useState(false);
   const [editor, setEditor] = useState<EditorState>(null);
   const close = () => setDlg('');
 
@@ -93,29 +96,39 @@ export default function App() {
   return (
     <>
       <div className="wrap">
-        <div className="top">
-          <h1><Link href="/" className="homeln" aria-label="Home" title="Home">{PLANE}UrDeck</Link></h1>
-          <div className="tools">
-            <button className="ico" disabled={!e.U.length} onClick={() => e.doUndo()} aria-label="Undo" title="Undo (Z)"><Icon n="undo" /></button>
-            <button className="ico" onClick={() => { setSf('all'); setDlg('browse'); }} aria-label="Search" title="Search (/)"><Icon n="search" /></button>
-            <button className="ico" onClick={() => setDlg('stats')} aria-label="Statistics"><Icon n="chart" /></button>
-            <button className="ico" onClick={() => setDlg('models')} aria-label="3D models" title="3D models"><Icon n="cube" /></button>
-            <button className="ico" onClick={() => setDlg('set')} aria-label="Settings"><Icon n="set" /></button>
+        <header className="sh">
+          <div className="sh-bar">
+            <Link href="/" className="sh-ib" aria-label="Home" title="Home"><Ic n="arrowL" /></Link>
+            <button className="pick sh-pick" onClick={() => { e.openMenu(); setDlg('menu'); }} aria-haspopup="dialog"><span className="pk">Studying</span><b>{e.selLabel()}</b><span aria-hidden="true"><Ic n="chevD" /></span></button>
+            <button className="sh-ib" disabled={!e.U.length} onClick={() => e.doUndo()} aria-label="Undo" title="Undo (Z)"><Icon n="undo" /></button>
+            <button className="sh-ib" onClick={() => { setSf('all'); setDlg('browse'); }} aria-label="Search" title="Search (/)"><Icon n="search" /></button>
+            <div className="sh-mw">
+              <button className={'sh-ib' + (more ? ' on' : '')} onClick={() => setMore(m => !m)} aria-label="More" aria-expanded={more} aria-haspopup="menu"><Ic n="dots" /></button>
+              {more && (
+                <>
+                  <button className="sh-scrim" aria-label="Close menu" onClick={() => setMore(false)} />
+                  <div className="sh-menu" role="menu">
+                    <button role="menuitem" onClick={() => { setMore(false); setDlg('stats'); }}><Icon n="chart" />Statistics</button>
+                    <button role="menuitem" onClick={() => { setMore(false); setDlg('grid'); }}><Ic n="grid" />Browse many cards</button>
+                    <button role="menuitem" onClick={() => { setMore(false); setDlg('models'); }}><Icon n="cube" />3D models</button>
+                    <Link role="menuitem" href="/read" onClick={() => setMore(false)}><Ic n="file" />Reader</Link>
+                    <button role="menuitem" onClick={() => { setMore(false); setDlg('set'); }}><Icon n="set" />Settings</button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-        <p className="sub1"><Ic n="fire" className="fireic" /> {sub}</p>
-        <div className="path"><div className="track" /><i id="fill" style={{ width: p + '%' }} /><span id="plane" style={{ left: Math.max(2, Math.min(98, p)) + '%' }}>{PLANE}</span></div>
-        <div className="counts">
-          <div className="cn n"><b>{c.nToday}</b><small>New</small></div>
-          <div className="cn l"><b>{c.l}</b><small>Learning</small></div>
-          <div className="cn d"><b>{c.dToday}</b><small>Due</small></div>
-        </div>
-        <div className="stats2"><b>{c.m}</b> mastered of {c.tot} · <b>{S.done}</b> answered today{S.done ? ' (' + Math.round(S.ok / S.done * 100) + '% right)' : ''}</div>
-        <FieldPill className="st-field" />
-        <div className="pickrow">
-          <button className="pick" onClick={() => { e.openMenu(); setDlg('menu'); }} aria-haspopup="dialog"><span className="pk">Studying</span><b>{e.selLabel()}</b><span aria-hidden="true"><Ic n="chevD" /></span></button>
-          <button className="plus alt" onClick={() => setDlg('grid')} aria-label="Browse many cards at once" title="Browse many cards at once"><Ic n="grid" /></button>
-          <button className="plus" onClick={() => setDlg('add')} aria-label="Add folder or cards" title="Add folder or cards">+</button>
+          <div className="sh-stats">
+            <button type="button" className="sh-chip n" onClick={() => setDlg('stats')} aria-label={c.nToday + ' new'}><small>New</small><b>{c.nToday}</b></button>
+            <button type="button" className="sh-chip l" onClick={() => setDlg('stats')} aria-label={c.l + ' learning'}><small>Learning</small><b>{c.l}</b></button>
+            <button type="button" className="sh-chip d" onClick={() => setDlg('stats')} aria-label={c.dToday + ' due'}><small>Due</small><b>{c.dToday}</b></button>
+            <button type="button" className="sh-fire" title={sub} onClick={openStreak} aria-label="Streak details"><Ic n="fire" className="fireic" /><b>{streakInfo(e).n}</b>{(S.freeze || 0) > 0 && <small><Ic n="snow" />{S.freeze}</small>}</button>
+          </div>
+          <i className="sh-prog" role="progressbar" aria-label="Progress through today's cards" aria-valuenow={Math.round(p)} aria-valuemin={0} aria-valuemax={100}><u style={{ width: p + '%' }} /></i>
+        </header>
+        <div className="sh-sub">
+          <FieldPill className="st-field" />
+          <button className="sh-add" onClick={() => setDlg('add')} aria-label="Add folder or cards" title="Add folder or cards"><Ic n="plus" />Add</button>
         </div>
         <SpeedBar />
         <div id="mode" className={e.cram && !e.speed ? 'on' : ''}><span>Practice: {e.deck.length} left · your schedule is not changed.</span><button className="ghost" onClick={() => e.exitPractice()}>Exit</button></div>

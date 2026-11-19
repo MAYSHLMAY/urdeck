@@ -1,4 +1,6 @@
 'use client';
+import { openStreak } from './Streak';
+import { readerStore } from '@/lib/reader';
 import { labs } from '@/lib/prefs';
 import { FieldPill } from './Fields';
 import { applyLook, getHome, type HomeCfg } from '@/lib/look';
@@ -28,12 +30,40 @@ import { badges, newBadges, todayCount, weakTopics, overconfident, sprintIds, st
 import { SiteNav } from './SiteChrome';
 
 /** The landing page: every category (pool) is a card with its card sets, PDFs and 3D models in one place. */
+/** Tap a deck card: it grows to fill the screen while the study page opens underneath, then melts away (no flash, no reload feel). */
+function zoomInto(el: HTMLElement, go: () => void) {
+  try {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches || !el.animate) { go(); return; }
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el), d = document.documentElement;
+    const o = el.cloneNode(true) as HTMLElement;
+    Object.assign(o.style, { position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', margin: '0', zIndex: '2147483000', transform: 'none', transition: 'none', pointerEvents: 'none', boxShadow: 'none' });
+    o.removeAttribute('aria-label'); o.setAttribute('aria-hidden', 'true');
+    const rot = (cs.getPropertyValue('--r') || '0deg').trim();
+    document.body.appendChild(o);
+    const kids = Array.from(o.children) as HTMLElement[], rad = cs.borderRadius || '24px';
+    const bg = getComputedStyle(document.body).backgroundColor;
+    kids.forEach(k => k.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, fill: 'forwards', easing: 'ease-out' }));
+    const grow = o.animate([
+      { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', borderRadius: rad, transform: `rotate(${rot})`, backgroundColor: cs.backgroundColor },
+      { left: '0px', top: '0px', width: '100vw', height: '100dvh', borderRadius: '0px', transform: 'rotate(0deg)', backgroundColor: bg }
+    ], { duration: 260, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' });
+    d.classList.add('zin');
+    let done = false;
+    const finish = () => { if (done) return; done = true; o.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out', fill: 'forwards' }).finished.finally(() => { o.remove(); setTimeout(() => d.classList.remove('zin'), 250); }); };
+    setTimeout(go, 120); // start loading the study page while the card is still growing
+    setTimeout(() => { const t0 = Date.now(), tick = () => { if (location.pathname.replace(/\/$/, '') === '/study' && document.querySelector('.card') || Date.now() - t0 > 900) finish(); else requestAnimationFrame(tick); }; tick(); }, 230);
+  } catch { go(); }
+}
+
 export default function Home() {
   const e = useEngine(), R = usePoolSync(), router = useRouter();
   const [liveG, setLive] = useState<any[]>([]);
   useEffect(() => watchLobby(g => setLive(g)), []);
   const home = useHomeCfg(), me = useMe(), [cz, setCz] = useState(false);
   useEffect(() => { const f = () => setCz(true); addEventListener('ud-arrange', f); return () => removeEventListener('ud-arrange', f); }, []);
+  /* phones: Home is three tabs you can swipe between (Today, Progress, Library) instead of one long page */
+  const [phone, setPhone] = useState(false), [ptab, setPtab] = useState<'today' | 'progress' | 'library'>('today'), [dir, setDir] = useState(1), [rot, setRot] = useState(0);
+  useEffect(() => { const m = matchMedia('(max-width: 899px)'), f = () => setPhone(m.matches); f(); m.addEventListener('change', f); try { const t = sessionStorage.getItem('ud-htab'); if (t === 'progress' || t === 'library') setPtab(t); } catch { /* ignore */ } return () => m.removeEventListener('change', f); }, []);
   const [mounted, setMounted] = useState(false), [set, setSet] = useState(false), [open, setOpen] = useState<string | null>(null);
 
   useEffect(() => { setMounted(true); e.init(); if (e.typeChosen || e.kindSel !== 'all') e.resetType(); if (new URLSearchParams(location.search).get('settings')) { setSet(true); history.replaceState(null, '', '/'); } }, []); // eslint-disable-line
@@ -71,10 +101,11 @@ export default function Home() {
   const TIPS = ['Short sessions beat long ones. Ten minutes a day wins.', 'Say the answer out loud before you flip the card.', 'Sleep after studying locks memories in.', 'Mix topics: it feels harder and works better.', 'Wrong answers teach the most. Keep them.', 'Explain a card to an imaginary friend.', 'Start with your weakest topic while you are fresh.'];
   const tip = TIPS[Math.floor(now / 864e5) % TIPS.length];
   const nLeech = e.leeches().length;
+  const lastRead = (() => { const r = readerStore().recent(1)[0]; const d = r ? R.pdf(r.id) : null; return r && d ? { id: r.id, t: d.title, p: r.p } : null; })();
   const lastLab = (() => { const id = labs.recent(1)[0]; return id ? allModels.find(m => m.id === id) : undefined; })();
   const COL = ['#5B5BD6', '#E5533C', '#16A064', '#E2A21B'];
   const plainQ = (q: string) => { let t = stripKind(q); if (kindOf(q) === 'c') t = clozeFront(t, activeCloze(t), '____'); t = t.replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(); return t.length > 84 ? t.slice(0, 81).trim() + '...' : t; };
-  const deckCards = e.upNext(4).map((q, i) => ({ id: q.id, lab: q.s || q.t || 'Card', text: plainQ(q.q) || 'Picture card', col: COL[i] }));
+  const deckRaw = e.upNext(4), deckCards = deckRaw.map((_, i) => deckRaw[(i + rot) % deckRaw.length]).map((q, i) => ({ id: q.id, lab: q.s || q.t || 'Card', text: plainQ(q.q) || 'Picture card', col: COL[i] }));
   const greet = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
   const card = (x: any, cls: string) => {
     const inner = <><span className="uc-i"><Ic n={x.ic} /></span>{x.b && <span className="uc-b">{x.b}</span>}<b className="uc-t">{x.t}</b><span className="uc-d">{x.d}</span><Ic n={x.ic} className="uc-wm" /></>;
@@ -89,6 +120,7 @@ export default function Home() {
   ].filter(x => home.short.includes(x.id));
   const MORE = [
     { id: 'quiz', t: 'Live quiz', d: 'Play along with friends', b: 'Live', c: '#0B7BC4', ic: 'play', href: '/play' },
+    { id: 'read', t: 'Reader', d: lastRead ? lastRead.t + ' · p. ' + lastRead.p.page : 'Read your PDFs, no cards needed', b: lastRead ? 'Resume' : 'PDF', c: '#D6453D', ic: 'file', href: lastRead ? '/read?pdf=' + encodeURIComponent(lastRead.id) : '/read' },
     { id: 'lab', t: '3D lab', d: lastLab ? 'Continue: ' + lastLab.name : 'Models and simulations', b: lastLab ? 'Resume' : 'New', c: '#8250DF', ic: 'cube', href: lastLab ? '/lab#' + encodeURIComponent(lastLab.id) : '/lab' },
     { id: 'duel', t: 'Challenge', d: 'Duel a friend on your cards', b: 'Hot', c: '#E5533C', ic: 'trophy', href: '/duel' },
     { id: 'leech', t: 'Leech Lab', d: nLeech ? nLeech + ' stuck card' + (nLeech === 1 ? '' : 's') + ' to treat' : 'Fix cards that keep slipping', b: nLeech ? String(nLeech) : 'Fix', c: '#F07B2B', ic: 'flag', href: '/leeches' },
@@ -108,10 +140,10 @@ export default function Home() {
           <h1 className="dk-h">Your memory is on <em>deck</em> today.</h1>
           <p className="dk-sub">{todo > 0 ? <><b>{todo}</b> card{todo === 1 ? '' : 's'} to review. </> : 'Nothing due right now. '}{msg}</p>
           {home.hero === 'deck' && (
-            <div className="dk-fan">
+            <div className="dk-fan" onTouchStart={ev => { const t = ev.touches[0]; (ev.currentTarget as any)._s = [t.clientX, t.clientY]; }} onTouchEnd={ev => { const a = (ev.currentTarget as any)._s, t = ev.changedTouches[0]; if (!a || deckRaw.length < 2) return; const dx = t.clientX - a[0]; if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(t.clientY - a[1])) { (ev.currentTarget as any)._sw = Date.now(); setRot(r => (r + (dx < 0 ? 1 : deckRaw.length - 1)) % deckRaw.length); try { navigator.vibrate?.(6); } catch { /* ignore */ } } }}>
               {deckCards.length ? deckCards.map((d, i) => (
-                <button type="button" key={d.id} className={'dk-c c' + i} style={{ ['--c' as any]: d.col }} aria-label={'Study this card: ' + d.text} onClick={() => { e.openCard(d.id); router.push('/study'); }}><small>{d.lab}</small><b>{d.text}</b><span>Card {i + 1} of {Math.max(todo, deckCards.length)}</span></button>
-              )) : <Link href="/study" className="dk-c c0" style={{ ['--c' as any]: COL[0] }}><small>Your deck</small><b>Add your first cards to start studying.</b><span>Card 1 of 1</span></Link>}
+                <button type="button" key={d.id} className={'dk-c c' + i} aria-label={'Study this card: ' + d.text} onClick={ev => { e.openCard(d.id); zoomInto(ev.currentTarget, () => router.push('/study')); }}><small>{d.lab}</small><b>{d.text}</b><span>Card {i + 1} of {Math.max(todo, deckCards.length)}</span></button>
+              )) : <Link href="/study" className="dk-c c0"><small>Your deck</small><b>Add your first cards to start studying.</b><span>Card 1 of 1</span></Link>}
             </div>
           )}
           <div className="dk-bar">
@@ -139,7 +171,7 @@ export default function Home() {
     </>),
     progress: (<>
         <section className="panel">
-          <div className="streakln"><Ic n="fire" /><b>{st.n}</b> day streak{st.atRisk ? <small className="risk">study today to keep it</small> : st.done ? <small className="okk">done for today</small> : null}{(S.freeze || 0) > 0 ? <small className="fz"><Ic n="snow" /> {S.freeze} freeze{S.freeze > 1 ? 's' : ''}</small> : null}{e.examInfo() ? <small> · {e.examInfo()}</small> : null}</div>
+          <button type="button" className="streakln" onClick={openStreak} aria-label="Streak details"><Ic n="fire" /><b>{st.n}</b> day streak{st.atRisk ? <small className="risk">study today to keep it</small> : st.done ? <small className="okk">done for today</small> : null}{(S.freeze || 0) > 0 ? <small className="fz"><Ic n="snow" /> {S.freeze} freeze{S.freeze > 1 ? 's' : ''}</small> : null}{e.examInfo() ? <small> · {e.examInfo()}</small> : null}<span className="stk-go" aria-hidden><Ic n="chevR" /></span></button>
           <div className="goalbar" aria-label="Daily goal"><div><i style={{ width: gp * 100 + '%' }} className={gp >= 1 ? 'full' : ''} /></div><span>{tc >= goal ? 'Goal reached!' : tc + ' / ' + goal + ' today'}</span></div>
           <div className="week" aria-label="Answers in the last 7 days">{week.map((w, i) => <div key={i} className={w.today ? 'td' : ''} title={w.n + ' answers'}><i style={{ height: w.n ? Math.max(14, w.n / wmax * 100) + '%' : undefined, animationDelay: i * 50 + 'ms' }} className={(w.n ? 'on' : 'z') + (w.n >= goal ? ' hit' : '')} /><small>{w.d}</small></div>)}</div>
           <p className="wnote">{pct}% mastered · {c.tot - c.m} to go</p>
@@ -194,11 +226,33 @@ export default function Home() {
       <main className={'hm' + (home.cols === 2 ? ' two' : '')}>
         {liveG.length > 0 && liveG.slice(0, 2).map((g: any) => <Link key={g.pin} className="livebn" href={'/play?pin=' + g.pin}><i className="pulse" /><b>Live now: {g.title}</b><span>Join</span></Link>)}
 
-        <div className="hsecs">
-          {home.order.map((id, ix) => home.hidden.includes(id) ? null : (
-            <div key={id} className={'hsx s-' + id} style={{ ['--i' as any]: ix }}>{SEC[id]}</div>
-          ))}
-        </div>
+        {(() => {
+          const GROUPS: Record<string, string[]> = { today: ['today', 'stats', 'shortcuts'], progress: ['progress', 'mistakes', 'needs', 'badges'], library: ['topics'] };
+          const vis = (id: string) => !home.hidden.includes(id);
+          const tabs = (['today', 'progress', 'library'] as const).filter(t => GROUPS[t].some(vis));
+          const cur = tabs.includes(ptab) ? ptab : tabs[0];
+          const go2 = (t: 'today' | 'progress' | 'library') => { if (t === cur) return; setDir(tabs.indexOf(t) > tabs.indexOf(cur) ? 1 : -1); setPtab(t); try { sessionStorage.setItem('ud-htab', t); } catch { /* ignore */ } try { navigator.vibrate?.(8); } catch { /* ignore */ } scrollTo({ top: 0 }); };
+          const swipe = { x: 0, y: 0, ok: false };
+          const L: Record<string, string> = { today: 'Today', progress: 'Progress', library: 'Library' };
+          const list = phone ? home.order.filter(id => vis(id) && GROUPS[cur].includes(id)) : home.order.filter(vis);
+          return (
+            <>
+              {phone && tabs.length > 1 && (
+                <div className="htabs" role="tablist" aria-label="Home sections" style={{ ['--n' as any]: tabs.length, ['--k' as any]: tabs.indexOf(cur) }}>
+                  <i aria-hidden />
+                  {tabs.map(t => <button key={t} type="button" role="tab" aria-selected={t === cur} className={t === cur ? 'on' : ''} onClick={() => go2(t)}>{L[t]}</button>)}
+                </div>
+              )}
+              <div key={phone ? cur : 'all'} className={'hsecs' + (phone ? ' ptab ' + (dir > 0 ? 'fwd' : 'back') : '')}
+                onTouchStart={ev => { if (!phone) return; const t = ev.touches[0], el = ev.target as HTMLElement; swipe.x = t.clientX; swipe.y = t.clientY; swipe.ok = !el.closest('.dk-fan,.modes.row,.topics,.week,input,textarea,select,dialog'); }}
+                onTouchEnd={ev => { if (!phone || !swipe.ok) return; const t = ev.changedTouches[0], dx = t.clientX - swipe.x, dy = t.clientY - swipe.y; if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 2) { const i = tabs.indexOf(cur) + (dx < 0 ? 1 : -1); if (tabs[i]) go2(tabs[i]); } }}>
+                {list.map((id, ix) => (
+                  <div key={id} className={'hsx s-' + id} style={{ ['--i' as any]: ix }}>{SEC[id]}</div>
+                ))}
+              </div>
+            </>
+          );
+        })()}
         <button type="button" className="hcustom" onClick={() => setCz(true)}><Ic n="sliders" /> Customize home</button>
       </main>
       <HomeCustomize open={cz} onClose={() => setCz(false)} cfg={home} />

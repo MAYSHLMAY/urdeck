@@ -17,6 +17,7 @@ import { OfflineBadge } from '@/components/OfflineBadge';
 import { SyncBoot } from '@/components/SyncBoot';
 import { SPLASH_BOOT, SPLASH_CSS, SPLASH_HTML } from '@/lib/splash';
 import { FieldHost } from '@/components/Fields';
+import { StreakHost } from '@/components/Streak';
 import { SplashBoot } from '@/components/SplashBoot';
 import { NativeBoot } from '@/components/NativeBoot';
 import { Welcome } from '@/components/Welcome';
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
   icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }, { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: '/apple-touch-icon.png' },
   appleWebApp: { capable: true, title: 'UrDeck', statusBarStyle: 'default' }
 };
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#0E7A4F' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#F3F5FB' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -44,7 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <style dangerouslySetInnerHTML={{ __html: SPLASH_CSS }} />
       </head>
       <body><div id="ud-splash" role="dialog" aria-modal="true" aria-label="UrDeck is starting" dangerouslySetInnerHTML={{ __html: SPLASH_HTML }} /><SplashBoot />
-        <FieldHost /><NativeBoot /><SyncBoot />
+        <FieldHost /><StreakHost /><NativeBoot /><SyncBoot />
         <Welcome />
         <OfflineBadge />
         <Listen />{children}</body>
