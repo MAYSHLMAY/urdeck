@@ -108,13 +108,23 @@ export function AddDialog({ open, onClose, onManage }: { open: boolean; onClose:
               ) : tab === 'X' ? (
                 <div>
                   <p className="ad-help">Bring cards in from a spreadsheet, Anki, Quizlet or a cards file.</p>
-                  <div className="ad-chips" aria-hidden><span>CSV</span><span>Anki</span><span>Quizlet</span><span>Cards file</span><span>3D sim</span></div>
+                  <div className="ad-chips" aria-hidden><span>CSV</span><span>Anki .apkg</span><span>Quizlet</span><span>Cards file</span><span>3D sim</span></div>
                   <label className="pickr"><input type="checkbox" checked={flipIn} onChange={ev => setFlipIn(ev.target.checked)} /><span>Two-column files become flip cards</span></label>
-                  <input type="file" className="ad-file" accept=".csv,.tsv,.txt,.html,.htm,.js,text/html,text/javascript,text/csv,text/plain,text/tab-separated-values" multiple disabled={busy}
+                  <input type="file" className="ad-file" accept=".apkg,.csv,.tsv,.txt,.html,.htm,.js,text/html,text/javascript,text/csv,text/plain,text/tab-separated-values" multiple disabled={busy}
                     onChange={async ev => {
                       const t = ev.target, fs = Array.from(t.files || []); t.value = ''; if (!fs.length) return;
                       setBusy(true); const out: string[] = []; let bad = false;
                       for (const f of fs) {
+                        if (/\.apkg$/i.test(f.name)) {
+                          try {
+                            const { apkgToCards } = await import('@/lib/apkg');
+                            const r = await apkgToCards(await f.arrayBuffer(), f.name, t => say(t, 'ok'));
+                            if (!r.n) { out.push(f.name + ': ' + (r.note || 'no usable cards found')); bad = true; continue; }
+                            const a = await e.addPack(f.name.replace(/\.[^.]+$/, '') + '.txt', importToPack(f.name, r.text, '', false).text, await whereFor(r.text), ctags.trim());
+                            out.push(a.msg + (r.imgs ? ' · ' + r.imgs + ' picture' + (r.imgs > 1 ? 's' : '') : '') + (r.skipped ? ' · ' + r.skipped + ' note(s) skipped' : '') + (r.imgSkipped ? ' · ' + r.imgSkipped + ' picture(s) left out (back sides or too large)' : '')); if (!a.ok) bad = true;
+                          } catch (x: any) { out.push(f.name + ': could not read this package (' + (x?.message || 'error') + ').'); bad = true; }
+                          continue;
+                        }
                         const txt = await f.text();
                         if (isSim(txt)) {
                           if (!isOwner()) { out.push(f.name + ': simulations can only be added by the owner (sign in as owner).'); bad = true; continue; }

@@ -1,5 +1,5 @@
 /* Offline support. App shell and static files are cached; Supabase data is cached by the app itself (IndexedDB). */
-const V = 'fr-shell-v4';
+const V = 'fr-shell-v5';
 
 self.addEventListener('install', e => {
   self.skipWaiting();

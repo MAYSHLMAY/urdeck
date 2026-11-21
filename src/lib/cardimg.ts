@@ -31,7 +31,7 @@ export function withImg(q: string, img: CardImg | null): string {
   return text + tok;
 }
 /** Text-only view of a question (no picture token). */
-export const qText = (q: string) => String(q || '').replace(/<!--(?:img|k|occ|src):[^>]*-->/g, '').replace(/\{\{c(\d+)::([\s\S]*?)(?:::([^}]*?))?\}\}/g, (_m, _k, _a, h) => '[' + (h || '…') + ']').trim();
+export const qText = (q: string) => String(q || '').replace(/<!--(?:img|k|occ|src|mdl):[^>]*-->/g, '').replace(/\{\{c(\d+)::([\s\S]*?)(?:::([^}]*?))?\}\}/g, (_m, _k, _a, h) => '[' + (h || '…') + ']').trim();
 
 /** Shrink a picture in the browser so it stays small (JPEG/WebP). Returns a data URL. */
 export async function compressImage(file: Blob, maxSide = 1100, maxBytes = 150_000): Promise<string> {
@@ -46,4 +46,11 @@ export async function compressImage(file: Blob, maxSide = 1100, maxBytes = 150_0
     if (q > 0.55) q -= 0.1; else side = Math.round(side * 0.8);
   }
   return out;
+}
+
+/** A card can point at a 3D model (and one part of it): <!--mdl:modelId~partId-->. */
+export const withMdl = (q: string, model: string, part?: string) => String(q || '').replace(/<!--mdl:[^>]*-->/g, '') + '<!--mdl:' + encodeURIComponent(model) + (part ? '~' + encodeURIComponent(part) : '') + '-->';
+export function parseMdl(q: string): { model: string; part: string } | null {
+  const m = /<!--mdl:([^~>]+)(?:~([^>]*))?-->/.exec(String(q || '')); if (!m) return null;
+  try { return { model: decodeURIComponent(m[1]), part: m[2] ? decodeURIComponent(m[2]) : '' }; } catch { return null; }
 }

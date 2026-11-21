@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { qText } from '@/lib/cardimg';
+import { qText, parseMdl } from '@/lib/cardimg';
+import Link from 'next/link';
 import { M, D } from '@/lib/srs';
 import { useEngine, esc, Ic, ask } from './ui';
 import { useRefs } from './refHooks';
@@ -90,6 +91,7 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
       </div>
       <h2 className="q" ref={qRef} />
       <CardFigure key={cur.id} q={cur.q} reveal={answered || rev} />
+      {(answered || rev) && parseMdl(cur.q) && <Link className="mdl-link" prefetch={false} href={'/lab#' + encodeURIComponent(parseMdl(cur.q)!.model) + (parseMdl(cur.q)!.part ? '~' + encodeURIComponent(parseMdl(cur.q)!.part) : '')}><Ic n="cube" />View in 3D</Link>}
       {flipK && <FlipBody key={cur.id + ':' + e.showN} kind={kind} cur={cur} c={c} rev={rev} setRev={setRev} />}
       {!flipK && <div className="opts">
         {e.curOpts.map((o, k) => (

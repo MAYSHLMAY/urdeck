@@ -1,4 +1,5 @@
 'use client';
+import { isNative } from '@/lib/base';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -29,7 +30,7 @@ export function SiteNav({ owner, onSettings }: { owner: boolean; onSettings: () 
 /** App-style bottom tab bar (phones only; hidden on wide screens, where the top bar is used). */
 export function TabBar() {
   const router = useRouter();
-  useEffect(() => { const go = () => ['/', '/study', '/lab', '/play', '/exam', '/duel'].forEach(r => { try { router.prefetch(r); } catch { /* ignore */ } }); const w: any = window; const h = w.requestIdleCallback ? w.requestIdleCallback(go, { timeout: 3000 }) : setTimeout(go, 1200); return () => { if (w.cancelIdleCallback && w.requestIdleCallback) w.cancelIdleCallback(h); else clearTimeout(h); }; }, [router]);
+  useEffect(() => { const go = () => ['/', '/study', '/lab', '/play', '/exam', '/duel'].filter(r => r !== '/lab' || isNative()).forEach(r => { try { router.prefetch(r); } catch { /* ignore */ } }); const w: any = window; const h = w.requestIdleCallback ? w.requestIdleCallback(go, { timeout: 3000 }) : setTimeout(go, 1200); return () => { if (w.cancelIdleCallback && w.requestIdleCallback) w.cancelIdleCallback(h); else clearTimeout(h); }; }, [router]);
   const path = (usePathname() || '/').replace(/(.)\/$/, '$1'); // the app build uses trailing slashes
   if (!(path === '/' || path === '/study' || path === '/lab')) return null;
   const T: [string, string, string][] = [['/', 'home', 'Home'], ['/study', 'cap', 'Study'], ['/play', 'play', 'Quiz'], ['/lab', 'cube', '3D lab']];

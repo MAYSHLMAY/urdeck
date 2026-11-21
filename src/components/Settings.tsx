@@ -1,4 +1,5 @@
 'use client';
+import { Connections } from './Research';
 import Link from 'next/link';
 import { AccountCard } from './Welcome';
 import { Appearance } from './Appearance';
@@ -177,10 +178,14 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
             })()}
           </section>
 
+          <section className="scard"><h4><Ic n="cloud" />Sources</h4>
+            <Connections />
+          </section>
+
           <section className="scard"><h4><Ic n="data" />Your data</h4>
             <p className="n">Your progress is saved <b>automatically on this device</b>. Cards, folders, PDFs and models live in the shared database.</p>
             <div className="row">
-              <button className="solid" onClick={() => { dl('Flight-Recall-backup-' + ymd(new Date()) + '.json', e.backupJSON()); say('Backup downloaded.'); }}>Download backup</button>
+              <button className="solid" onClick={() => { dl('UrDeck-backup-' + ymd(new Date()) + '.json', e.backupJSON()); say('Backup downloaded.'); }}>Download backup</button>
               <button className="ghost" onClick={() => bk.current?.click()}>Restore…</button>
               {owner && <button className="ghost" onClick={exportLibrary}>Export library</button>}
             </div>

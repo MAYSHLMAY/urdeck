@@ -190,7 +190,7 @@ Browse opens full screen (cards use the whole width on any device). On a compute
 - 3D lab and simulations: Full opens a full-screen layer (also uses the browser's fullscreen and orientation lock when available). Orientation cycles Auto, Landscape, Portrait: inline it reshapes the viewer, in full screen it locks the screen, and for simulations on phones without a lock it turns the viewer 90 degrees. The 3D models (canvas) rely on the real lock; otherwise they ask you to turn the phone.
 
 ## Android app
-See `ANDROID.md`: push to GitHub and the included workflow builds `FlightRecall.apk`.
+See `ANDROID.md`: push to GitHub and the included workflow builds `UrDeck.apk`.
 
 ## Accounts and first launch
 - **First launch** shows an animated splash, an interactive tour (flip a card, tap mistake pairs, spin a 3D cube, answer a quiz, toggle smart help), a hands-on practice round, then a player-card builder with optional **Continue with Google**. It appears once; Settings → Account → *Replay the tour* shows it again. Existing users and `/play`, `/host`, `/duel` links skip it.
@@ -255,3 +255,15 @@ One compact sticky header (back, studying selector, undo, search, more menu), a 
 
 ## Real reading tracking
 A Reader page counts as read only after time on it that scales with its text (about words/12 seconds, between 7 and 28 s), only while the app is visible and you were active in the last minute (read-aloud counts as active). Skimming past pages counts nothing. Read pages are stored per PDF as ranges (`Prog.rd`) and merged across devices; five newly read pages in a day keep the streak. The Reader shows a progress bar under the page number, a check on counted pages, ticks in the thumbnails, "N of M pages read" in the library, and today's count toward the streak.
+
+## Sources (adapters)
+A source is a small JSON manifest (`src/lib/adapters.ts`): request address with `{q}`/`{n}`/`{key}`, where the result list is, and a `map` from title/by/year/text/link/pdf/thumb/image/license to paths in the answer (`|invidx|strip|names|year|file` transforms; XML supported). Built in: OpenAlex, arXiv, Wikipedia, Wikimedia Commons, Openverse. Users can plug in more from Settings > Sources or the Reader's Research pane (data only, no code; https; keys stay on the device). Results can become cards, citations or AI questions. Sources must allow browser requests (CORS).
+
+## Anki import, SEO and 3D links
+- **.apkg import** (`src/lib/apkg.ts`, Add > Import): reads old (.anki2/.anki21) and new zstd (.anki21b) packages on the device with fflate, fzstd and sql.js (wasm in `public/sql-wasm.wasm`, loaded only when a package is chosen). Basic -> flip, reversed -> reversed, cloze -> cloze, decks -> sets. The first picture on a front is kept (shrunk, 2.4 MB budget per import).
+- **SEO**: metadataBase, title template, Open Graph/Twitter (`public/og.png`), JSON-LD, `robots.ts`, `sitemap.ts`, a server-rendered `/about`. App-only pages are noindex. Set `NEXT_PUBLIC_SITE_URL` and optionally `GOOGLE_SITE_VERIFICATION`.
+- **3D**: models opened once are kept in IndexedDB (instant and offline; refreshed in the background). Cards made from model parts carry `<!--mdl:model~part-->` and show **View in 3D** after the answer, opening `/lab#model~part` with the part highlighted. The web build no longer pre-loads the 3D lab on idle.
+
+## App icon and PWA launch
+- Icons are generated per accent (`public/icons/<accent>-*.png`, `public/manifests/<accent>.webmanifest`). Picking a colour in Settings swaps the tab icon, apple-touch-icon and manifest link live (`syncIcons` in `src/lib/look.ts`); an app installed after choosing a colour gets that colour. The installed icon itself is fixed by the OS at install time. The Android APK icon is the default Indigo.
+- Opening the PWA from its icon goes to `/?source=pwa`; a boot script sends you back to the page you were on if you left within 45 minutes (`ud-last`, kept by `AppBoot`). The manifest also sets `launch_handler: focus-existing` for browsers that support it.

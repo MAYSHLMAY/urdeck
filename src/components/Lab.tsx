@@ -3,6 +3,7 @@ import { useStage, StageBar } from './useStage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import * as THREE from 'three';
+import { withMdl } from '@/lib/cardimg';
 import { BUILTIN, modelCode, validateModel, forgetModel, type ModelDef } from '@/lib/models';
 import { isSim, is3d, simTitle } from '@/lib/sim';
 import SimFrame from './SimFrame';
@@ -144,10 +145,10 @@ export default function Lab() {
       await refs().load();
       if (dead) return;
       const ids = [...BUILTIN, ...refs().models].map(x => x.id);
-      const h0 = decodeURIComponent(location.hash.slice(1)), id0 = h0 || labs.recent(1)[0] || 'elevon';
+      const hz = decodeURIComponent(location.hash.slice(1)), h0 = hz.split('~')[0], hp = hz.split('~')[1] || '', id0 = h0 || labs.recent(1)[0] || 'elevon';
       const found = ids.includes(id0);
       if (!found && h0) say('Model "' + id0 + '" was not found. Showing the default.', true);
-      const start = found ? id0 : 'elevon'; setSelId(start); openModel(start);
+      const start = found ? id0 : 'elevon'; setSelId(start); Promise.resolve(openModel(start)).then(() => { if (hp && found && !dead && R.current.def?.parts?.some((x: any) => x.id === hp)) select(hp); });
     })();
 
     return () => {
@@ -240,7 +241,8 @@ export default function Lab() {
   const makeCards = () => {
     if (!def) return;
     const ps = parts.filter(p => p.info && p.info.trim()); let n = 0;
-    ps.forEach(p => { if (!e.myAddCard({ s: 'Lab: ' + def.name, q: withKind(def.name + ': ' + p.info!.trim(), 'f'), c: p.label, w: [], p: false })) n++; });
+    const have = new Set(e.Q.filter(x => x.s === 'Lab: ' + def.name).map(x => x.c));
+    ps.forEach(p => { if (have.has(p.label)) return; if (!e.myAddCard({ s: 'Lab: ' + def.name, q: withKind(withMdl(def.name + ': ' + p.info!.trim(), selId, p.id), 'f'), c: p.label, w: parts.filter(o => o.id !== p.id).map(o => o.label).slice(0, 3), p: false })) n++; });
     if (n) { labs.patch(selId, { made: true }); say(n + ' flashcard' + (n === 1 ? '' : 's') + ' added to your set "Lab: ' + def.name + '". They join your daily review.'); }
     else say('Could not add the cards.', true);
   };
@@ -256,7 +258,7 @@ export default function Lab() {
 
       <button type="button" className="lb-now" onClick={() => setBrowse(true)} aria-label="Choose a model">
         <span className="lb-ic lg"><Ic n="cube" /></span>
-        <span className="lb-tx"><b>{cur?.name || def?.name || 'Loading…'}</b><small>{catName(Rf.modelCat[selId])}{sim ? ' · ' + sim.kind + ' simulation' : ''} · {labs.seen()} of {all.length} opened</small></span>
+        <span className="lb-tx"><b>{cur?.name || def?.name || 'Loading…'}</b><small suppressHydrationWarning>{catName(Rf.modelCat[selId])}{sim ? ' · ' + sim.kind + ' simulation' : ''} · {labs.seen()} of {all.length} opened</small></span>
         <span className="lb-chg">Models</span>
       </button>
 

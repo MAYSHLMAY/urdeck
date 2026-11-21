@@ -168,7 +168,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .sres{margin:0 0 12px}.sres .frow{min-height:48px;margin:5px 0}
 .sh{font-size:.78rem;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin:10px 2px 4px}
 .addm input[type=text]{margin-bottom:2px}
-html{-webkit-text-size-adjust:100%;text-size-adjust:100%}html,body{max-width:100%;overflow-x:hidden}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}html,body{max-width:100%}html{overflow-x:hidden}body{overflow-x:clip}
 img,svg,input,select,textarea{max-width:100%}.set input[type=password],.set input[type=text],.set select{box-sizing:border-box}
 .sheet .sc,.sheet .in{overflow-x:hidden;max-width:100%}.sheet .in{width:100%;box-sizing:border-box}
 .card,.q,.opt,.opt span,.rq,.rh,.tx,.tx b,.tx small,.info,.crumbs,.frow,.res{min-width:0;max-width:100%;overflow-wrap:anywhere}

@@ -1,4 +1,4 @@
-export const metadata = { title: 'Privacy · UrDeck' };
+export const metadata = { title: 'Privacy', alternates: { canonical: '/privacy' } };
 
 export default function Privacy() {
   const h = { fontSize: '1.15rem', margin: '26px 0 6px' } as const;

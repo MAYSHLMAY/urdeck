@@ -7,6 +7,7 @@ import { Ic } from './ui';
 
 /** Companion panes that sit beside the pages: an AI helper that knows the page you are on, a web view, and your notes. */
 
+let usedSeed = 0;
 type Turn = { r: 'u' | 'a'; t: string; bad?: boolean };
 const CHIPS: [string, string][] = [
   ['Explain this page', 'Explain this page in simple words, as if to a student meeting it for the first time.'],
@@ -15,13 +16,14 @@ const CHIPS: [string, string][] = [
   ['Quiz me', 'Ask me 3 short questions about this page, one at a time. Ask the first now and wait for my answer.']
 ];
 
-export function AiPane({ title, page, getText, getSel }: { title: string; page: number; getText: () => Promise<string>; getSel: () => string }) {
+export function AiPane({ title, page, getText, getSel, seed, seedKey }: { seed?: string; seedKey?: number; title: string; page: number; getText: () => Promise<string>; getSel: () => string }) {
   const [cfg, setCfg] = useState(aiGet()), [key, setKey] = useState(''), [err, setErr] = useState(''), [busy, setBusy] = useState(false);
   const [log, setLog] = useState<Turn[]>([]), [q, setQ] = useState(''), [useSel, setUseSel] = useState(true);
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { const f = () => setCfg(aiGet()); addEventListener('fr-ai', f); return () => removeEventListener('fr-ai', f); }, []);
   useEffect(() => { end.current?.scrollIntoView({ block: 'end' }); }, [log, busy]);
   useEffect(() => { setLog([]); }, [title]);
+  useEffect(() => { if (seed && seedKey && seedKey !== usedSeed && cfg) { usedSeed = seedKey; send(seed); } }, [seedKey, cfg]); // eslint-disable-line
 
   async function connect() {
     setBusy(true); setErr('');

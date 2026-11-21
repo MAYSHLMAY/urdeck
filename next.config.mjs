@@ -7,6 +7,7 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   ...(EXPORT ? { distDir: 'out', output: 'export', trailingSlash: true, images: { unoptimized: true } } : {}),
   webpack: config => {
+    config.resolve.fallback = { ...(config.resolve.fallback || {}), fs: false, path: false, crypto: false }; // sql.js (Anki import) mentions these for Node only
     config.resolve.alias.canvas = false; // pdf.js optionally imports node-canvas; the browser build does not need it
     return config;
   },

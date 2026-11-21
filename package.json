@@ -30,11 +30,14 @@
     "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@fontsource/source-serif-4": "^5.3.1",
     "@supabase/supabase-js": "^2.45.0",
+    "fflate": "^0.8.3",
+    "fzstd": "^0.1.1",
     "next": "14.2.35",
     "pdfjs-dist": "3.11.174",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "sql.js": "^1.17.0",
     "three": "0.128.0"
   },
   "devDependencies": {

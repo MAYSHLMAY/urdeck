@@ -6,6 +6,7 @@ import { SelMenu } from './SelMenu';
 import { DefineCard, selectionReq, type DefReq } from './Define';
 import { MakeCard } from './MakeCard';
 import { AiPane, WebPane, NotesPane, openBeside } from './ReaderPanes';
+import { ResearchPane } from './Research';
 import { useNoteCapture, useRefs } from './refHooks';
 import { AskHost, Ic, Sheet, SheetFrame, Toast, ask, useEngine } from './ui';
 import { notes as notesStore, type NoteColor } from '@/lib/notes';
@@ -15,7 +16,7 @@ import { refs, canAddLocal } from '@/lib/refs';
 
 type Theme = 'light' | 'sepia' | 'paper' | 'night';
 type Side = 'outline' | 'pages' | 'marks' | 'find';
-type Split = 'off' | 'ai' | 'web' | 'notes' | 'pdf';
+type Split = 'off' | 'ai' | 'res' | 'web' | 'notes' | 'pdf';
 const THEMES: [Theme, string][] = [['light', 'Light'], ['sepia', 'Sepia'], ['paper', 'Paper'], ['night', 'Night']];
 const K_UI = 'ud-rd-ui';
 interface UI { tabs: string[]; act: string; theme: Theme; br: number; split: Split; ratio: number; bId: string; rate: number; side: boolean; sideTab: Side }
@@ -67,6 +68,7 @@ export default function Reader() {
 
   /* selection → floating menu */
   const cap = useNoteCapture(body, pdf ? pdf.id : null, !!pdf, { on: marker, opts: { color } });
+  const [res, setRes] = useState({ q: '', k: 0 }), [aiSeed, setAiSeed] = useState({ t: '', k: 0 });
   const pend = cap.pending, selKey = pend ? pend.page + '|' + pend.text : '', lastSel = useRef('');
   if (pend) lastSel.current = pend.text;
   useEffect(() => { setMenu(false); if (!pend || marker) return; const t = setTimeout(() => setMenu(true), coarse ? 380 : 260); return () => clearTimeout(t); }, [selKey, marker, coarse]); // eslint-disable-line
@@ -78,6 +80,7 @@ export default function Reader() {
     define: () => { const s = cap.recent(); if (!s) return; const r = selectionReq(s.text, s.page); if (r) { setDefReq(r); setMenu(false); } },
     find: () => { const s = cap.recent(); if (!s) return; setFq(s.text.split(' ').slice(0, 6).join(' ')); up({ side: true, sideTab: 'find' }); setMenu(false); },
     ask: () => { up({ split: 'ai' }); setMenu(false); },
+    res: () => { const s = cap.recent(); setRes(r => ({ q: s?.text || '', k: r.k + 1 })); up({ split: 'res' }); setMenu(false); },
     card: () => { const s = cap.recent(); if (s) setMk({ text: s.text, page: s.page }); setMenu(false); }
   };
 
@@ -228,7 +231,7 @@ export default function Reader() {
           {pop === 'split' && (
             <div className="rd-pop rd-pop-t" role="menu" onPointerDown={ev => ev.stopPropagation()}>
               <h4>Beside the page</h4>
-              {([['ai', 'sparkle', 'Ask AI', 'Knows the page you are on'], ['web', 'search', 'Web', 'Look things up or open a site'], ['notes', 'note', 'Notes', 'Your highlights and notes'], ['pdf', 'file', 'Another PDF', 'Compare two documents']] as const).map(([k, i, l, d]) => <button key={k} type="button" className={ui.split === k ? 'on' : ''} onClick={() => { up({ split: k, bId: k === 'pdf' && !ui.bId ? ui.tabs.find(t => t !== ui.act) || '' : ui.bId }); setPop(''); }}><Ic n={i} /><span><b>{l}</b><small>{d}</small></span></button>)}
+              {([['ai', 'sparkle', 'Ask AI', 'Knows the page you are on'], ['res', 'search', 'Research', 'Papers, images and articles'], ['web', 'search', 'Web', 'Look things up or open a site'], ['notes', 'note', 'Notes', 'Your highlights and notes'], ['pdf', 'file', 'Another PDF', 'Compare two documents']] as const).map(([k, i, l, d]) => <button key={k} type="button" className={ui.split === k ? 'on' : ''} onClick={() => { up({ split: k, bId: k === 'pdf' && !ui.bId ? ui.tabs.find(t => t !== ui.act) || '' : ui.bId }); setPop(''); }}><Ic n={i} /><span><b>{l}</b><small>{d}</small></span></button>)}
               <button type="button" onClick={() => { openBeside(location.href); setPop(''); }}><Ic n="expand" /><span><b>New window beside this one</b><small>Open ChatGPT, Gemini or Claude next to the reader</small></span></button>
               {ui.split !== 'off' && <button type="button" className="rd-x" onClick={() => { up({ split: 'off' }); setPop(''); }}><Ic n="close" /><span><b>Close side pane</b></span></button>}
             </div>
@@ -275,11 +278,12 @@ export default function Reader() {
               <div className="rd-div" role="separator" aria-orientation={wide ? 'vertical' : 'horizontal'} aria-label="Resize" tabIndex={0} onPointerDown={drag} onKeyDown={ev => { if (ev.key === 'ArrowLeft' || ev.key === 'ArrowUp') up({ ratio: Math.max(24, ui.ratio - 3) }); if (ev.key === 'ArrowRight' || ev.key === 'ArrowDown') up({ ratio: Math.min(78, ui.ratio + 3) }); }}><i /></div>
               <section className="rd-b">
                 <div className="rd-bh" role="tablist">
-                  {([['ai', 'Ask AI'], ['web', 'Web'], ['notes', 'Notes'], ['pdf', 'PDF']] as const).map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={ui.split === k} className={ui.split === k ? 'on' : ''} onClick={() => up({ split: k, bId: k === 'pdf' && !ui.bId ? ui.tabs.find(t => t !== ui.act) || '' : ui.bId })}>{l}</button>)}
+                  {([['ai', 'Ask AI'], ['res', 'Research'], ['web', 'Web'], ['notes', 'Notes'], ['pdf', 'PDF']] as const).map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={ui.split === k} className={ui.split === k ? 'on' : ''} onClick={() => up({ split: k, bId: k === 'pdf' && !ui.bId ? ui.tabs.find(t => t !== ui.act) || '' : ui.bId })}>{l}</button>)}
                   <button type="button" className="rd-ib sm" aria-label="Close side pane" onClick={() => up({ split: 'off' })}><Ic n="close" /></button>
                 </div>
                 <div className="rd-bb">
-                  {ui.split === 'ai' && <AiPane title={pdf.title} page={page.n} getText={() => textOf(page.n)} getSel={() => lastSel.current} />}
+                  {ui.split === 'res' && <ResearchPane seed={res.q} seedKey={res.k} onAsk={t => { setAiSeed(a => ({ t, k: a.k + 1 })); up({ split: 'ai' }); }} />}
+                  {ui.split === 'ai' && <AiPane seed={aiSeed.t} seedKey={aiSeed.k} title={pdf.title} page={page.n} getText={() => textOf(page.n)} getSel={() => lastSel.current} />}
                   {ui.split === 'web' && <WebPane seed={lastSel.current.split(' ').slice(0, 4).join(' ')} />}
                   {ui.split === 'notes' && <NotesPane pdfId={pdf.id} onOpen={n => viewer.current?.scrollToPage(n.page_number || 1, boxOf(n.rects))} />}
                   {ui.split === 'pdf' && (

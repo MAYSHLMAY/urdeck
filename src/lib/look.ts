@@ -23,17 +23,30 @@ export function syncBars() {
   const c = bgHex();
   document.querySelectorAll('meta[name="theme-color"]').forEach(el => { el.removeAttribute('media'); el.setAttribute('content', c); });
 }
+/** The tab icon, the home-screen icon and the install manifest follow the colour you picked. */
+export function syncIcons(a = getLook().a) {
+  try {
+    if (!ACCENTS.some(x => x[0] === a)) return;
+    const set = (sel: string, make: () => HTMLLinkElement, attrs: Record<string, string>) => { let l = document.head.querySelector<HTMLLinkElement>(sel); if (!l) { l = make(); document.head.appendChild(l); } Object.entries(attrs).forEach(([k, v]) => l!.setAttribute(k, v)); return l; };
+    document.head.querySelectorAll('link[rel="icon"]').forEach((l, i) => { if (i) l.remove(); });
+    set('link[rel="icon"]', () => Object.assign(document.createElement('link'), { rel: 'icon' }), { href: '/icons/' + a + '-192.png', type: 'image/png', sizes: '192x192' });
+    set('link[rel="apple-touch-icon"]', () => Object.assign(document.createElement('link'), { rel: 'apple-touch-icon' }), { href: '/icons/' + a + '-180.png' });
+    set('link[rel="manifest"]', () => Object.assign(document.createElement('link'), { rel: 'manifest' }), { href: '/manifests/' + a + '.webmanifest' });
+  } catch { /* ignore */ }
+}
 export function applyLook(p?: Partial<Look>) {
   const n: Look = { ...getLook(), ...(p || {}) };
   try { localStorage.setItem(K, JSON.stringify(n)); } catch { /* ignore */ }
   const d = document.documentElement;
   d.dataset.accent = n.a; d.dataset.theme = n.t === 'auto' ? '' : n.t;
   ['font', 'density', 'corner', 'qa', 'layout'].forEach(x => d.removeAttribute('data-' + x));
-  syncBars();
+  syncBars(); syncIcons(n.a);
   try { dispatchEvent(new Event('ud-look')); } catch { /* ignore */ }
 }
 /** Inline script for <head>: applies the saved look before the first paint (no flash). */
-export const LOOK_BOOT = `try{var j=JSON.parse(localStorage.getItem('${K}')||'{}'),d=document.documentElement;if(j.a)d.dataset.accent=j.a;if(j.t&&j.t!=='auto')d.dataset.theme=j.t;}catch(e){}`;
+export const LOOK_BOOT = `try{var j=JSON.parse(localStorage.getItem('${K}')||'{}'),d=document.documentElement;if(j.a)d.dataset.accent=j.a;if(j.t&&j.t!=='auto')d.dataset.theme=j.t;}catch(e){}`
+/* Opened from the home-screen icon: go back to the page you were on (if you left it a moment ago) instead of starting again at Home. */
+  + `try{if(/[?&]source=pwa/.test(location.search)&&location.pathname.replace(/\\/$/,'')===''){var r=JSON.parse(localStorage.getItem('ud-last')||'null');if(r&&r.p&&r.p!=='/'&&Date.now()-r.t<2700000&&!/^\\/(api|play|host|duel|privacy)/.test(r.p))location.replace(r.p)}}catch(e){}`;
 
 /* ---------- Home layout: which sections, in what order, and how they look. Local to this device. ---------- */
 export const HOME_SECTIONS: [string, string, string][] = [

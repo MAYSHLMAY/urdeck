@@ -18,6 +18,14 @@ export interface ModelDef {
 }
 
 const cache = new Map<string, string>();
+/* Models you have opened are kept on the device, so they open instantly and offline. A fresh copy is fetched quietly in the background. */
+let _mdb: Promise<IDBDatabase | null> | null = null;
+const mdb = () => _mdb || (_mdb = new Promise(res => {
+  try { const r = indexedDB.open('ud-models', 1); r.onupgradeneeded = () => r.result.createObjectStore('m'); r.onsuccess = () => res(r.result); r.onerror = () => res(null); } catch { res(null); }
+}));
+const dget = async (id: string): Promise<string> => { const d = await mdb(); return d ? new Promise(res => { try { const q = d.transaction('m').objectStore('m').get(id); q.onsuccess = () => res(typeof q.result === 'string' ? q.result : ''); q.onerror = () => res(''); } catch { res(''); } }) : ''; };
+const dput = async (id: string, code: string) => { const d = await mdb(); if (!d) return; try { d.transaction('m', 'readwrite').objectStore('m').put(code, id); } catch { /* ignore */ } };
+const ddel = async (id: string) => { const d = await mdb(); if (!d) return; try { d.transaction('m', 'readwrite').objectStore('m').delete(id); } catch { /* ignore */ } };
 
 /** The source of a model: a built-in file, or the shared database row. */
 export async function modelCode(id: string): Promise<string> {
@@ -28,14 +36,17 @@ export async function modelCode(id: string): Promise<string> {
     if (!r.ok) throw Error('models/' + id + '.model.js not found. Copy your model files into public/models/.');
     code = await r.text();
   } else {
-    const r = await sb().from('models').select('code').eq('id', id).maybeSingle();
+    const kept = await dget(id);
+    const fresh = async () => { const r = await sb().from('models').select('code').eq('id', id).maybeSingle(); if (!r.error && r.data) dput(id, (r.data as any).code); return r; };
+    if (kept) { fresh().catch(() => {}); cache.set(id, kept); return kept; }
+    const r = await fresh();
     if (r.error) throw Error(r.error.message);
     if (!r.data) throw Error('This model no longer exists.');
     code = (r.data as any).code;
   }
   cache.set(id, code); return code;
 }
-export const forgetModel = (id: string) => cache.delete(id);
+export const forgetModel = (id: string) => { ddel(id); return cache.delete(id); };
 
 /** Load a model file (an ES module with `export default {name, build(THREE)}`). */
 export async function validateModel(code: string): Promise<ModelDef> {

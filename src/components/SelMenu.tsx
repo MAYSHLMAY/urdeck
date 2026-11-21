@@ -4,7 +4,7 @@ import { NOTE_COLORS, type NoteColor } from '@/lib/notes';
 import type { PendingSel } from './refHooks';
 import { Ic } from './ui';
 
-export interface SelActs { hl: () => void; ul: () => void; st: () => void; note: () => void; copy: () => void; define: () => void; find: () => void; ask?: () => void; card?: () => void }
+export interface SelActs { hl: () => void; ul: () => void; st: () => void; note: () => void; copy: () => void; define: () => void; find: () => void; ask?: () => void; res?: () => void; card?: () => void }
 
 /**
  * Floating menu next to the selected text, like the one in WPS or Edge. On phones it opens by itself once the selection
@@ -43,7 +43,7 @@ export function SelMenu({ sel, coarse, color, onColor, acts }: { sel: PendingSel
       <div className="sma">
         <B i="marker" l="Highlight" f={acts.hl} /><B i="underline" l="Underline" f={acts.ul} /><B i="strike" l="Strike" f={acts.st} />
         <B i="note" l="Note" f={acts.note} /><B i="copy" l="Copy" f={acts.copy} /><B i="book" l="Define" f={acts.define} /><B i="search" l="Find" f={acts.find} />
-        {acts.ask && <B i="sparkle" l="Ask AI" f={acts.ask} />}{acts.card && <B i="layers" l="Make card" f={acts.card} />}
+        {acts.ask && <B i="sparkle" l="Ask AI" f={acts.ask} />}{acts.res && <B i="search" l="Research" f={acts.res} />}{acts.card && <B i="layers" l="Make card" f={acts.card} />}
       </div>
     </div>
   );
