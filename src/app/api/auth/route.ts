@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     clearThrottle(ip);
     return NextResponse.json(issueToken());
   } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Server error' }, { status: 500 });
+    console.error('auth', e?.message); return NextResponse.json({ error: 'Server error. Please try again.' }, { status: 500 });
   }
 }
 

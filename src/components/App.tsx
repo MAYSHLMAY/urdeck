@@ -1,4 +1,5 @@
 'use client';
+import { StudySkeleton } from './Skeleton';
 import { kindOf } from '@/lib/kind';
 import { applyLook } from '@/lib/look';
 import { useEffect, useState } from 'react';
@@ -42,7 +43,7 @@ export default function App() {
     setMounted(true);
     e.init();
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator && !(window as any).Capacitor?.isNativePlatform?.()) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator && !(window as any).Capacitor?.isNativePlatform?.()) navigator.serviceWorker.register('/sw.js?v=' + process.env.NEXT_PUBLIC_BUILD).catch(() => {});
     // eslint-disable-next-line
   }, []);
 
@@ -83,7 +84,7 @@ export default function App() {
     return () => removeEventListener('keydown', onKey);
   }, [e]);
 
-  if (!mounted) return <div className="wrap"><p className="info">Loading…</p></div>;
+  if (!mounted) return <StudySkeleton />;
 
   const c = e.counts(), S = e.S, now = Date.now();
   const live2 = S.last === e.dayKey(now) || S.last === e.dayKey(e.addDays(e.dayStart(now), -1));

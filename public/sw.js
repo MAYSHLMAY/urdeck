@@ -1,5 +1,6 @@
 /* Offline support. App shell and static files are cached; Supabase data is cached by the app itself (IndexedDB). */
-const V = 'fr-shell-v5';
+/* The cache name carries the build id (sw.js?v=<build>), so every new release starts clean and can never mix old pages with new code. */
+const V = 'fr-shell-' + (new URL(self.location.href).searchParams.get('v') || 'x');
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -24,15 +25,29 @@ self.addEventListener('fetch', e => {
     }));
     return;
   }
-  // pages, page data and model files: answer from the cache at once (offline first), refresh it in the background.
-  // Only the very first visit to a page has to wait for the network.
+  // page data that Next fetches while you tap around must always match the running code: network first, cache only when offline
+  if (req.headers.get('RSC') || url.searchParams.has('_rsc')) {
+    e.respondWith(fetch(req).then(r => { if (r.ok) caches.open(V).then(c => c.put(req, r.clone())); return r; }).catch(async () => (await caches.open(V).then(c => c.match(req))) || Response.error()));
+    return;
+  }
+  // opening a page: the live page if the network answers within 3 s (so old pages never meet new code), otherwise the saved copy (offline first)
+  if (req.mode === 'navigate') {
+    e.respondWith((async () => {
+      const c = await caches.open(V);
+      try {
+        const r = await Promise.race([fetch(req), new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 3000))]);
+        if (r.ok) c.put(req, r.clone()); return r;
+      } catch (err) { return (await c.match(req)) || (await c.match('/')) || fetch(req); }
+    })());
+    return;
+  }
+  // model files and other data: answer from the cache at once, refresh it in the background
   e.respondWith((async () => {
     const c = await caches.open(V);
     const hit = await c.match(req);
     const net = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; });
     if (hit) { e.waitUntil(net.catch(() => {})); return hit; }
-    try { return await net; }
-    catch (err) { const home = req.mode === 'navigate' ? await c.match('/') : null; if (home) return home; throw err; }
+    return net;
   })());
 });
 

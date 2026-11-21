@@ -9,6 +9,8 @@ import { randomName, cleanName, badName } from '@/lib/game/names';
 
 export const useMe = () => useSyncExternalStore(auth.subscribe, () => auth.me(), () => null);
 const EXEMPT = /^\/(play|host|duel|privacy)(\/|$)/;
+/** First run: the app behind stays hidden until the welcome is finished (skip, guest or signed in). */
+const gate = (on: boolean) => { try { const d = document.documentElement; if (on) d.setAttribute('data-gate-on', '1'); else { d.removeAttribute('data-gate'); d.removeAttribute('data-gate-on'); } } catch { /* ignore */ } };
 
 /** Make the account and device sync agree, so signing in on a new device brings your progress back. */
 export async function linkAccount() {
@@ -208,8 +210,8 @@ export function Welcome() {
     try {
       const u = new URL(location.href);
       if (!seen() && !EXEMPT.test(location.pathname) && !u.searchParams.has('sync') && !u.searchParams.has('ud_auth')) {
-        if (localStorage.getItem('fr-progress-v1')) markSeen(); else start(false);
-      } else if (u.searchParams.has('ud_auth')) markSeen();
+        if (localStorage.getItem('fr-progress-v1')) { markSeen(); gate(false); } else { gate(true); start(false); }
+      } else { if (u.searchParams.has('ud_auth')) markSeen(); gate(false); }
     } catch { /* ignore */ }
     const on = () => start(true), cl = () => { setFirst(false); setPh('join'); setOpen(true); };
     addEventListener(TOUR_EVENT, on); addEventListener(CLAIM_EVENT, cl);
@@ -220,7 +222,7 @@ export function Welcome() {
   useEffect(() => { if (open && ph === 'splash') { const t = setTimeout(() => setPh('tour'), 2300); return () => clearTimeout(t); } }, [open, ph]);
   useEffect(() => { if (!open) return; const k = (e: KeyboardEvent) => { if (e.key === 'Escape') finish(); if (ph === 'tour' && e.key === 'ArrowRight') next(); if (ph === 'tour' && e.key === 'ArrowLeft') setI(v => Math.max(0, v - 1)); }; addEventListener('keydown', k); return () => removeEventListener('keydown', k); }); // eslint-disable-line react-hooks/exhaustive-deps
   if (!open) return null;
-  const finish = () => { markSeen(); setOpen(false); };
+  const finish = () => { markSeen(); gate(false); setOpen(false); };
   const next = () => { if (i < TOUR.length - 1) setI(i + 1); else setPh('try'); };
   const down = (e: React.PointerEvent) => { sx.current = (e.target as HTMLElement).closest('[data-noswipe]') ? null : e.clientX; };
   const up = (e: React.PointerEvent) => { const s = sx.current; sx.current = null; if (s == null) return; const d = e.clientX - s; if (d < -50) next(); else if (d > 50) setI(v => Math.max(0, v - 1)); };

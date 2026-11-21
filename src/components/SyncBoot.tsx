@@ -10,7 +10,7 @@ export function SyncBoot() {
   useEffect(() => {
     applyLook();
     const s = sync(); s.start();
-    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator && !(window as any).Capacitor?.isNativePlatform?.()) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator && !(window as any).Capacitor?.isNativePlatform?.()) navigator.serviceWorker.register('/sw.js?v=' + process.env.NEXT_PUBLIC_BUILD).catch(() => {});
     try { if (localStorage.getItem('fr-debug') === '1') (window as any).__fr = { e: engine(), s, n: notes() }; } catch { /* ignore */ }
     try {
       const u = new URL(location.href), c = u.searchParams.get('sync');

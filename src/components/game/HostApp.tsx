@@ -1,4 +1,5 @@
 'use client';
+import { ListSkeleton } from '../Skeleton';
 import { siteOrigin } from '@/lib/base';
 import { QImg } from '../CardFigure';
 import { useEffect, useMemo, useState } from 'react';
@@ -17,7 +18,7 @@ export default function HostApp() {
   const [host, setHost] = useState<Host | null>(null);
   const [saved, setSaved] = useState<ReturnType<typeof Host.hasSaved>>(null);
   useEffect(() => { setOk(isOwner()); setSaved(Host.hasSaved()); e.init(); }, []); // eslint-disable-line
-  if (ok === null) return <div className="gm"><div className="gwrap"><p>Loading…</p></div></div>;
+  if (ok === null) return <div className="gm"><div className="gwrap"><ListSkeleton n={3} h={64} /></div></div>;
   if (!ok) return (
     <div className="gm"><div className="gtop"><Link href="/" className="gbtn sm ghost">← Home</Link><b>Host a quiz</b></div><div className="gwrap"><div className="gcard"><h2>Owner only</h2><p className="note">Only the owner can start a live game.</p>
       <input type="password" placeholder="Owner password" value={pw} onChange={x => setPw(x.target.value)} onKeyDown={async x => { if (x.key === 'Enter') { const m = await unlock(pw); m ? setErr(m) : setOk(true); } }} />

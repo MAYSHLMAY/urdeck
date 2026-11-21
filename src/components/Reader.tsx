@@ -7,6 +7,7 @@ import { DefineCard, selectionReq, type DefReq } from './Define';
 import { MakeCard } from './MakeCard';
 import { AiPane, WebPane, NotesPane, openBeside } from './ReaderPanes';
 import { ResearchPane } from './Research';
+import { ListSkeleton } from './Skeleton';
 import { useNoteCapture, useRefs } from './refHooks';
 import { AskHost, Ic, Sheet, SheetFrame, Toast, ask, useEngine } from './ui';
 import { notes as notesStore, type NoteColor } from '@/lib/notes';
@@ -219,7 +220,7 @@ export default function Reader() {
     );
   })();
 
-  if (!ready) return <div className="rdr t-light"><p className="rd-n" style={{ padding: 24 }}>Loading…</p></div>;
+  if (!ready) return <div className="rdr t-light"><div style={{ padding: 20 }}><ListSkeleton n={3} h={72} /></div></div>;
   return (
     <div className={'rdr t-' + ui.theme + (focus ? ' focus' : '') + (wide ? ' wide' : '')} style={{ ['--rdbr' as any]: ui.br / 100 }}>
       {!focus && (

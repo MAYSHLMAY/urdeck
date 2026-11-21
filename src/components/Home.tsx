@@ -5,6 +5,7 @@ import { labs } from '@/lib/prefs';
 import { FieldPill } from './Fields';
 import { applyLook, getHome, type HomeCfg } from '@/lib/look';
 import { useMe } from './Welcome';
+import { HomeSkeleton, ListSkeleton } from './Skeleton';
 import { useSyncExternalStore } from 'react';
 import { HomeCustomize } from './HomeCustomize';
 import { clozeFront, activeCloze, stripKind, kindOf } from '@/lib/kind';
@@ -77,7 +78,7 @@ export default function Home() {
   useEffect(() => { if (mounted && e.ready) scheduleReminder(e); }, [mounted, e.ready, e.ver]); // eslint-disable-line
   useEffect(() => { try { if (!mounted || !e.ready) return; newBadges(e).forEach(b => e.toast('Badge earned: ' + b.title)); } catch { /* ignore */ } }, [mounted, e.ver]); // eslint-disable-line
 
-  if (!mounted) return <div className="wrap"><p className="info">Loading…</p></div>;
+  if (!mounted) return <HomeSkeleton />;
 
   const c = e.counts(), S = e.S, now = Date.now();
   let live = false; for (let k = 0; k <= 1 + (S.freeze || 0); k++) if (S.last === e.dayKey(e.addDays(e.dayStart(now), -k))) live = true;
@@ -196,7 +197,7 @@ export default function Home() {
     </>),
     topics: (<>
         <div className="shead"><h2>Topics</h2><span>Cards, PDFs and 3D models</span></div>
-        {R.loading && !R.loaded && <p className="info">Loading topics…</p>}
+        {R.loading && !R.loaded && <ListSkeleton n={2} h={56} />}
         {R.error && <p className="info">{R.error}</p>}
         <div className="topics">
           {R.categories.map(k => {

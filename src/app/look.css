@@ -330,3 +330,15 @@ button.sh-fire{border:0;background:none;font:inherit;color:inherit;cursor:pointe
 .htabs{background:color-mix(in srgb,var(--acc) 9%,var(--bg));backdrop-filter:none;-webkit-backdrop-filter:none;top:max(6px,env(safe-area-inset-top))}
 .htabs{box-shadow:0 -14px 0 8px var(--bg),0 0 0 8px var(--bg)}
 .htabs::after{content:'';position:absolute;z-index:-1;left:-16px;right:-16px;top:calc(100% + 4px);height:14px;background:linear-gradient(var(--bg),transparent);pointer-events:none}
+
+/* Skeleton loading */
+.sk{display:block;background:linear-gradient(90deg,color-mix(in srgb,var(--ink) 7%,transparent) 0%,color-mix(in srgb,var(--ink) 13%,transparent) 50%,color-mix(in srgb,var(--ink) 7%,transparent) 100%);background-size:220% 100%;animation:skim 1.25s ease-in-out infinite;border-radius:10px;max-width:100%}
+@keyframes skim{from{background-position:120% 0}to{background-position:-120% 0}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+.skw{display:flex;flex-direction:column;gap:14px}
+.sk-row{display:flex;gap:10px;align-items:center}
+.sk-card{display:flex;flex-direction:column;gap:14px;padding:18px;border:1px solid var(--line);border-radius:28px;background:var(--card)}
+.sk-trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.sk-rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sk-opts,.sk-list{display:flex;flex-direction:column;gap:10px}
+.sk-tabs{padding:6px;border-radius:20px;background:color-mix(in srgb,var(--acc) 9%,var(--bg))}

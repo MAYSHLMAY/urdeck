@@ -1,6 +1,11 @@
 'use client';
+import { useEffect, useState } from 'react';
+import { recover } from '@/lib/recover';
 /* If a screen ever fails, show what happened and a way back, instead of the generic "Application error". */
 export default function Err({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const [fix, setFix] = useState(false);
+  useEffect(() => { setFix(recover()); }, []);
+  if (fix) return <main style={{ margin: '40vh auto', textAlign: 'center', fontFamily: 'system-ui,sans-serif', opacity: .7 }}>Updating…</main>;
   return (
     <main style={{ maxWidth: 520, margin: '12vh auto', padding: 20, fontFamily: 'system-ui,sans-serif' }}>
       <h2 style={{ margin: '0 0 8px' }}>Something went wrong on this screen</h2>

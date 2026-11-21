@@ -1,4 +1,5 @@
 'use client';
+import { StageSkeleton } from './Skeleton';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { qText, parseMdl } from '@/lib/cardimg';
 import Link from 'next/link';
@@ -22,8 +23,8 @@ export function Stage({ onInfo, onCard }: { onInfo: (id: string) => void; onCard
   if (e.loadErr && !e.Q.length)
     return <section id="stage"><div className="card"><div className="q">Could not load the cards</div>
       <p className="info">{e.loadErr}</p><div className="row"><button className="solid" onClick={() => e.init()}>Try again</button></div></div></section>;
-  if (!e.ready) return <section id="stage"><p className="info">Loading cards…</p></section>;
-  if (!e.cur) return <section id="stage">{e.phase === 'done' ? <Done /> : <p className="info">Loading cards…</p>}</section>;
+  if (!e.ready) return <StageSkeleton />;
+  if (!e.cur) return <section id="stage">{e.phase === 'done' ? <Done /> : <StageSkeleton />}</section>;
   return <section id="stage"><Question onInfo={onInfo} onCard={onCard} /></section>;
 }
 

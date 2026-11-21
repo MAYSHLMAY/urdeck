@@ -1,4 +1,5 @@
 'use client';
+import { ListSkeleton } from '../Skeleton';
 import { apiUrl } from '@/lib/base';
 import { QImg } from '../CardFigure';
 import { useEffect, useRef, useState } from 'react';
@@ -21,7 +22,7 @@ export default function PlayApp() {
     loadIdentity().then(i => setMe(i));
     const q = new URLSearchParams(location.search).get('pin'); if (q) setAuto(q.replace(/\D/g, '').slice(0, 6));
   }, []);
-  if (me === undefined) return <div className="gm"><div className="gwrap"><p>Loading…</p></div></div>;
+  if (me === undefined) return <div className="gm"><div className="gwrap"><ListSkeleton n={3} h={64} /></div></div>;
   if (me === null || view === 'edit') return <Profile me={me} first={me === null} onDone={i => { setMe(i); setView(auto ? 'game' : 'home'); if (auto) setPin(auto); }} onCancel={() => setView('home')} />;
   if (view === 'game' && pin) return <Game me={me} pin={pin} onExit={() => { setPin(''); setAuto(''); setView('home'); history.replaceState(null, '', '/play'); }} onEdit={() => setView('edit')} />;
   if (view === 'board') return <div className="gm"><div className="gtop"><button className="gbtn sm ghost" onClick={() => setView('home')}>← Back</button><b>Leaderboard</b></div><div className="gwrap start"><Leaderboards /></div></div>;

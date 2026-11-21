@@ -2,11 +2,18 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { syncIcons } from '@/lib/look';
+import { recover, looksStale } from '@/lib/recover';
 
 /** Remembers where you are (so the home-screen icon can bring you back) and keeps the app icon in your colour. */
 export function AppBoot() {
   const path = usePathname();
-  useEffect(() => { syncIcons(); }, []);
+  useEffect(() => {
+    syncIcons();
+    const er = (ev: ErrorEvent) => { if (looksStale(String(ev.message || ''))) recover(); };
+    const rj = (ev: PromiseRejectionEvent) => { if (looksStale(String((ev.reason && (ev.reason.message || ev.reason.name)) || ''))) recover(); };
+    addEventListener('error', er); addEventListener('unhandledrejection', rj);
+    return () => { removeEventListener('error', er); removeEventListener('unhandledrejection', rj); };
+  }, []);
   useEffect(() => {
     const save = () => { try { localStorage.setItem('ud-last', JSON.stringify({ p: (location.pathname + location.search + location.hash).replace(/([?&])source=pwa&?/, '$1').replace(/[?&]$/, ''), t: Date.now() })); } catch { /* ignore */ } };
     save();

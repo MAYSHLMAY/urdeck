@@ -1,4 +1,5 @@
 'use client';
+import { ListSkeleton } from './Skeleton';
 import { useRef, useState } from 'react';
 import { isOwner } from '@/lib/api';
 import { canAddLocal, canUpload, MAX_PDF_MB, type Category, type PdfDoc } from '@/lib/refs';
@@ -76,7 +77,7 @@ export function CategoryPool({ section }: { section: string | null }) {
   const maxN = Math.max(1, ...R.categories.map(c => R.pdfsOf(c.id).length));
   const sel = R.category(R.catId), docs = sel ? R.pdfsOf(sel.id) : [];
 
-  if (R.loading && !R.loaded) return <p className="pdf-msg">Loading the reference library…</p>;
+  if (R.loading && !R.loaded) return <ListSkeleton n={3} h={56} />;
 
   return (
     <div className="pools-wrap">

@@ -267,3 +267,11 @@ A source is a small JSON manifest (`src/lib/adapters.ts`): request address with 
 ## App icon and PWA launch
 - Icons are generated per accent (`public/icons/<accent>-*.png`, `public/manifests/<accent>.webmanifest`). Picking a colour in Settings swaps the tab icon, apple-touch-icon and manifest link live (`syncIcons` in `src/lib/look.ts`); an app installed after choosing a colour gets that colour. The installed icon itself is fixed by the OS at install time. The Android APK icon is the default Indigo.
 - Opening the PWA from its icon goes to `/?source=pwa`; a boot script sends you back to the page you were on if you left within 45 minutes (`ud-last`, kept by `AppBoot`). The manifest also sets `launch_handler: focus-existing` for browsers that support it.
+
+## Updates without "Application error"
+`public/sw.js` is registered as `/sw.js?v=<build id>` (`NEXT_PUBLIC_BUILD`, the Vercel commit sha), so each release gets its own cache. Page data (`RSC`/`_rsc`) is network-first; page loads are network-first with a 3 s fallback to the saved copy (offline still works). `src/lib/recover.ts` + `error.tsx` + `global-error.tsx` + `AppBoot` clear the saved copies and reload once if a screen fails because old pages met new code.
+
+## First-run lock, skeletons, security
+- First run: the boot script sets `data-gate` so everything except the splash and the Welcome overlay is `visibility:hidden` until Welcome finishes (skip, guest or signed in). A 15 s failsafe lifts it only if Welcome never started.
+- `src/components/Skeleton.tsx`: Home, Study, card stage and list placeholders replace the "Loading…" text.
+- Security: nosniff, Referrer-Policy, X-Frame-Options SAMEORIGIN, Permissions-Policy and HSTS headers (non-export build); the public auth route no longer returns internal error text. Owner login was already throttled and uses HMAC tokens with timing-safe checks.

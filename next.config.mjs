@@ -3,6 +3,7 @@ const EXPORT = process.env.NEXT_OUTPUT === 'export'; // set by scripts/build-mob
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  env: { NEXT_PUBLIC_BUILD: process.env.VERCEL_GIT_COMMIT_SHA || String(Date.now()) },
   poweredByHeader: false,
   eslint: { ignoreDuringBuilds: true },
   ...(EXPORT ? { distDir: 'out', output: 'export', trailingSlash: true, images: { unoptimized: true } } : {}),
@@ -21,6 +22,13 @@ const nextConfig = {
         { key: 'Access-Control-Max-Age', value: '86400' }
       ];
       return [
+        { source: '/:path*', headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'Permissions-Policy', value: 'camera=(), geolocation=(), payment=(), usb=(), interest-cohort=()' },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' }
+        ] },
         { source: '/api/:path*', headers: cors },
         { source: '/sw.js', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
         { source: '/vendor/:path*', headers: [{ key: 'Access-Control-Allow-Origin', value: '*' }, { key: 'Cache-Control', value: 'public, max-age=86400' }] },
