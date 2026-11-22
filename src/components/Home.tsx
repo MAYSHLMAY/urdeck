@@ -73,7 +73,7 @@ export default function Home() {
   useEffect(() => { const m = matchMedia('(max-width: 899px)'), f = () => setPhone(m.matches); f(); m.addEventListener('change', f); try { const t = sessionStorage.getItem('ud-htab'); if (t === 'progress' || t === 'library') setPtab(t); } catch { /* ignore */ } return () => m.removeEventListener('change', f); }, []);
   const [mounted, setMounted] = useState(false), [set, setSet] = useState(false), [open, setOpen] = useState<string | null>(null);
 
-  useEffect(() => { setMounted(true); e.init(); if (e.typeChosen || e.kindSel !== 'all') e.resetType(); if (new URLSearchParams(location.search).get('settings')) { setSet(true); history.replaceState(null, '', '/'); } }, []); // eslint-disable-line
+  useEffect(() => { setMounted(true); e.init(); e.resetType(); if (new URLSearchParams(location.search).get('settings')) { setSet(true); history.replaceState(null, '', '/'); } }, []); // eslint-disable-line
   const o = e.O;
   useEffect(() => {
     applyLook({ t: o.theme });

@@ -38,7 +38,7 @@ export function FlipBody({ kind, cur, c, rev, setRev }: { kind: string; cur: any
       {rev && <>
         {kind === 't' && G && <p className={'say ' + (G.verdict === 'right' ? 'yes' : G.verdict === 'close' ? 'mid' : 'no')}><b>{G.verdict === 'right' ? 'Right' : G.verdict === 'close' ? 'Close' : typed.trim() ? 'Not quite' : 'Skipped'}.</b> {G.why}{typed.trim() ? <> <span className="flipyou">{typed}</span></> : null}</p>}
         {kind === 't' && ai && !g2 && typed.trim() && gr && gr.verdict !== 'right' && <button className="ghost" disabled={jb} onClick={async () => { setJb(true); try { setG2(await aiJudge(cur, typed)); } catch (er: any) { e.toast(er.message); } setJb(false); }}>{jb ? 'Asking AI…' : 'Ask AI to judge'}</button>}
-        {kind !== 'c' && <div className="flipans" dangerouslySetInnerHTML={{ __html: ans }} />}
+        {kind !== 'c' && <div className="flipans">{kind === 'f' && <small className="fa-l">Answer</small>}<div dangerouslySetInnerHTML={{ __html: ans }} /></div>}
         <div className="grades g4">
           {([[0, 'Again'], [1, 'Hard'], [2, 'Good'], [3, 'Easy']] as [number, string][]).map(([g, n]) => (
             <button key={g} className={'g g' + g + (sug === g ? ' sug' : '')} onClick={() => e.flipGrade(g)}><b>{n}</b><small>{e.lab(cur.id, c, g)}</small></button>

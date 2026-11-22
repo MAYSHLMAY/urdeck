@@ -47,6 +47,8 @@ export default function App() {
     // eslint-disable-next-line
   }, []);
 
+  useEffect(() => { if (mounted && e.ready) e.tryResume(); }, [mounted, e.ready]); // eslint-disable-line
+
   /* theme + text size */
   const o = e.O;
   useEffect(() => {

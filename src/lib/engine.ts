@@ -374,7 +374,28 @@ export class Engine {
   }
   setKind(k: 'all' | Kind) { this.kindSel = k; this.typeChosen = true; this._pl = null; this.cc = null; this.later = {}; this.last = null; this.cram = false; this.speed = null; this.show(); }
   /** Back to the type chooser (also used when leaving study, so Home counts every type). */
-  resetType() { this.kindSel = 'all'; this.typeChosen = false; this._pl = null; this.cc = null; }
+  resetType() { this.kindSel = 'all'; this.typeChosen = false; this._pl = null; this.cc = null; this.forgetPos(); }
+  /* ---------- keep your place: a refresh or an accidental close brings you back to the same card (an answer is only counted when you give it) ---------- */
+  private rememberPos() {
+    try {
+      if (!this.typeChosen || this.cram || this.speed || !this.cur) return;
+      localStorage.setItem('ud-resume', JSON.stringify({ id: String(this.cur.id), k: this.kindSel, sec: this.S.sec, t: Date.now() }));
+    } catch { /* ignore */ }
+  }
+  private forgetPos() { try { localStorage.removeItem('ud-resume'); } catch { /* ignore */ } }
+  private resumed = false;
+  /** Called once when the study screen opens fresh: put the learner back on the card they were looking at. */
+  tryResume(): boolean {
+    if (this.resumed || this.typeChosen || !this.ready) return false; this.resumed = true;
+    try {
+      const r = JSON.parse(localStorage.getItem('ud-resume') || 'null');
+      if (!r || Date.now() - r.t > 12 * 3600e3 || r.sec !== this.S.sec) { this.forgetPos(); return false; }
+      const q = this.Q.find(z => String(z.id) === r.id);
+      if (!q || !this.live(q, Date.now())) { this.forgetPos(); return false; }
+      this.kindSel = r.k || 'all'; this.typeChosen = true; this.cram = false; this.speed = null; this.later = {}; this.last = null; this._pl = null; this.cc = null;
+      this.forced = r.id; this.show(); return true;
+    } catch { return false; }
+  }
   live(q: QCard, now: number) { const c = this.S.cards[q.id]; return !(c && (c.susp || c.by > now)); }
   selLabel() {
     const v = this.S.sec, Q = this.Q;
@@ -589,7 +610,7 @@ export class Engine {
     this.cur = this.pick(); this.showN++; this.chosen = null; this.conf = 0;
     if (!this.cur && this.speed) { this.finishSpeed(false); return; }
     if (!this.cur) { this.phase = 'done'; this.curOpts = []; this.emit(); return; }
-    this.phase = 'q';
+    this.phase = 'q'; this.rememberPos();
     this.curOpts = shuf([{ t: this.cur.c, ok: 1 }, ...this.cur.w.map(t => ({ t, ok: 0 }))]);
     this.emit();
   }
@@ -630,6 +651,7 @@ export class Engine {
       if (x.vib && navigator.vibrate) navigator.vibrate(good ? 12 : [40, 40, 40]);
       if (x.sound) { setSound(true); (good ? sfx.right : sfx.wrong)(); }
     }
+    this.forgetPos();
     if (this.cram) { this.phase = 'cr'; this.emit(); return; }
     this.pend = this.snap(cur.id); this.phase = good ? 'ok' : 'bad';
     S.done++; if (good) S.ok++; this.streakTick(); if (cur.p) { this.PE.seen[cur.id] = 1; this.persist(); }

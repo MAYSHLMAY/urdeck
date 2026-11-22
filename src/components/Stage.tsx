@@ -60,7 +60,7 @@ function Question({ onInfo, onCard }: { onInfo: (id: string) => void; onCard: Ca
   const wm = x.wrongMin === x.wrongMax ? x.wrongMin : x.wrongMin + '–' + x.wrongMax;
 
   return (
-    <div className="card pop" key={e.showN} ref={cardEl}
+    <div className={'card pop' + (flipK && rev ? ' revd' : '') + (flipK && rev && kind === 'f' ? ' back' : '')} key={e.showN} ref={cardEl}
       onTouchStart={ev => { const t = ev.touches[0]; sw.current = { x: t.clientX, y: t.clientY, h: null }; }}
       onTouchMove={ev => {
         const g = sw.current; if (!g) return; const t = ev.touches[0], mx = t.clientX - g.x, my = t.clientY - g.y;

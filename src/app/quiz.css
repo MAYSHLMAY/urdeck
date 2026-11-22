@@ -130,3 +130,66 @@
 .pows button b{font-size:1.05rem;font-weight:800;color:var(--acc)}.pows button small{font-size:.68rem;color:var(--mute)}
 .pows button:active{transform:scale(.94)}.pows button:disabled{opacity:.4;cursor:default}.pows button.on{background:var(--acc)}.pows button.on b,.pows button.on small{color:#fff}
 .abtn.gone{display:none}
+
+/* ===== Live quiz, on-brand: the app's own colours instead of game-show red/blue/yellow/green ===== */
+.gm{--t0:var(--acc);--t1:var(--warm);--t2:color-mix(in srgb,var(--acc) 38%,#06b6d4);--t3:color-mix(in srgb,var(--acc) 55%,#ec4899)}
+/* answer tiles: a calm card with a coloured shape badge */
+.abtn{color:var(--ink);background:var(--card)!important;border:1.5px solid var(--line);border-radius:22px;box-shadow:var(--shadow);min-height:84px;padding:14px 16px;gap:14px;transition:transform .15s var(--ease),border-color .2s,box-shadow .2s,opacity .3s,background-color .2s}
+.abtn::after{display:none}
+.abtn svg{box-sizing:border-box;width:clamp(40px,7vw,60px);height:clamp(40px,7vw,60px);padding:clamp(10px,1.8vw,15px);border-radius:15px;background:var(--tc);fill:#fff;opacity:1;flex:none}
+.abtn.c0{--tc:var(--t0)}.abtn.c1{--tc:var(--t1)}.abtn.c2{--tc:var(--t2)}.abtn.c3{--tc:var(--t3)}
+.abtn span{font-weight:750;letter-spacing:-.015em}
+button.abtn:hover{border-color:var(--tc);transform:translateY(-2px);box-shadow:0 14px 26px -16px var(--tc),var(--shadow)}
+button.abtn:active{transform:scale(.975);box-shadow:var(--shadow)}
+.abtn.dim{opacity:.4;filter:saturate(.6)}
+.abtn.right{outline:0;border-color:var(--ok);background:var(--okbg)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 30%,transparent)}
+.abtn.right svg{background:var(--ok)}
+.abtn.wrong{border-color:var(--bad);background:var(--badbg)!important}
+.ans.full .abtn{animation:tilein .5s var(--ease) both;animation-delay:calc(.25s + var(--i,0) * 90ms)}
+/* question + timer */
+.qcard{background:var(--card);color:var(--ink);border:1.5px solid var(--line);box-shadow:var(--shadow)}
+.ring .rfg{stroke:var(--acc)}.ring .rbg{stroke:color-mix(in srgb,var(--acc) 14%,var(--line))}
+.ring.low .rfg{stroke:var(--bad)}
+.cnt-pill{background:var(--accbg);color:var(--acc);font-weight:800;border-radius:99px;padding:5px 14px;font-size:.85rem}
+/* buttons: accent first, no green/red blocks */
+.gbtn.go{background:var(--acc);box-shadow:0 10px 20px -10px var(--acc)}
+.gbtn.blue{background:var(--card);color:var(--ink);border-color:var(--line);box-shadow:none}
+.gbtn.red{background:var(--badbg);color:var(--bad);box-shadow:none;border-color:transparent}
+.gbtn.red:hover{background:color-mix(in srgb,var(--bad) 18%,var(--card))}
+/* answer feedback */
+.fb,.fb.right,.fb.wrong,.fb.none{color:var(--ink);background:var(--card);border:1.5px solid var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.fb::before{content:"";position:absolute;inset:0 0 auto 0;height:6px;background:var(--fc)}
+.fb.right{--fc:var(--ok);background:linear-gradient(180deg,var(--okbg),var(--card) 70%)}
+.fb.wrong{--fc:var(--bad);background:linear-gradient(180deg,var(--badbg),var(--card) 70%)}
+.fb.none{--fc:var(--mute)}
+.fb b,.fb span{color:var(--ink)}.fb small{color:var(--mute)}
+.fb .ficon{background:var(--fc);color:#fff;box-shadow:0 10px 22px -10px var(--fc)}
+.fb.right .ficon,.fb.wrong .ficon,.fb.none .ficon{color:#fff}
+.fb .pts{background:var(--accbg);color:var(--acc)}
+/* result bars use the same palette */
+.hist i.c0{background:var(--t0)}.hist i.c1{background:var(--t1)}.hist i.c2{background:var(--t2)}.hist i.c3{background:var(--t3)}
+.hist i{border-radius:14px 14px 4px 4px}
+/* leaderboard + podium */
+.brow:nth-child(1) .r{background:linear-gradient(180deg,#F7C948,var(--warm));color:#fff}
+.brow:nth-child(2) .r{background:#B8C0D4;color:#fff}.brow:nth-child(3) .r{background:#D69E6B;color:#fff}
+.podium .pblk{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 85%,#fff),var(--acc))!important}
+/* calmer backdrop */
+.gm::before{opacity:.7}.gm::after{opacity:.6}
+/* host on a big screen: everything scales up */
+@media(min-width:900px){
+.gwrap{max-width:1180px;gap:22px}
+.qcard.xl{font-size:clamp(1.8rem,3.2vw,2.9rem);padding:clamp(26px,3.4vw,48px);line-height:1.25;border-radius:30px}
+.qstat{padding:12px 14px 12px 24px;border-radius:26px}.qn{font-size:1.7rem}
+.qstat .ring{width:78px!important;height:78px!important}.qstat .ring b{font-size:1.7rem}
+.ans.full{gap:18px}.ans.full .abtn{min-height:clamp(130px,20vh,210px);border-radius:28px;padding:22px 26px;gap:22px}
+.ans.full .abtn span{font-size:clamp(1.3rem,2.3vw,2.1rem)}
+.ans.full .abtn svg{width:76px;height:76px;padding:19px;border-radius:20px}
+.gcard.pincard{padding:28px}.pinbox{font-size:clamp(3.4rem,6vw,5.4rem)}
+.pchip{font-size:1.05rem;padding:7px 18px 7px 7px}
+.roster h2{font-size:1.9rem}
+.board{max-width:820px;gap:10px}.brow{padding:14px 22px;font-size:1.2rem}.brow .r{width:36px;height:36px}
+.hist{height:clamp(220px,36vh,380px)}.hist b{font-size:1.9rem}
+.gtop{margin:14px 18px 0;padding:12px 20px}
+}
+.abtn{border-color:color-mix(in srgb,var(--acc) 16%,var(--line));box-shadow:0 10px 22px -16px color-mix(in srgb,var(--acc) 60%,#000),0 1px 0 color-mix(in srgb,var(--acc) 10%,transparent)}
+@media(max-width:560px){.pq .qcard{font-size:1.2rem;padding:18px 16px}.pq .abtn span{font-size:1.05rem}}
