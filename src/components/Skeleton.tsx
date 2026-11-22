@@ -1,22 +1,26 @@
+import { SiteNav } from './SiteChrome';
 /** Calm placeholders shown while the app wakes up: same shapes as the real screen, so nothing jumps when it arrives. */
 const B = ({ w, h, r, c = '' }: { w?: number | string; h: number | string; r?: number; c?: string }) => <i className={'sk ' + c} style={{ width: w, height: h, borderRadius: r }} aria-hidden="true" />;
 
 export function HomeSkeleton() {
   return (
-    <div className="wrap skw" role="status" aria-busy="true" aria-label="Loading">
+    <>
+    <SiteNav owner={false} onSettings={() => {}} />
+    <div className="hm skw" role="status" aria-busy="true" aria-label="Loading">
       <div className="sk-tabs"><B h={44} r={16} /></div>
       <div className="sk-card">
         <div className="sk-row"><B w="42%" h={16} /><span style={{ flex: 1 }} /><B w={44} h={44} r={22} /></div>
         <B h={46} r={23} />
         <B w="88%" h={34} /><B w="62%" h={34} />
         <B w="55%" h={14} />
-        <B h={170} r={24} />
+        <B h={170} r={24} c="sk-fan" />
         <div className="sk-row"><B w={150} h={52} r={18} /><B w={52} h={52} r={26} /></div>
       </div>
       <div className="sk-trio"><B h={78} r={22} /><B h={78} r={22} /><B h={78} r={22} /></div>
       <B w="38%" h={20} />
-      <div className="sk-rail"><B h={120} r={22} /><B h={120} r={22} /></div>
+      <div className="sk-rail"><B h={120} r={22} /><B h={120} r={22} /><B h={120} r={22} /><B h={120} r={22} /></div>
     </div>
+    </>
   );
 }
 export function StudySkeleton() {

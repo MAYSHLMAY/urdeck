@@ -341,7 +341,7 @@ button.sh-fire{border:0;background:none;font:inherit;color:inherit;cursor:pointe
 .sk{display:block;background:linear-gradient(90deg,color-mix(in srgb,var(--ink) 7%,transparent) 0%,color-mix(in srgb,var(--ink) 13%,transparent) 50%,color-mix(in srgb,var(--ink) 7%,transparent) 100%);background-size:220% 100%;animation:skim 1.25s ease-in-out infinite;border-radius:10px;max-width:100%}
 @keyframes skim{from{background-position:120% 0}to{background-position:-120% 0}}
 @media (prefers-reduced-motion:reduce){.sk{animation:none}}
-.skw{display:flex;flex-direction:column;gap:14px}
+.skw{display:flex;flex-direction:column;gap:16px;width:100%;box-sizing:border-box}.skw.hm{gap:16px}
 .sk-row{display:flex;gap:10px;align-items:center}
 .sk-card{display:flex;flex-direction:column;gap:14px;padding:18px;border:1px solid var(--line);border-radius:28px;background:var(--card)}
 .sk-trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
@@ -368,3 +368,12 @@ dialog[open]{overscroll-behavior:contain}
 .tcard .tbtn{padding:10px 14px}
 .hnote{margin:4px 2px 0;color:var(--mute);font-size:.85rem}
 }
+
+/* Loading placeholder follows the real Home layout on wide screens */
+@media(min-width:700px){
+.sk-card{display:grid;grid-template-columns:1.05fr 1fr;column-gap:24px;row-gap:14px;padding:26px 30px 28px;align-content:center}
+.sk-card>*{grid-column:1}.sk-card>.sk-fan{grid-column:2;grid-row:1/8;height:260px!important;align-self:center}
+.sk-rail{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(min-width:900px){.sk-tabs{display:none}}
+@media(min-width:700px){.skw.hm{gap:22px}.sk-card{min-height:406px}}
