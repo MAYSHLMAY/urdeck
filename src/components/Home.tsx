@@ -84,7 +84,7 @@ export default function Home() {
   useEffect(() => { if (mounted && e.ready) scheduleReminder(e); }, [mounted, e.ready, e.ver]); // eslint-disable-line
   useEffect(() => { try { if (!mounted || !e.ready) return; newBadges(e).forEach(b => e.toast('Badge earned: ' + b.title)); } catch { /* ignore */ } }, [mounted, e.ver]); // eslint-disable-line
 
-  if (!mounted) return <HomeSkeleton />;
+  if (!mounted || !e.ready) return <HomeSkeleton />;
 
   const c = e.counts(), S = e.S, now = Date.now();
   let live = false; for (let k = 0; k <= 1 + (S.freeze || 0); k++) if (S.last === e.dayKey(e.addDays(e.dayStart(now), -k))) live = true;
@@ -145,16 +145,16 @@ export default function Home() {
           </div>
           <FieldPill className="dk-field" />
           <h1 className="dk-h">Your memory is on <em>deck</em> today.</h1>
-          <p className="dk-sub">{todo > 0 ? <><b>{todo}</b> card{todo === 1 ? '' : 's'} to review. </> : 'Nothing due right now. '}{msg}</p>
+          <p className="dk-sub">{!e.ready ? <i className="sk" style={{ display: 'block', width: '78%', height: 16, borderRadius: 8, margin: '6px 0' }} aria-hidden="true" /> : todo > 0 ? <><b>{todo}</b> card{todo === 1 ? '' : 's'} to review. </> : 'Nothing due right now. '}{e.ready && msg}</p>
           {home.hero === 'deck' && (
             <div className="dk-fan" onTouchStart={ev => { const t = ev.touches[0]; (ev.currentTarget as any)._s = [t.clientX, t.clientY]; }} onTouchEnd={ev => { const a = (ev.currentTarget as any)._s, t = ev.changedTouches[0]; if (!a || deckRaw.length < 2) return; const dx = t.clientX - a[0]; if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(t.clientY - a[1])) { (ev.currentTarget as any)._sw = Date.now(); setRot(r => (r + (dx < 0 ? 1 : deckRaw.length - 1)) % deckRaw.length); try { navigator.vibrate?.(6); } catch { /* ignore */ } } }}>
-              {deckCards.length ? deckCards.map((d, i) => (
+              {!e.ready ? <i className="sk dk-c c0" style={{ display: 'block' }} aria-hidden="true" /> : deckCards.length ? deckCards.map((d, i) => (
                 <button type="button" key={d.id} className={'dk-c c' + i} aria-label={'Study this card: ' + d.text} onClick={ev => { e.openCard(d.id); zoomInto(ev.currentTarget, () => router.push('/study')); }}><small>{d.lab}</small><b>{d.text}</b><span>Card {i + 1} of {Math.max(todo, deckCards.length)}</span></button>
               )) : <Link href="/study" className="dk-c c0"><small>Your deck</small><b>Add your first cards to start studying.</b><span>Card 1 of 1</span></Link>}
             </div>
           )}
           <div className="dk-bar">
-            <Link className="dk-go" href="/study">{todo > 0 ? (tc > 0 ? 'Continue' : 'Start') : 'Browse cards'} <Ic n="arrowR" /></Link>
+            <Link className="dk-go" href="/study">{!e.ready ? 'Study' : todo > 0 ? (tc > 0 ? 'Continue' : 'Start') : 'Browse cards'} <Ic n="arrowR" /></Link>
             <div className={'dk-ring' + (gp >= 1 ? ' met' : '')} role="img" aria-label={"Today's goal: " + tc + ' of ' + goal}>
               <svg viewBox="0 0 120 120" aria-hidden><circle cx="60" cy="60" r="50" className="rb" /><circle cx="60" cy="60" r="50" className="rf" strokeDasharray={2 * Math.PI * 50} strokeDashoffset={2 * Math.PI * 50 * (1 - gp)} /></svg>
               <span>{gp >= 1 ? <Ic n="check" /> : <b>{tc}</b>}</span>
@@ -167,9 +167,9 @@ export default function Home() {
     </>),
     stats: (<>
         <div className="tstats">
-          <div className="tstat n"><b>{c.nToday}</b><span>New</span><Ic n="sparkle" className="uc-wm" /></div>
-          <div className="tstat l"><b>{c.l}</b><span>Learning</span><Ic n="clock" className="uc-wm" /></div>
-          <div className="tstat d"><b>{c.dToday}</b><span>Due</span><Ic n="target" className="uc-wm" /></div>
+          <div className="tstat n"><b>{e.ready ? c.nToday : '–'}</b><span>New</span><Ic n="sparkle" className="uc-wm" /></div>
+          <div className="tstat l"><b>{e.ready ? c.l : '–'}</b><span>Learning</span><Ic n="clock" className="uc-wm" /></div>
+          <div className="tstat d"><b>{e.ready ? c.dToday : '–'}</b><span>Due</span><Ic n="target" className="uc-wm" /></div>
         </div>
     </>),
     shortcuts: (<>

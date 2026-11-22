@@ -84,7 +84,7 @@ export default function App() {
     return () => removeEventListener('keydown', onKey);
   }, [e]);
 
-  if (!mounted) return <StudySkeleton />;
+  if (!mounted || !e.ready) return <StudySkeleton />;
 
   const c = e.counts(), S = e.S, now = Date.now();
   const live2 = S.last === e.dayKey(now) || S.last === e.dayKey(e.addDays(e.dayStart(now), -1));

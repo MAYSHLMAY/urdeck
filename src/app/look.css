@@ -354,3 +354,17 @@ html[data-splash="1"],html[data-gate],html:has(.wl),html:has(dialog[open]),html:
 html[data-splash="1"] body,html[data-gate] body,html:has(.wl) body,html:has(dialog[open]) body,html:has(.clight) body,html:has(.vfull) body,html:has(.rch-mk) body{overflow:hidden!important;overscroll-behavior:none}
 dialog[open]{overscroll-behavior:contain}
 .wl,#ud-splash{overscroll-behavior:none;touch-action:manipulation}
+
+/* Topics follow the chosen colour and fill the page as a list */
+.tcard{--pc:var(--acc)!important}
+.tcard::before{background:var(--acc)!important}
+.tbadge{background:var(--acc)!important;color:#fff}
+.tbtn{background:color-mix(in srgb,var(--acc) 14%,var(--card))!important;color:var(--acc)!important}
+.tcard .uc-wm{display:none}
+@media(max-width:700px){
+.topics{display:flex!important;flex-direction:column;overflow:visible!important;margin:0!important;padding:2px 0 8px!important;gap:10px;scroll-snap-type:none!important}
+.tcard{flex:none!important;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:14px 14px 14px 16px;border-radius:20px}
+.tcard::before{inset:0 auto 0 0;width:5px;height:auto}
+.tcard .tbtn{padding:10px 14px}
+.hnote{margin:4px 2px 0;color:var(--mute);font-size:.85rem}
+}
