@@ -56,6 +56,12 @@ function zoomInto(el: HTMLElement, go: () => void) {
   } catch { go(); }
 }
 
+/** Is this touch inside something that scrolls sideways (a carousel)? Then the swipe belongs to it, not to the Today / Progress / Library tabs. */
+function inHScroll(el: HTMLElement | null) {
+  for (let a = el; a && a !== document.body; a = a.parentElement) { const o = getComputedStyle(a).overflowX; if ((o === 'auto' || o === 'scroll') && a.scrollWidth > a.clientWidth + 2) return true; }
+  return false;
+}
+
 export default function Home() {
   const e = useEngine(), R = usePoolSync(), router = useRouter();
   const [liveG, setLive] = useState<any[]>([]);
@@ -245,7 +251,7 @@ export default function Home() {
                 </div>
               )}
               <div key={phone ? cur : 'all'} className={'hsecs' + (phone ? ' ptab ' + (dir > 0 ? 'fwd' : 'back') : '')}
-                onTouchStart={ev => { if (!phone) return; const t = ev.touches[0], el = ev.target as HTMLElement; swipe.x = t.clientX; swipe.y = t.clientY; swipe.ok = !el.closest('.dk-fan,.modes.row,.topics,.week,input,textarea,select,dialog'); }}
+                onTouchStart={ev => { if (!phone) return; const t = ev.touches[0], el = ev.target as HTMLElement; swipe.x = t.clientX; swipe.y = t.clientY; swipe.ok = !el.closest('.dk-fan,.modes,.more,.badges,.topics,.week,input,textarea,select,dialog') && !inHScroll(el); }}
                 onTouchEnd={ev => { if (!phone || !swipe.ok) return; const t = ev.changedTouches[0], dx = t.clientX - swipe.x, dy = t.clientY - swipe.y; if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 2) { const i = tabs.indexOf(cur) + (dx < 0 ? 1 : -1); if (tabs[i]) go2(tabs[i]); } }}>
                 {list.map((id, ix) => (
                   <div key={id} className={'hsx s-' + id} style={{ ['--i' as any]: ix }}>{SEC[id]}</div>

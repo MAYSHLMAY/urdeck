@@ -27,8 +27,8 @@ export function syncBars() {
 export function syncIcons(a = getLook().a) {
   try {
     if (!ACCENTS.some(x => x[0] === a)) return;
-    const set = (sel: string, make: () => HTMLLinkElement, attrs: Record<string, string>) => { let l = document.head.querySelector<HTMLLinkElement>(sel); if (!l) { l = make(); document.head.appendChild(l); } Object.entries(attrs).forEach(([k, v]) => l!.setAttribute(k, v)); return l; };
-    document.head.querySelectorAll('link[rel="icon"]').forEach((l, i) => { if (i) l.remove(); });
+    /* Only change the address on links that already exist. Never add or remove head nodes: React owns them and breaks on navigation. */
+    const set = (sel: string, _m: () => HTMLLinkElement, attrs: Record<string, string>) => { document.head.querySelectorAll<HTMLLinkElement>(sel).forEach(l => Object.entries(attrs).forEach(([k, v]) => { if (l.getAttribute(k) !== v) l.setAttribute(k, v); })); };
     set('link[rel="icon"]', () => Object.assign(document.createElement('link'), { rel: 'icon' }), { href: '/icons/' + a + '-192.png', type: 'image/png', sizes: '192x192' });
     set('link[rel="apple-touch-icon"]', () => Object.assign(document.createElement('link'), { rel: 'apple-touch-icon' }), { href: '/icons/' + a + '-180.png' });
     set('link[rel="manifest"]', () => Object.assign(document.createElement('link'), { rel: 'manifest' }), { href: '/manifests/' + a + '.webmanifest' });

@@ -13,4 +13,4 @@ export function recover(): boolean {
   })();
   return true;
 }
-export const looksStale = (m: string) => /ChunkLoadError|Loading chunk|dynamically imported module|Unexpected token '<'|client-side exception|Failed to fetch RSC|Minified React error|Hydration|did not match/i.test(m);
+export const looksStale = (m: string) => /ChunkLoadError|Loading chunk|dynamically imported module|Unexpected token '<'|Failed to fetch RSC/i.test(m);

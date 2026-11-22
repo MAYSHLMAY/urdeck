@@ -117,7 +117,6 @@
 /* ---- smoothness: no tap delay, no blur, cheaper off-screen work, gentler snap ---- */
 html{touch-action:manipulation;-webkit-text-size-adjust:100%}
 a,button,summary,label,[role=button]{touch-action:manipulation}
-.hsecs>.hsx:nth-child(n+3){content-visibility:auto;contain-intrinsic-size:auto 300px}
 .topics,.modes.row{scroll-snap-type:x proximity!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
 .tabbar,.top,.xbar,.snav{transform:translateZ(0)}
 
@@ -237,7 +236,14 @@ button.fd-row{all:unset;box-sizing:border-box;display:flex;align-items:center;ga
   .hm{padding-top:10px}
   .modes,.more{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;margin:0 -14px;padding:0 14px 6px;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
   .modes::-webkit-scrollbar,.more::-webkit-scrollbar,.badges::-webkit-scrollbar{display:none}
-  .modes .uc,.more .uc{flex:0 0 min(72%,240px);scroll-snap-align:start;min-height:132px}
+  .modes,.more{scroll-padding-left:14px}
+  .modes .uc,.more .uc{flex:0 0 min(64%,216px);scroll-snap-align:start;min-height:116px;padding:14px;gap:8px 10px;border-radius:22px;background:var(--card)}
+  .modes .uc.glow,.more .uc.glow{background:var(--card)}
+  .modes .uc-wm,.more .uc-wm{display:none}
+  .modes .uc-t,.more .uc-t{margin-top:4px;font-size:1rem}
+  .modes .uc-d,.more .uc-d{margin-top:-4px;font-size:.8rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-right:30px}
+  .modes .uc::before,.more .uc::before{content:'';position:absolute;z-index:0;right:12px;bottom:12px;width:26px;height:26px;border-radius:50%;background:color-mix(in srgb,var(--c) 14%,transparent)}
+  .modes .uc::after,.more .uc::after{content:'';position:absolute;z-index:1;right:21px;bottom:21px;width:6px;height:6px;border-top:2px solid var(--c);border-right:2px solid var(--c);transform:rotate(45deg)}
   .badges{display:flex;overflow-x:auto;scroll-snap-type:x proximity;gap:10px;margin:0 -14px;padding:0 14px 6px;scrollbar-width:none}.badges .bdg{flex:0 0 112px;scroll-snap-align:start}
   .dk{border-radius:28px;padding:16px 16px 18px}
   .dk-fan{height:200px}.dk-c{height:156px;top:20px}
@@ -342,3 +348,9 @@ button.sh-fire{border:0;background:none;font:inherit;color:inherit;cursor:pointe
 .sk-rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .sk-opts,.sk-list{display:flex;flex-direction:column;gap:10px}
 .sk-tabs{padding:6px;border-radius:20px;background:color-mix(in srgb,var(--acc) 9%,var(--bg))}
+
+/* Lock the page behind splash, welcome, sheets and full-screen viewers */
+html[data-splash="1"],html[data-gate],html:has(.wl),html:has(dialog[open]),html:has(.clight),html:has(.vfull),html:has(.rch-mk){overflow:hidden!important;overscroll-behavior:none}
+html[data-splash="1"] body,html[data-gate] body,html:has(.wl) body,html:has(dialog[open]) body,html:has(.clight) body,html:has(.vfull) body,html:has(.rch-mk) body{overflow:hidden!important;overscroll-behavior:none}
+dialog[open]{overscroll-behavior:contain}
+.wl,#ud-splash{overscroll-behavior:none;touch-action:manipulation}

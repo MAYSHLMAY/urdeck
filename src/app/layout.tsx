@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   keywords: ['UrDeck', 'flashcards app', 'spaced repetition', 'Anki alternative', 'import Anki apkg', 'study app', 'PDF reader for students', '3D anatomy lab', 'live quiz', 'offline study app'],
   alternates: { canonical: '/' },
   manifest: '/manifest.webmanifest',
-  icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }, { url: '/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: '/apple-touch-icon.png' },
+  icons: { icon: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: '/apple-touch-icon.png' },
   appleWebApp: { capable: true, title: 'UrDeck', statusBarStyle: 'default' },
   openGraph: { type: 'website', siteName: 'UrDeck', url: '/', title: 'UrDeck: flashcards, 3D lab and PDF reader', description: DESC, images: [{ url: '/og.png', width: 1200, height: 630, alt: 'UrDeck study app' }] },
   twitter: { card: 'summary_large_image', title: 'UrDeck: flashcards, 3D lab and PDF reader', description: DESC, images: ['/og.png'] },
