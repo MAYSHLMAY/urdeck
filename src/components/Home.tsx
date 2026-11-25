@@ -129,6 +129,7 @@ export default function Home() {
     { id: 'quiz', t: 'Live quiz', d: 'Play along with friends', b: 'Live', c: '#0B7BC4', ic: 'play', href: '/play' },
     { id: 'read', t: 'Reader', d: lastRead ? lastRead.t + ' · p. ' + lastRead.p.page : 'Read your PDFs, no cards needed', b: lastRead ? 'Resume' : 'PDF', c: '#D6453D', ic: 'file', href: lastRead ? '/read?pdf=' + encodeURIComponent(lastRead.id) : '/read' },
     { id: 'lab', t: '3D lab', d: lastLab ? 'Continue: ' + lastLab.name : 'Models and simulations', b: lastLab ? 'Resume' : 'New', c: '#8250DF', ic: 'cube', href: lastLab ? '/lab#' + encodeURIComponent(lastLab.id) : '/lab' },
+    { id: 'articles', t: 'Articles', d: 'Interactive reads you can touch', b: 'New', c: '#2F8F6B', ic: 'book', href: '/articles' },
     { id: 'duel', t: 'Challenge', d: 'Duel a friend on your cards', b: 'Hot', c: '#E5533C', ic: 'trophy', href: '/duel' },
     { id: 'leech', t: 'Leech Lab', d: nLeech ? nLeech + ' stuck card' + (nLeech === 1 ? '' : 's') + ' to treat' : 'Fix cards that keep slipping', b: nLeech ? String(nLeech) : 'Fix', c: '#F07B2B', ic: 'flag', href: '/leeches' },
     ...(isOwner() ? [{ id: 'host', t: 'Host', d: 'Run a live game', b: 'Owner', c: '#E2A21B', ic: 'star', href: '/host' }] : [])

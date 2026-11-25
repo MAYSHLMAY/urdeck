@@ -6,13 +6,14 @@
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Card, FoldDB } from './types';
+import { timedFetch } from './net';
 
 let _sb: SupabaseClient | null = null;
 export function sb() {
   if (_sb) return _sb;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) throw new Error('Supabase is not configured. Copy .env.example to .env.local and fill it in.');
-  _sb = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  _sb = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { fetch: (i: any, init?: any) => timedFetch(i, init || {}, 25_000) } });
   return _sb;
 }
 

@@ -9,6 +9,7 @@ import { parsePack, parseRaw, ready, cook } from './parse';
 import { DEF, M, D, examDays, leechHit, addDays, dayStart, fmtIv, lab as labFn, nxt, steps, ymd, type CS, type Opts } from './srs';
 import { applyMut, buildTree, emptyTree, fpath, FD, isField, type Tree } from './tree';
 import { spillAll, spillDel, spillPut, freeSpace } from './spill';
+import { safe, PROG as SAFE_PROG } from './safety';
 import { emptyMeta, fetchMeta, readCache, saveCards, syncCards, type Meta } from './library';
 import { api, isOwner } from './api';
 import { setSound, sfx } from './game/sound';
@@ -81,6 +82,10 @@ export class Engine {
   private saveT: any = 0;
 
   constructor() {
+    if (typeof window !== 'undefined') {
+      safe.boot(process.env.NEXT_PUBLIC_BUILD || 'dev');
+      if (safe.check() === 'damaged') setTimeout(() => this.toast('Your saved progress could not be read. Open Settings, then Safety copies, to restore one.'), 1500);
+    }
     const m = jget(K_MINE);
     if (m) { this.DATA.packs = m.packs || []; this.DATA.titles = m.titles || {}; }
     const sh = jget(K_SH); if (sh) this.SH = sh;
@@ -112,6 +117,7 @@ export class Engine {
   private spilled = new Set<string>(); private warned = false;
   /** Write one value. If localStorage is full: drop rebuildable caches and retry, then keep the data in IndexedDB so nothing is lost. */
   private put(key: string, val: string): boolean {
+    if (key === SAFE_PROG) { try { safe.guard(key, localStorage.getItem(key), val); } catch { /* ignore */ } }
     try { localStorage.setItem(key, val); if (this.spilled.delete(key)) spillDel(key); return true; }
     catch {
       freeSpace();

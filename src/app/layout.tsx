@@ -14,6 +14,7 @@ import './reference.css';
 import './home.css';
 import './browse.css';
 import { OfflineBadge } from '@/components/OfflineBadge';
+import { Guide } from '@/components/Guide';
 import { SyncBoot } from '@/components/SyncBoot';
 import { SPLASH_BOOT, SPLASH_CSS, SPLASH_HTML } from '@/lib/splash';
 import { FieldHost } from '@/components/Fields';
@@ -21,10 +22,12 @@ import { StreakHost } from '@/components/Streak';
 import { SplashBoot } from '@/components/SplashBoot';
 import { NativeBoot } from '@/components/NativeBoot';
 import { AppBoot } from '@/components/AppBoot';
+import UpdatePrompt from '@/components/UpdatePrompt';
 import { Welcome } from '@/components/Welcome';
 import './theme.css';
 import './app.css';
 import './welcome.css';
+import './guide.css';
 import './look.css';
 import './buddy.css';
 import { LOOK_BOOT } from '@/lib/look';
@@ -58,9 +61,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: LD }} />
       </head>
       <body><div id="ud-splash" role="dialog" aria-modal="true" aria-label="UrDeck is starting" dangerouslySetInnerHTML={{ __html: SPLASH_HTML }} /><SplashBoot />
-        <FieldHost /><StreakHost /><NativeBoot /><AppBoot /><SyncBoot />
+        <FieldHost /><StreakHost /><NativeBoot /><AppBoot /><UpdatePrompt /><SyncBoot />
         <Welcome />
         <OfflineBadge />
+        <Guide />
         <Listen />{children}</body>
     </html>
   );

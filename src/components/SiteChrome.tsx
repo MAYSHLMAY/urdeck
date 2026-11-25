@@ -15,6 +15,7 @@ export function SiteNav({ owner, onSettings }: { owner: boolean; onSettings: () 
       <Link href="/" className="sbrand">{PLANE}<span>UrDeck</span></Link>
       <div className="slinks">
         <Link href="/study">Study</Link>
+        <Link href="/articles">Articles</Link>
         <Link href="/lab">3D lab</Link>
         <Link href="/play">Live quiz</Link>
         {owner && <Link href="/host">Host</Link>}

@@ -1,9 +1,12 @@
 'use client';
+import { startGuide } from './Guide';
+import { safe, type SnapInfo } from '@/lib/safety';
+import { off as reportsOff } from '@/lib/report';
 import { Connections } from './Research';
 import Link from 'next/link';
 import { AccountCard } from './Welcome';
 import { Appearance } from './Appearance';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DEF, steps, ymd } from '@/lib/srs';
 import { api, isOwner, lock, unlock } from '@/lib/api';
 import { dl, Sheet, SheetFrame, useEngine, Ic, ask } from './ui';
@@ -88,6 +91,36 @@ function Swatches() {
   );
 }
 
+function SafetyCopies({ say }: { say: (t: string, c?: string) => void }) {
+  const [open, setOpen] = useState(false), [list, setList] = useState<SnapInfo[] | null>(null);
+  const names: Record<string, string> = { daily: 'Daily copy', update: 'Before an update', shrink: 'Before a big change', restore: 'Before a restore', migrate: 'Before an upgrade' };
+  const show = async () => { setOpen(o => !o); if (!list) setList(await safe.list()); };
+  return (
+    <div className="safec">
+      <button className="ghost sm" onClick={show} aria-expanded={open}>Safety copies</button>
+      {open && <div className="sflist">
+        <p className="n">The app keeps a few copies of your progress on this phone by itself. Restoring one first saves what you have now, so you can undo it.</p>
+        {!list ? <p className="n">Looking…</p> : !list.length ? <p className="n">No copies yet. The first one is made the next time you open the app.</p> : list.map(x => (
+          <div className="sfrow" key={x.id}>
+            <span><b>{names[x.label] || x.label}</b><small>{new Date(x.t).toLocaleString()} · {x.cards} cards tracked</small></span>
+            <button className="ghost sm" onClick={async () => { if (!confirm('Put this copy back? Your current progress is saved as a copy first.')) return; if (await safe.restore(x.id)) { say('Restored. Reloading…'); setTimeout(() => location.reload(), 600); } else say('That copy could not be restored.', 'err'); }}>Restore</button>
+          </div>))}
+      </div>}
+    </div>
+  );
+}
+
+function CrashToggle() {
+  const [on, setOn] = useState(true);
+  useEffect(() => { setOn(!reportsOff()); }, []);
+  return (
+    <label className="safec crash">
+      <input type="checkbox" checked={on} onChange={e => { setOn(e.target.checked); try { localStorage.setItem('ud-noreport', e.target.checked ? '0' : '1'); } catch { /* ignore */ } }} />
+      <span><b>Send crash reports</b><small>Only the error text, the page and the app version. Never your cards, notes or name.</small></span>
+    </label>
+  );
+}
+
 export function Settings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const e = useEngine(), R = useRefs();
   const [msg, setMsg] = useState<{ t: string; c: string }>({ t: '', c: '' });
@@ -143,6 +176,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
       <SheetFrame title="Settings" onClose={onClose}>
         <div className="sc setp">
           <AccountCard />
+          <section className="scard"><h4>Help</h4><p className="wl-hint" style={{ textAlign: 'left' }}>New here? A short guide points at the real buttons and moves on as you tap them.</p><button className="wl-btn pri" onClick={() => { onClose(); setTimeout(startGuide, 400); }}>Show me around</button></section>
           <Appearance onArrange={onClose} />
           {BASIC.map(([g, ic, fs]) => (
             <section className="scard" key={g}><h4><Ic n={ic} />{g}</h4>{g === 'Look' && <Swatches />}{g === 'Studying' && <Reminder />}{fs.map(field)}</section>
@@ -195,6 +229,8 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
               ev.target.value = '';
             }} />
             <p className={'n ' + msg.c} id="smsg">{msg.t}</p>
+            <SafetyCopies say={say} />
+            <CrashToggle />
           </section>
 
           <details className="scard adv"><summary><Ic n="sliders" />Advanced</summary>

@@ -1,4 +1,5 @@
 'use client';
+import { timedFetch } from '@/lib/net';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Sheet, SheetFrame, useEngine, Ic } from './ui';
 import { isOwner } from '@/lib/api';
@@ -124,7 +125,7 @@ export function Connections() {
     setErr(''); setBusy(true);
     try {
       let t = txt.trim();
-      if (/^https:\/\//i.test(t)) { const r = await fetch(t); if (!r.ok) throw new Error('Could not open that address.'); t = await r.text(); }
+      if (/^https:\/\//i.test(t)) { const r = await timedFetch(t, {}, 20_000); if (!r.ok) throw new Error('Could not open that address.'); t = await r.text(); }
       let j: any; try { j = JSON.parse(t); } catch { throw new Error('That is not valid JSON.'); }
       const r = checkManifest(j); if (!r.m) throw new Error(r.err);
       adapters.add(r.m); setAdd(false); setTxt('');

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { admin } from '@/lib/server/supabase';
+import { readJson, slow, statusOf, tooMany } from '@/lib/server/limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,8 @@ const fail = (m: string, s = 400) => NextResponse.json({ error: m }, { status: s
  */
 export async function POST(req: Request) {
   try {
-    const b = await req.json();
+    if (tooMany(req, 'notes', 600)) return slow();
+    const b = await readJson(req, 1_500_000);
     if (!UUID.test(b.deviceId)) return fail('Bad device id.');
     const up: any[] = Array.isArray(b.upserts) ? b.upserts.slice(0, 100) : [];
     const del: string[] = (Array.isArray(b.deletes) ? b.deletes : []).filter((x: any) => UUID.test(x)).slice(0, 200);
@@ -62,6 +64,6 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ saved, deleted: toDel });
   } catch (e: any) {
-    return fail(e.message || 'Server error', 500);
+    return fail(statusOf(e) === 413 ? 'Too much at once.' : (e.message || 'Server error'), statusOf(e));
   }
 }

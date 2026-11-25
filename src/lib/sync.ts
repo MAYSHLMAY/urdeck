@@ -14,11 +14,12 @@ import { engine } from './engine';
 import { notes } from './notes';
 import { auth, profile } from './auth';
 import { prefs } from './prefs';
+import { timedFetch, isNetErr } from './net';
+import { stable, h53, scanMeta, mergeRemote, stampOf, Clock, type Meta } from './syncmerge';
 
 const K_CFG = 'fr-sync-cfg-v1', K_META = 'fr-sync-meta-v1', K_CUR = 'fr-sync-cur-v1', K_OUT = 'fr-sync-out-v1';
 const A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 export interface Cfg { code: string; space: string; dev: string; since: number; base?: boolean }
-type Meta = Record<string, [string, string, 0 | 1]>;   // key → [stamp, hash, deleted]
 export interface Status { state: 'off' | 'idle' | 'syncing' | 'offline' | 'error'; last: number; err: string; pending: number }
 
 const jget = (k: string): any => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
@@ -28,9 +29,6 @@ const hex = (b: ArrayBuffer) => [...new Uint8Array(b)].map(x => x.toString(16).p
 const sha = (s: string) => crypto.subtle.digest('SHA-256', enc.encode(s));
 const b64 = (u: Uint8Array) => { let s = ''; u.forEach(c => (s += String.fromCharCode(c))); return btoa(s); };
 const unb64 = (s: string) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-const stable = (v: any): string => v === null || typeof v !== 'object' ? JSON.stringify(v) : Array.isArray(v) ? '[' + v.map(stable).join(',') + ']' : '{' + Object.keys(v).sort().filter(k => v[k] !== undefined).map(k => JSON.stringify(k) + ':' + stable(v[k])).join(',') + '}';
-/** quick 53-bit string hash, to see whether a record changed */
-function h53(s: string) { let a = 0xdeadbeef, b = 0x41c6ce57; for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); a = Math.imul(a ^ c, 2654435761); b = Math.imul(b ^ c, 1597334677); } a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909); b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909); return (4294967296 * (2097151 & b) + (a >>> 0)).toString(36) + s.length; }
 
 export const cleanCode = (s: string) => s.toUpperCase().replace(/[IL]/g, '1').replace(/O/g, '0').replace(/[^0-9A-Z]/g, '').replace(/U/g, 'V');
 export const fmtCode = (c: string) => c.match(/.{1,5}/g)?.join('-') || c;
@@ -40,7 +38,7 @@ const validCode = (c: string) => c.length === 20 && [...c].every(x => A.includes
 class Sync {
   cfg: Cfg | null = null; st: Status = { state: 'off', last: 0, err: '', pending: 0 };
   private meta: Meta = {}; private out = new Set<string>(); private cur = 0; private key: CryptoKey | null = null;
-  private subs = new Set<() => void>(); private busy = false; private again = false; private dirty = true; private started = false; private armed = false; private lastWall = 0; private ctr = 0; private deb: any = 0;
+  private subs = new Set<() => void>(); private busy = false; private again = false; private dirty = true; private started = false; private armed = false; private deb: any = 0;
   subscribe = (f: () => void) => { this.subs.add(f); return () => { this.subs.delete(f); }; };
   private emit() { this.subs.forEach(f => f()); }
   private set(p: Partial<Status>) { this.st = { ...this.st, ...p }; this.emit(); }
@@ -77,9 +75,10 @@ class Sync {
   private save() { jset(K_META, this.meta); jset(K_CUR, this.cur); jset(K_OUT, [...this.out]); }
 
   /* ---------- clock ---------- */
-  private stamp(wall: number, ctr = 0) { return String(Math.max(0, Math.floor(wall))).padStart(13, '0') + '.' + ctr.toString(16).padStart(4, '0') + '.' + this.cfg!.dev; }
-  private tick() { const now = Date.now(); if (now > this.lastWall) { this.lastWall = now; this.ctr = 0; } else this.ctr++; return this.stamp(this.lastWall, this.ctr); }
-  private seen(t: string) { const w = parseInt(t.slice(0, 13), 10); if (w > this.lastWall) { this.lastWall = w; this.ctr = 0; } }
+  private clk = new Clock(() => this.cfg!.dev);
+  private stamp(wall: number, ctr = 0) { return stampOf(wall, ctr, this.cfg!.dev); }
+  private tick() { return this.clk.tick(); }
+  private seen(t: string) { this.clk.seen(t); }
 
   /* ---------- crypto ---------- */
   private async aes() { if (!this.key) this.key = await crypto.subtle.importKey('raw', await sha('fr-key|' + this.cfg!.code), 'AES-GCM', false, ['encrypt', 'decrypt']); return this.key; }
@@ -98,33 +97,32 @@ class Sync {
   }
   private scan() {
     const cur = this.collect(), base = !!this.cfg?.base;
-    for (const [k, { v, ts }] of cur) {
-      const h = h53(stable(v)), m = this.meta[k];
-      if (!m) { this.meta[k] = [base ? this.stamp(ts || 0) : this.tick(), h, 0]; this.out.add(k); }
-      else if (m[2] === 1 || m[1] !== h) { this.meta[k] = [this.tick(), h, 0]; this.out.add(k); }
-    }
-    for (const k in this.meta) if (this.meta[k][2] === 0 && !cur.has(k)) { this.meta[k] = [this.tick(), '', 1]; this.out.add(k); }
+    scanMeta(this.meta, cur, base, () => this.tick(), t => this.stamp(t), this.out);
     if (base) { this.cfg!.base = false; jset(K_CFG, this.cfg); }
     return cur;
   }
   async run() {
     if (!this.cfg) return;
     if (this.busy) { this.again = true; return; }
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) { this.set({ state: 'offline' }); return; }
     await notes().start();   // never compare against notes that are still loading (they would look deleted)
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      // Offline: still note what changed, and when. A change made now must carry today's stamp, not the stamp of the day the phone reconnects.
+      if (this.dirty) { this.dirty = false; this.scan(); this.save(); }
+      this.set({ state: 'offline', pending: this.out.size }); return;
+    }
     this.busy = true; this.again = false; const wasDirty = this.dirty; this.dirty = false;
     try {
       this.set({ state: 'syncing', err: '' });
       if (wasDirty) this.scan(); this.save(); this.set({ pending: this.out.size });
       await this.push(); await this.pull();
       this.set({ state: 'idle', last: Date.now(), pending: this.out.size }); profile.schedulePush();
-    } catch (e: any) { this.set({ state: navigator.onLine === false ? 'offline' : 'error', err: String(e?.message || e).slice(0, 160) }); }
+    } catch (e: any) { this.set({ state: navigator.onLine === false || isNetErr(e) ? 'offline' : 'error', err: String(e?.message || e).slice(0, 160), pending: this.out.size }); }
     finally { this.busy = false; this.save(); if (this.again) setTimeout(() => this.run(), 400); }
   }
   /** When signed in, requests carry the account's login so a space the account has claimed accepts them. */
   private async uh(): Promise<Record<string, string>> { const t = await auth.token(); return t ? { 'x-user-token': t } : {}; }
   private async call(body: object) {
-    const r = await fetch(apiUrl('/api/sync'), { method: 'POST', headers: { 'content-type': 'application/json', ...(await this.uh()) }, body: JSON.stringify(body) });
+    const r = await timedFetch(apiUrl('/api/sync'), { method: 'POST', headers: { 'content-type': 'application/json', ...(await this.uh()) }, body: JSON.stringify(body) }, 25_000);
     const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Could not reach sync.'); return j;
   }
   /** Protect this device's space with the signed-in account ('' = done, otherwise the reason it did not work). */
@@ -148,19 +146,14 @@ class Sync {
   }
   private async pull() {
     for (let guard = 0; guard < 60; guard++) {
-      const r = await fetch(apiUrl(`/api/sync?space=${this.cfg!.space}&after=${this.cur}`), { cache: 'no-store', headers: await this.uh() });
+      const r = await timedFetch(apiUrl(`/api/sync?space=${this.cfg!.space}&after=${this.cur}`), { cache: 'no-store', headers: await this.uh() }, 25_000);
       const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Could not reach sync.');
       const rows: { rk: string; t: string; d: string; seq: number }[] = j.rows || []; if (!rows.length) return;
       const got: { k: string; t: string; v: any }[] = [];
       for (const row of rows) { try { const o = await this.open(row.d); if (o && typeof o.k === 'string') got.push({ k: o.k, t: row.t, v: o.v }); } catch { /* not ours / corrupted: skip */ } }
       this.scan();   // stamp anything the user changed meanwhile, so it beats older remote data
       const eng: [string, any][] = [], nts: [string, any][] = [], kvs: [string, any][] = [];
-      for (const g of got) {
-        this.seen(g.t); const m = this.meta[g.k];
-        if (m && m[0] >= g.t) continue;            // we hold a newer (or the same) version
-        this.meta[g.k] = [g.t, g.v == null ? '' : h53(stable(g.v)), g.v == null ? 1 : 0];
-        (g.k.startsWith('no:') ? nts : g.k.startsWith('kv:') ? kvs : eng).push([g.k, g.v]);
-      }
+      for (const [k, v] of mergeRemote(this.meta, got, t => this.seen(t))) (k.startsWith('no:') ? nts : k.startsWith('kv:') ? kvs : eng).push([k, v]);
       if (eng.length) engine().syncApply(eng);
       if (nts.length) notes().syncApply(nts);
       if (kvs.length) prefs.syncApply(kvs);

@@ -12,7 +12,9 @@
     "import:dry": "tsx scripts/import.ts --dry",
     "build:mobile": "node scripts/build-mobile.mjs",
     "android:sync": "npm run build:mobile && npx cap sync android",
-    "android:open": "npx cap open android"
+    "android:open": "npx cap open android",
+    "test": "vitest run",
+    "test:tz": "TZ=America/New_York vitest run && TZ=Africa/Addis_Ababa vitest run && TZ=Pacific/Auckland vitest run"
   },
   "dependencies": {
     "@capacitor-community/text-to-speech": "^5.1.0",
@@ -48,7 +50,8 @@
     "@types/react-dom": "^18.3.0",
     "sharp": "^0.35.5",
     "tsx": "^4.19.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^2.1.9"
   },
   "engines": {
     "node": ">=18.18"

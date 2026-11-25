@@ -1,10 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { recover } from '@/lib/recover';
+import { reportError } from '@/lib/report';
 /* The last safety net: if even the page frame fails (usually an old copy meeting a new release), refresh once by itself, then offer a button. */
-export default function GlobalError({ reset }: { error: Error; reset: () => void }) {
+export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
   const [fix, setFix] = useState(false);
-  useEffect(() => { setFix(recover()); }, []);
+  useEffect(() => { reportError(error, 'global'); setFix(recover()); }, []); // eslint-disable-line
   return (
     <html lang="en"><body style={{ margin: 0, fontFamily: 'system-ui,sans-serif', background: '#F3F5FB', color: '#171a2e' }}>
       <main style={{ maxWidth: 420, margin: '30vh auto', padding: 20, textAlign: 'center' }}>

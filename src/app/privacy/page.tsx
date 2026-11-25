@@ -19,6 +19,8 @@ export default function Privacy() {
 
       <h2 style={h}>Live quizzes</h2>
       <p>When a live quiz ends, the host's server saves the result: player nickname, avatar and scores, so leaderboards can be shown.</p>
+      <h2>Crash reports</h2>
+      <p>If the app breaks, it can send a short technical note: the error text, which page you were on, the app version and your browser. It never includes your cards, notes, name, email or sync code. You can turn this off in Settings, under Send crash reports.</p>
 
       <h2 style={h}>What we do not do</h2>
       <p>We do not sell your data, show ads or use your data for advertising. We do not share it, except with the services that run the app (hosting and database providers).</p>

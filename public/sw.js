@@ -3,15 +3,18 @@
 const V = 'fr-shell-' + (new URL(self.location.href).searchParams.get('v') || 'x');
 
 self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/read', '/play', '/exam', '/duel', '/leeches', '/icon-192.png', '/manifest.webmanifest'].map(u => c.add(u).catch(() => {})))));
+  // First install: nothing is running yet, so start at once. An update waits until the person taps "Reload" (see UpdatePrompt), so a page is never swapped under their hands.
+  if (!self.registration.active) self.skipWaiting();
+  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/read', '/articles', '/play', '/exam', '/duel', '/leeches', '/icon-192.png', '/manifest.webmanifest'].map(u => c.add(u).catch(() => {})))));
 });
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
-    for (const k of await caches.keys()) if (k !== V) await caches.delete(k);
+    for (const k of await caches.keys()) if (k !== V && k !== 'fr-state') await caches.delete(k);   // fr-state holds the study reminder, keep it
     await self.clients.claim();
   })());
 });
+
+self.addEventListener('message', e => { if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting(); });
 
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);

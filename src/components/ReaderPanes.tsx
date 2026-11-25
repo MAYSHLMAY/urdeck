@@ -16,6 +16,9 @@ const CHIPS: [string, string][] = [
   ['Quiz me', 'Ask me 3 short questions about this page, one at a time. Ask the first now and wait for my answer.']
 ];
 
+/** A page from this very app must never run with script access to it: treat it as untrusted (no scripts). */
+const sameSite = (u: string) => { try { return new URL(u, location.href).origin === location.origin; } catch { return true; } };
+
 export function AiPane({ title, page, getText, getSel, seed, seedKey }: { seed?: string; seedKey?: number; title: string; page: number; getText: () => Promise<string>; getSel: () => string }) {
   const [cfg, setCfg] = useState(aiGet()), [key, setKey] = useState(''), [err, setErr] = useState(''), [busy, setBusy] = useState(false);
   const [log, setLog] = useState<Turn[]>([]), [q, setQ] = useState(''), [useSel, setUseSel] = useState(true);
@@ -104,7 +107,7 @@ export function WebPane({ seed }: { seed: string }) {
         {QUICK.map(x => <button key={x.n} type="button" onClick={() => x.win ? openBeside(x.u) : go(x.u + encodeURIComponent(seed))}>{x.n}{x.win ? ' ↗' : ''}</button>)}
       </div>
       {url
-        ? <iframe key={n} className="rd-frame" src={url} title="Web page" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
+        ? <iframe key={n} className="rd-frame" src={url} title="Web page" referrerPolicy="no-referrer" sandbox={sameSite(url) ? 'allow-forms' : 'allow-scripts allow-same-origin allow-forms allow-popups'} />
         : <div className="rd-empty"><span className="rd-ei"><Ic n="search" /></span><b>Look things up beside the page</b><p>Type a word or an address. Sites marked with an arrow (ChatGPT, Gemini, Claude) do not allow being shown inside other apps, so they open in their own window placed on the other half of the screen. On a phone, use split-screen to keep both in view.</p></div>}
       {url && <p className="rd-foot">Blank page? That site blocks embedding. Use the window button above.</p>}
     </div>

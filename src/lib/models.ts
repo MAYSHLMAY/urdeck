@@ -1,3 +1,4 @@
+import { fetchRetry } from './net';
 /* 3D models. Built-ins are files in /public/models; uploaded ones live in the shared database (owner-only writes). */
 import { sb } from './library';
 
@@ -32,7 +33,7 @@ export async function modelCode(id: string): Promise<string> {
   const hit = cache.get(id); if (hit) return hit;
   let code = '';
   if (BUILTIN.some(b => b.id === id)) {
-    const r = await fetch('/models/' + id + '.model.js');
+    const r = await fetchRetry('/models/' + id + '.model.js', {}, { ms: 20_000 });
     if (!r.ok) throw Error('models/' + id + '.model.js not found. Copy your model files into public/models/.');
     code = await r.text();
   } else {

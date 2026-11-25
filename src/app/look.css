@@ -393,3 +393,18 @@ dialog[open]{overscroll-behavior:contain}
 .occm.act.rev{animation:occopen .5s ease-out both}
 @keyframes occopen{from{background:var(--acc);border-color:#fff;color:#fff;box-shadow:none;transform:scale(1)}60%{transform:scale(1.04)}to{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.clz.on,.occm.act.rev{animation:none}}
+
+.safec{margin-top:10px}.sflist{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.sfrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:14px;background:var(--card)}
+.sfrow span{display:flex;flex-direction:column;min-width:0}.sfrow small{color:var(--mute);font-size:.78rem}
+
+/* "A new version is ready" */
+.upd{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:10px;max-width:min(460px,calc(100vw - 24px));padding:10px 10px 10px 16px;border-radius:20px;background:var(--card);color:var(--ink);border:1.5px solid color-mix(in srgb,var(--acc) 22%,var(--line));box-shadow:0 18px 40px -18px rgba(0,0,0,.4);animation:updin .35s var(--ease,ease) both}
+.upd span{display:flex;flex-direction:column;line-height:1.25;min-width:0;font-size:.92rem}.upd small{color:var(--mute);font-size:.78rem}
+.upd button{border:0;border-radius:14px;padding:10px 16px;font:inherit;font-weight:750;background:var(--acc);color:#fff;cursor:pointer;flex:none}
+.upd button:disabled{opacity:.6}
+.upd .upd-x{background:transparent;color:var(--mute);padding:10px 8px;font-weight:600}
+@keyframes updin{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+html[data-gate] .upd{display:none}
+.safec.crash{display:flex;gap:10px;align-items:flex-start;margin-top:12px;cursor:pointer}.safec.crash input{margin-top:4px;accent-color:var(--acc)}
+.safec.crash span{display:flex;flex-direction:column}.safec.crash small{color:var(--mute);font-size:.78rem}

@@ -275,3 +275,36 @@ A source is a small JSON manifest (`src/lib/adapters.ts`): request address with 
 - First run: the boot script sets `data-gate` so everything except the splash and the Welcome overlay is `visibility:hidden` until Welcome finishes (skip, guest or signed in). A 15 s failsafe lifts it only if Welcome never started.
 - `src/components/Skeleton.tsx`: Home, Study, card stage and list placeholders replace the "Loading…" text.
 - Security: nosniff, Referrer-Policy, X-Frame-Options SAMEORIGIN, Permissions-Policy and HSTS headers (non-export build); the public auth route no longer returns internal error text. Owner login was already throttled and uses HMAC tokens with timing-safe checks.
+
+## Data safety and tests
+- `src/lib/safety.ts` keeps automatic copies of the learner's data on the phone (IndexedDB `ud-safe-v1`): one per day (newest 4 kept), one right before a new build runs for the first time (newest 2), and one whenever a save would shrink the progress file by more than 60%. Settings > Your data > Safety copies restores one; restoring first saves the current data, so it can be undone. Nothing here deletes live data.
+- Saved data has a version (`ud-schema-v1`). `MIGRATIONS` in `safety.ts` is the ordered list of upgrades; a copy is taken before any of them runs.
+- Unreadable progress is set aside (`ud-quarantine-*`) and the person is told to restore a copy.
+- Tests: `npm test` (Vitest), `npm run test:tz` (runs in New York, Addis Ababa and Auckland time zones to catch day-boundary and daylight-saving bugs). They cover the scheduler (`srs.ts`) and the safety code, run on every push (`.github/workflows/test.yml`) and before the APK build.
+- Sync rules live in `src/lib/syncmerge.ts` (pure, tested in `sync.test.ts` with a simulated server and devices that have wrong clocks): the larger stamp wins, deletes are stamped, and a device that has seen a stamp always makes larger ones afterwards. Changes made offline are stamped when they are made, not when the phone reconnects.
+
+## Security notes
+- Secret keys (`SUPABASE_SERVICE_ROLE_KEY`, `OWNER_PASSWORD`, `AUTH_SECRET`) are used only in server code; a build with marker values was searched and none appeared in the client bundle.
+- Routes anyone can call (`/api/ai`, `/api/sync`, `/api/notes`) have a cap on request size and a per-visitor rate limit (`src/lib/server/limit.ts`); sync also caps how many different sync codes one connection can use per hour. Limits are generous because a whole classroom can share one network address. The counters are per server instance, so for a stronger limit also turn on Vercel's firewall rate limiting.
+- `/api/ai` only talks to two fixed addresses, validates the message list, and never stores the key.
+- Everything that writes shared content needs the owner password. Run `node scripts/rls-check.mjs` (with the public URL and anon key) to prove a stranger cannot write to any table.
+- Sims run in a sandbox without access to the app; the reader's web pane drops script access for pages from this same site.
+
+## Updates
+- A new release no longer swaps the app under the person. The service worker of a new build waits; open pages notice the new build (the worker, or `/api/health` reporting a different `build`) and show "A new version is ready. Reload / Later" (`UpdatePrompt.tsx`). Tapping Reload switches and reloads; progress is untouched. The prompt is hidden during live games and the first-run lock, and is not used in the Android app.
+- A page that already runs the newest build activates its own matching worker straight away, so the prompt does not come back after reloading.
+- The worker keeps one cache per build and deletes older ones on activate (it keeps `fr-state`, which holds the study reminder). It never caches `/api/*`.
+- Upgrade path was tested by building two versions, opening the old one, switching the server to the new one, and checking: prompt appears, Reload lands on the new build with progress intact and no error screen, and tapping around an old page without reloading still works.
+
+## Crash reports and speed
+- `POST /api/log` (rate limited, 8 KB cap, always answers 204) stores short technical notes in `app_errors` (run `supabase/app-errors.sql` once; until then they go to the Vercel log as `[app-error]`). `GET /api/log` with the owner password lists the latest. The app reports through `src/lib/report.ts`: at most 5 per page load, no repeats, offline noise ignored, and it can be switched off in Settings (stored as `ud-noreport`). The privacy page says so.
+- Speed with 12,000 cards on a 4x slowed CPU: rebuild the whole library about 70 ms, counts 11 ms, picking the next card 5 ms, saving progress about 16 ms (650 KB), search about 100 ms. Nothing needed optimizing.
+
+## Bad connections
+All network calls go through `src/lib/net.ts`: every call has a time limit, so a half-dead connection can no longer freeze sync (a stuck call used to block all later syncs until restart). Failed calls count as "offline" (not as an error), the offline pill follows what really happens on the network, and safe reads (3D models) retry. Changes made offline stay queued and are sent when the connection returns. Covered by `src/lib/__tests__/net.test.ts`.
+
+## First-time guide
+`src/components/Guide.tsx` + `src/app/guide.css`. A small card floats over the real app, points at the real button with a pulsing ring and moves on when the person actually does the step (Study, pick a type, answer, rate, Home, 3D lab). Starts after the first-run welcome; replay from Settings, "Show me around". Progress is kept in `ud-guide`. Each step is one entry in `STEPS` (where it applies, what to point at, how to know it is done).
+
+## Articles
+Interactive articles at `/articles`, shown in a sandbox, plus private "My articles" kept on the device. See `docs/reading.md`.

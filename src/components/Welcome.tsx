@@ -111,7 +111,7 @@ function Try({ done }: { done: () => void }) {
   const TABS = [['Home', 'Your streak, goal ring and what to review today.'], ['Study', 'Answer cards. Add, import or scan cards here too.'], ['Quiz', 'Host or join a live game with a code.'], ['3D lab', 'Models and simulations.']];
   if (fin) return (
     <div className="wl-pane">
-      <h2>That’s the whole loop <span aria-hidden>🔥</span></h2>
+      <h2>That’s the whole loop</h2>
       <p className="wl-sub">Tap each tab to see where things live.</p>
       <div className="wl-tabs">{TABS.map(([t], k) => <button key={t} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{t}</button>)}</div>
       <p className="wl-hint" aria-live="polite">{tab < 0 ? 'Tabs sit at the bottom of the screen.' : TABS[tab][1]}</p>
@@ -163,7 +163,7 @@ function Join({ finish }: { finish: () => void }) {
       <Card3D av={av} name={cleanName(name)} goal={g} mood={mood} />
       <div className="wl-pc-tools">
         <input className="wl-in" value={name} maxLength={20} aria-label="Your name" onChange={ev => { setName(ev.target.value); setMsg(''); setMood('happy'); }} onBlur={() => setMood('idle')} />
-        <button className="wl-btn" onClick={shuffle} aria-label="Shuffle name and look">🎲</button>
+        <button className="wl-btn" onClick={shuffle} aria-label="Shuffle name and look">Shuffle</button>
         <button className={'wl-btn' + (look ? ' pri' : '')} onClick={() => setLook(v => !v)}>Look</button>
       </div>
       {look && <div className="wl-look" data-noswipe><AvatarPicker value={av} onChange={v => { setAv(v); setMood('happy'); }} /></div>}
@@ -222,7 +222,7 @@ export function Welcome() {
   useEffect(() => { if (open && ph === 'splash') { const t = setTimeout(() => setPh('tour'), 2300); return () => clearTimeout(t); } }, [open, ph]);
   useEffect(() => { if (!open) return; const k = (e: KeyboardEvent) => { if (e.key === 'Escape') finish(); if (ph === 'tour' && e.key === 'ArrowRight') next(); if (ph === 'tour' && e.key === 'ArrowLeft') setI(v => Math.max(0, v - 1)); }; addEventListener('keydown', k); return () => removeEventListener('keydown', k); }); // eslint-disable-line react-hooks/exhaustive-deps
   if (!open) return null;
-  const finish = () => { markSeen(); gate(false); setOpen(false); };
+  const finish = () => { markSeen(); gate(false); setOpen(false); if (first) setTimeout(() => dispatchEvent(new Event('ud-guide')), 500); };
   const next = () => { if (i < TOUR.length - 1) setI(i + 1); else setPh('try'); };
   const down = (e: React.PointerEvent) => { sx.current = (e.target as HTMLElement).closest('[data-noswipe]') ? null : e.clientX; };
   const up = (e: React.PointerEvent) => { const s = sx.current; sx.current = null; if (s == null) return; const d = e.clientX - s; if (d < -50) next(); else if (d > 50) setI(v => Math.max(0, v - 1)); };

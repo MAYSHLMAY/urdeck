@@ -1,5 +1,6 @@
 /* Browser side of the owner login + API calls. */
 import { apiUrl } from './base';
+import { timedFetch } from './net';
 const K_TOKEN = 'fr-owner-token-v2';
 
 type Tok = { token: string; exp: number };
@@ -24,11 +25,11 @@ export class ApiError extends Error { constructor(m: string, public status: numb
 
 export async function api<T = any>(path: string, body?: unknown, method = 'POST'): Promise<T> {
   const t = read();
-  const r = await fetch(apiUrl(path), {
+  const r = await timedFetch(apiUrl(path), {
     method,
     headers: { 'content-type': 'application/json', ...(t ? { authorization: 'Bearer ' + t.token } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body)
-  });
+  }, 30_000);
   const j = await r.json().catch(() => ({}));
   if (r.status === 401) lock();
   if (!r.ok) throw new ApiError(j.error || 'Request failed (' + r.status + ')', r.status);

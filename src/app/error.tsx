@@ -1,10 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { recover } from '@/lib/recover';
+import { reportError } from '@/lib/report';
 /* If a screen ever fails, show what happened and a way back, instead of the generic "Application error". */
 export default function Err({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const [fix, setFix] = useState(false);
-  useEffect(() => { setFix(recover()); }, []);
+  useEffect(() => { reportError(error, 'screen'); setFix(recover()); }, []); // eslint-disable-line
   if (fix) return <main style={{ margin: '40vh auto', textAlign: 'center', fontFamily: 'system-ui,sans-serif', opacity: .7 }}>Updating…</main>;
   return (
     <main style={{ maxWidth: 520, margin: '12vh auto', padding: 20, fontFamily: 'system-ui,sans-serif' }}>

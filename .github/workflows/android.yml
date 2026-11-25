@@ -25,6 +25,10 @@ jobs:
       - name: Install packages
         run: npm ci
 
+      # The scheduler and the data-safety code are checked before anything is built. A failing check stops the APK.
+      - name: Run tests (several time zones)
+        run: npm run test:tz
+
       # The app's pages are bundled in the APK; its server routes (cards, sync, live quiz...) are called on your website.
       # Set these once in the repo: Settings -> Secrets and variables -> Actions -> Variables
       #   API_BASE                       your website, e.g. https://urdeck.vercel.app
