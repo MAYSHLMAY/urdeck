@@ -6,7 +6,7 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.NEXT_PUBLIC_
 if (!url || !key) { console.error('Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY first.'); process.exit(2); }
 const H = { apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json', Prefer: 'return=minimal' };
 const PUBLIC_READ = ['packs', 'cards', 'titles', 'folders', 'placements', 'categories', 'pdfs', 'category_pdfs', 'category_sections', 'quiz_pdf_mappings', 'models', 'model_categories', 'game_sessions', 'game_players'];
-const PRIVATE = ['sync_ops', 'sync_spaces', 'user_notes', 'profiles'];
+const PRIVATE = ['sync_ops', 'sync_spaces', 'user_notes', 'profiles', 'articles'];
 let bad = 0;
 const nil = '00000000-0000-0000-0000-000000000000';
 for (const t of [...PUBLIC_READ, ...PRIVATE]) {

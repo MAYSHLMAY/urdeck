@@ -307,4 +307,4 @@ All network calls go through `src/lib/net.ts`: every call has a time limit, so a
 `src/components/Guide.tsx` + `src/app/guide.css`. A small card floats over the real app, points at the real button with a pulsing ring and moves on when the person actually does the step (Study, pick a type, answer, rate, Home, 3D lab). Starts after the first-run welcome; replay from Settings, "Show me around". Progress is kept in `ud-guide`. Each step is one entry in `STEPS` (where it applies, what to point at, how to know it is done).
 
 ## Articles
-Interactive articles at `/articles`, shown in a sandbox, plus private "My articles" kept on the device. See `docs/reading.md`.
+Interactive articles at `/articles`: the owner publishes an .html page for everyone, and each person can add private ones on their device. See `docs/reading.md`. Run `supabase/articles.sql` once.

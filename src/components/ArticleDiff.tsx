@@ -7,8 +7,8 @@ type Show = 'add' | 'del' | 'mod' | 'code';
 const clip = (s: string, n = 260) => (s.length > n ? s.slice(0, n) + '…' : s);
 
 /** Shows what changed between the article already here and the file just chosen. The person decides what happens next. */
-export function ArticleDiff({ oldTitle, newTitle, ops, sum, newHtml, isPublic, byName, onReplace, onAddNew, onCancel }: {
-  oldTitle: string; newTitle: string; ops: Op[]; sum: Summary; newHtml: string; isPublic: boolean; byName: boolean;
+export function ArticleDiff({ oldTitle, newTitle, ops, sum, newHtml, isPublic, byName, ownerAction, addLabel, onReplace, onAddNew, onCancel }: {
+  oldTitle: string; newTitle: string; ops: Op[]; sum: Summary; newHtml: string; isPublic: boolean; byName: boolean; ownerAction?: { label: string; run: () => void }; addLabel?: string;
   onReplace: () => void; onAddNew: () => void; onCancel: () => void;
 }) {
   const [tab, setTab] = useState<'changes' | 'preview'>('changes');
@@ -59,7 +59,7 @@ export function ArticleDiff({ oldTitle, newTitle, ops, sum, newHtml, isPublic, b
       )}
       <footer className="ad-foot">
         {isPublic
-          ? <><p>This is a public article, so it cannot be replaced from here. You can keep your newer file as your own private copy.</p><div><button type="button" className="ad-go" onClick={onAddNew}>Save as my own copy</button><button type="button" onClick={onCancel}>Cancel</button></div></>
+          ? <><p>{ownerAction ? 'This replaces the published article for everyone.' : 'This is a public article, so it cannot be replaced from here. You can keep your newer file as your own private copy.'}</p><div>{ownerAction && <button type="button" className="ad-go" onClick={ownerAction.run}>{ownerAction.label}</button>}<button type="button" className={ownerAction ? '' : 'ad-go'} onClick={onAddNew}>{addLabel || 'Save as my own copy'}</button><button type="button" onClick={onCancel}>Cancel</button></div></>
           : <><p>Replacing keeps the old version. You can undo it later.</p><div><button type="button" className="ad-go" onClick={onReplace}>Replace the old one</button><button type="button" onClick={onAddNew}>Add as a new article</button><button type="button" onClick={onCancel}>Cancel</button></div></>}
       </footer>
     </div>

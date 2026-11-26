@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { myAll, myList, myPut, myDelete, myReplace, myUndo, MAX_BYTES } from '@/lib/articles/local';
 import { titleOf } from '@/lib/articles/frame';
 import { diff, kept, identical, looksLikeUpdate, type Op, type Summary } from '@/lib/articles/diff';
-import { fetchRetry } from '@/lib/net';
+import { pubHtml } from '@/lib/articles/public';
 import { ArticleDiff } from './ArticleDiff';
 import type { LocalMeta } from '@/lib/articles/types';
 
-type Pub = { slug: string; title: string; url: string };
+type Pub = { slug: string; title: string };
 type Pending = { html: string; title: string; target: { kind: 'mine' | 'public'; id: string; title: string }; ops: Op[]; sum: Summary; byName: boolean };
 const tick = () => new Promise<void>(r => setTimeout(r, 30));   // lets "Comparing..." paint before the heavy work
 
@@ -36,7 +36,7 @@ export function MyArticles({ pub = [] }: { pub?: Pub[] }) {
       await tick();
       const mine = await myAll();
       const cands: { kind: 'mine' | 'public'; id: string; title: string; html: string }[] = mine.filter(a => !forced || a.id === forced).map(a => ({ kind: 'mine', id: a.id, title: a.title, html: a.html }));
-      if (!forced) for (const p of pub) { try { const r = await fetchRetry(p.url, {}, { ms: 20_000, tries: 2 }); if (r.ok) cands.push({ kind: 'public', id: p.slug, title: p.title, html: await r.text() }); } catch { /* offline: compare with what is here */ } }
+      if (!forced) for (const p of pub) { const r = await pubHtml(p.slug); if (r) cands.push({ kind: 'public', id: p.slug, title: p.title, html: r.html }); }
       let best: Pending | null = null, bestKept = -1;
       for (const c of cands) {
         await tick(); const d = diff(c.html, html), k = kept(d.sum);

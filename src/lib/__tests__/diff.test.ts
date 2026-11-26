@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { diff, lines, kept, looksLikeUpdate, identical, chunks, words } from '../articles/diff';
-import { readFileSync } from 'fs';
 
 const page = (ps: string[], js = '') => `<title>T</title><body><h1>Head</h1>${ps.map(p => `<p>${p}</p>`).join('')}<script>${js}</script></body>`;
 const P = ['Voltage is the push that moves charge.', 'Current is the flow of charge in a wire.', 'Resistance opposes the flow of current.', 'Power is voltage times current.', 'A cycle is one full turn of the wave.'];
@@ -28,12 +27,6 @@ describe('article diff', () => {
     const c = chunks(diff(page(many), page(n)).ops); expect(c.some(x => x.type === 'fold')).toBe(true); expect(c.filter(x => x.type === 'op' && x.change)).toHaveLength(1);
   });
   it('word diff marks only what changed', () => { const w = words('a b c', 'a x c'); expect(w.filter(x => x.t !== 'same').map(x => x.t + ':' + x.s.trim())).toEqual(['del:b', 'add:x']); });
-  it('handles the real article against a lightly edited copy quickly', () => {
-    const h = readFileSync('public/articles-data/av01-ac-and-test-equipment/v1/index.html', 'utf8');
-    const edited = h.replace('Voltage, current, resistance, power', 'Voltage, current, resistance and power') + '<p>A brand new closing note for readers.</p>';
-    const t = Date.now(), r = diff(h, edited); expect(Date.now() - t).toBeLessThan(8000);
-    expect(r.sum.add).toBeGreaterThanOrEqual(1); expect(looksLikeUpdate(r.sum)).toBe(true); expect(kept(r.sum)).toBeGreaterThan(0.95);
-  });
 });
 describe('big pages', () => {
   it('spread-out edits across a large page stay correct and fast', () => {
