@@ -19,7 +19,7 @@ export function OpenArticle() {
   }, []);
   return (
     <main className="ar" style={{ padding: 24 }}>
-      {err ? <><p className="ar-note">{err}</p><Link href="/articles/" className="ar-back">Back to articles</Link></> : <p className="ar-note" role="status">Opening…</p>}
+      {err ? <><p className="ar-note">{err}</p><Link href="/articles" className="ar-back">Back to articles</Link></> : <p className="ar-note" role="status">Opening…</p>}
     </main>
   );
 }

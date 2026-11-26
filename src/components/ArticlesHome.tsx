@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { pubList, pubHtml, publish, type PubMeta } from '@/lib/articles/public';
+import { pubList, pubHtml, pubSync, publish, type PubMeta } from '@/lib/articles/public';
 import { isOwner } from '@/lib/api';
 import { titleOf } from '@/lib/articles/frame';
 import { slugOf, validSlug } from '@/lib/articles/meta';
@@ -18,7 +18,7 @@ export function ArticlesHome() {
   const [list, setList] = useState<PubMeta[] | null>(null), [owner, setOwner] = useState(false), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false);
   const [form, setForm] = useState<Draft | null>(null), [cmp, setCmp] = useState<{ d: Draft; slug: string; title: string; ops: Op[]; sum: Summary } | null>(null);
   const inp = useRef<HTMLInputElement>(null);
-  const load = () => pubList().then(setList);
+  const load = () => pubList().then(l => { setList(l); pubSync(l); });
   useEffect(() => { load(); setOwner(isOwner()); }, []);
 
   const choose = async (f: File | undefined) => {
@@ -52,10 +52,10 @@ export function ArticlesHome() {
     <ul className="ar-g">
       {(list || []).map(a => (
         <li key={a.slug}>
-          <Link href={'/articles/open/?slug=' + encodeURIComponent(a.slug)} className="ar-c" style={{ ['--h' as any]: hue(a.slug) }}>
+          <a href={'/articles/open?slug=' + encodeURIComponent(a.slug)} className="ar-c" style={{ ['--h' as any]: hue(a.slug) }}>
             <span className="ar-cov" aria-hidden="true"><b>{a.title.slice(0, 1)}</b></span>
             <span className="ar-t"><b>{a.title}</b>{a.summary && <span>{a.summary}</span>}<small>{a.reading_minutes} min read · Interactive{a.version > 1 ? ' · updated' : ''}</small></span>
-          </Link>
+          </a>
         </li>
       ))}
     </ul>

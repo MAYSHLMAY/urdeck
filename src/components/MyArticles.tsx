@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { myAll, myList, myPut, myDelete, myReplace, myUndo, MAX_BYTES } from '@/lib/articles/local';
 import { titleOf } from '@/lib/articles/frame';
 import { diff, kept, identical, looksLikeUpdate, type Op, type Summary } from '@/lib/articles/diff';
@@ -59,7 +58,7 @@ export function MyArticles({ pub = [] }: { pub?: Pub[] }) {
       {list && list.length > 0 && <ul className="ar-ml">
         {list.map(a => (
           <li key={a.id}>
-            <Link href={'/articles/open/?mine=' + encodeURIComponent(a.id)}><b>{a.title}{a.version > 1 && <i className="ar-ver">v{a.version}</i>}</b><small>{Math.max(1, Math.round(a.bytes / 1024))} KB · {a.updated ? 'updated ' + new Date(a.updated).toLocaleDateString() : 'added ' + new Date(a.added).toLocaleDateString()}</small></Link>
+            <a href={'/articles/open?mine=' + encodeURIComponent(a.id)}><b>{a.title}{a.version > 1 && <i className="ar-ver">v{a.version}</i>}</b><small>{Math.max(1, Math.round(a.bytes / 1024))} KB · {a.updated ? 'updated ' + new Date(a.updated).toLocaleDateString() : 'added ' + new Date(a.added).toLocaleDateString()}</small></a>
             <span className="ar-acts">
               <button type="button" disabled={busy} onClick={() => pick(a.id)}>Update from file</button>
               {a.hasPrev && <button type="button" onClick={async () => { await myUndo(a.id).catch(() => {}); done('Went back to the previous version.'); }}>Undo update</button>}

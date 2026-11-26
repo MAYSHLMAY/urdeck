@@ -20,7 +20,7 @@ export function titleOf(html: string, fallback: string): string {
 
 /** For opening an article as a normal full page (not in a frame): adds a small way back to the app. Everything else in the page is left as the author wrote it. */
 const BACK = "<style>#ud-back{position:fixed;left:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:2147483647;font:700 12px/1 system-ui,sans-serif;color:#fff;background:rgba(20,24,40,.78);border:0;border-radius:99px;padding:10px 14px;cursor:pointer;opacity:.7}#ud-back:hover,#ud-back:focus{opacity:1}</style>"
-  + "<button id=\"ud-back\" type=\"button\" aria-label=\"Back to UrDeck\" onclick=\"location.href='/articles/'\">Back</button>"
+  + "<button id=\"ud-back\" type=\"button\" aria-label=\"Back to UrDeck\" onclick=\"location.href='/articles'\">Back</button>"
   + "<script>addEventListener('popstate',function(){location.reload()})</script>";
 export function standalone(html: string): string {
   const i = html.toLowerCase().lastIndexOf('</body>');

@@ -5,7 +5,7 @@ const V = 'fr-shell-' + (new URL(self.location.href).searchParams.get('v') || 'x
 self.addEventListener('install', e => {
   // First install: nothing is running yet, so start at once. An update waits until the person taps "Reload" (see UpdatePrompt), so a page is never swapped under their hands.
   if (!self.registration.active) self.skipWaiting();
-  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/read', '/articles', '/play', '/exam', '/duel', '/leeches', '/icon-192.png', '/manifest.webmanifest'].map(u => c.add(u).catch(() => {})))));
+  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/read', '/articles', '/articles/open', '/play', '/exam', '/duel', '/leeches', '/icon-192.png', '/manifest.webmanifest'].map(u => c.add(u).catch(() => {})))));
 });
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
@@ -40,7 +40,7 @@ self.addEventListener('fetch', e => {
       try {
         const r = await Promise.race([fetch(req), new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 3000))]);
         if (r.ok) c.put(req, r.clone()); return r;
-      } catch (err) { return (await c.match(req)) || (await c.match('/')) || fetch(req); }
+      } catch (err) { return (await c.match(req)) || (await c.match(req, { ignoreSearch: true })) || (await c.match('/')) || fetch(req); }
     })());
     return;
   }

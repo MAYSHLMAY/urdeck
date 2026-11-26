@@ -1,6 +1,6 @@
 # Articles (Read area)
 
-- **Where:** `/articles` (list), `/articles/open/?slug=...` (a published article), `/articles/open/?mine=...` (private, this device only). `/read` is still the PDF reader.
+- **Where:** `/articles` (list), `/articles/open?slug=...` (a published article), `/articles/open?mine=...` (private, this device only). `/read` is still the PDF reader.
 - **Published articles:** the owner picks an .html file on the Articles page (shown only when unlocked as owner). Everyone can then open it and use it. No login is needed to read. Stored in the `articles` table (run `supabase/articles.sql` once); read and written only through `/api/articles`.
 - **Replacing:** publishing a file that is mostly the same as a published article (even with another file name) shows what changed and offers "Replace for everyone" (same address, version goes up) or "Publish as a new article instead".
 - **Opening:** an article opens as a normal full page (no frame), so its tabs, buttons, saved settings and links to the app work. A small Back button is added. Because it is a normal page it has full access to the app on that device, so only the owner publishes, and private files should be ones the person trusts. The frame (`ArticleFrame`, sandboxed with a network-blocking policy) is still used for the "Preview new file" tab in the compare screen.
@@ -13,3 +13,8 @@
 - Then you choose: **Replace the old one** (kept as a previous version, last 3 kept, **Undo update** on the row), **Add as a new article**, or Cancel.
 - An identical file is recognised and nothing is changed. "Update from file" on a row compares against that article only, even if little matches.
 - A matching published article offers "Save as my own copy" to everyone; only the owner can replace it for everyone.
+
+## Offline
+- Published articles are saved on the device (IndexedDB `ud-articles-v1`, store `p`) in the background whenever the list loads online, and refreshed when a newer version exists. Opening one reads the saved copy first, so it works with no connection. Private articles are always on the device.
+- Article links are plain links to `/articles/open?...` (no trailing slash: a redirect there breaks offline page loads). The service worker serves the opener page from its saved copy for any query.
+- `src/lib/recover.ts` never clears saved copies or reloads when offline, or when the server does not answer (it used to, which wiped the offline copies exactly when they were needed).
