@@ -52,7 +52,7 @@ export function ArticlesHome() {
     <ul className="ar-g">
       {(list || []).map(a => (
         <li key={a.slug}>
-          <Link href={'/articles/view/?slug=' + encodeURIComponent(a.slug)} className="ar-c" style={{ ['--h' as any]: hue(a.slug) }}>
+          <Link href={'/articles/open/?slug=' + encodeURIComponent(a.slug)} className="ar-c" style={{ ['--h' as any]: hue(a.slug) }}>
             <span className="ar-cov" aria-hidden="true"><b>{a.title.slice(0, 1)}</b></span>
             <span className="ar-t"><b>{a.title}</b>{a.summary && <span>{a.summary}</span>}<small>{a.reading_minutes} min read · Interactive{a.version > 1 ? ' · updated' : ''}</small></span>
           </Link>

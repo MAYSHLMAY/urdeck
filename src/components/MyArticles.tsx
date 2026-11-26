@@ -52,14 +52,14 @@ export function MyArticles({ pub = [] }: { pub?: Pub[] }) {
   return (
     <section className="ar-mine" aria-labelledby="ar-mine-h">
       <h2 id="ar-mine-h">My articles</h2>
-      <p className="ar-note">Add a page of your own to read here. Only you can see it. It is saved on this device and is never uploaded. If the file is mostly the same as one you already have, even with a different name, you will see what changed and can replace it.</p>
+      <p className="ar-note">Add a page of your own to read here. Only you can see it. It is saved on this device and is never uploaded. It opens as a normal page of the app, so add only files you trust. If the file is mostly the same as one you already have, even with a different name, you will see what changed and can replace it.</p>
       <input ref={inp} type="file" accept=".html,.htm,.txt,text/html,text/plain" hidden onChange={e => { add(e.target.files?.[0]); e.target.value = ''; }} />
       <button type="button" className="ar-add" disabled={busy} onClick={() => pick(null)}>{busy ? 'Comparing…' : 'Add an article from a file'}</button>
       {msg && <p className="ar-msg" role="status">{msg}</p>}
       {list && list.length > 0 && <ul className="ar-ml">
         {list.map(a => (
           <li key={a.id}>
-            <Link href={'/articles/mine/?id=' + encodeURIComponent(a.id)}><b>{a.title}{a.version > 1 && <i className="ar-ver">v{a.version}</i>}</b><small>{Math.max(1, Math.round(a.bytes / 1024))} KB · {a.updated ? 'updated ' + new Date(a.updated).toLocaleDateString() : 'added ' + new Date(a.added).toLocaleDateString()}</small></Link>
+            <Link href={'/articles/open/?mine=' + encodeURIComponent(a.id)}><b>{a.title}{a.version > 1 && <i className="ar-ver">v{a.version}</i>}</b><small>{Math.max(1, Math.round(a.bytes / 1024))} KB · {a.updated ? 'updated ' + new Date(a.updated).toLocaleDateString() : 'added ' + new Date(a.added).toLocaleDateString()}</small></Link>
             <span className="ar-acts">
               <button type="button" disabled={busy} onClick={() => pick(a.id)}>Update from file</button>
               {a.hasPrev && <button type="button" onClick={async () => { await myUndo(a.id).catch(() => {}); done('Went back to the previous version.'); }}>Undo update</button>}
