@@ -13,7 +13,8 @@ const run = async <T,>(mode: IDBTransactionMode, f: (s: IDBObjectStore) => IDBRe
   return new Promise<T>((res, rej) => { const t = db.transaction(store, mode), q = f(t.objectStore(store)); t.oncomplete = () => { db.close(); res(q.result); }; t.onerror = t.onabort = () => { db.close(); rej(t.error); }; });
 };
 export const myAll = (): Promise<LocalArticle[]> => run<LocalArticle[]>('readonly', s => s.getAll());
-export const myList = async (): Promise<LocalMeta[]> => (await myAll()).map(a => ({ id: a.id, title: a.title, added: a.added, bytes: a.bytes, version: a.version || 1, updated: a.updated, hasPrev: !!a.prev?.length })).sort((x, y) => (y.updated || y.added) - (x.updated || x.added));
+export const toMeta = (all: LocalArticle[]): LocalMeta[] => all.map(a => ({ id: a.id, title: a.title, added: a.added, bytes: a.bytes, version: a.version || 1, updated: a.updated, hasPrev: !!a.prev?.length })).sort((x, y) => (y.updated || y.added) - (x.updated || x.added));
+export const myList = async (): Promise<LocalMeta[]> => toMeta(await myAll());
 export const myGet = (id: string) => run<LocalArticle | undefined>('readonly', s => s.get(id));
 export const myPut = (a: LocalArticle) => run('readwrite', s => s.put(a));
 export const myDelete = (id: string) => run('readwrite', s => s.delete(id));
@@ -36,3 +37,4 @@ export type SavedPub = { slug: string; version: number; title: string; summary: 
 export const pubSavedGet = (slug: string) => run<SavedPub | undefined>('readonly', s => s.get(slug), PS);
 export const pubSavedPut = (a: SavedPub) => run('readwrite', s => s.put(a), PS);
 export const pubSavedAll = () => run<SavedPub[]>('readonly', s => s.getAll(), PS);
+export const pubSavedDelete = (slug: string) => run('readwrite', s => s.delete(slug), PS);

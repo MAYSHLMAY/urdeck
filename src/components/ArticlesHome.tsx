@@ -1,12 +1,17 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { pubList, pubHtml, pubSync, publish, type PubMeta } from '@/lib/articles/public';
+import { pubSavedAll } from '@/lib/articles/local';
+import { externalRefs, summary } from '@/lib/articles/offline';
+import { OfflineCheck } from './OfflineCheck';
+import { pubList, pubHtml, pubHtmlFresh, pubSaveEdit, pubDelete, pubSync, publish, type PubMeta } from '@/lib/articles/public';
 import { isOwner } from '@/lib/api';
 import { titleOf } from '@/lib/articles/frame';
 import { slugOf, validSlug } from '@/lib/articles/meta';
 import { diff, kept, identical, looksLikeUpdate, type Op, type Summary } from '@/lib/articles/diff';
 import { MyArticles } from './MyArticles';
+import { ArticleEditor } from './ArticleEditor';
+import { askPassword } from './ui';
 import { ArticleDiff } from './ArticleDiff';
 
 const hue = (s: string) => [...s].reduce((n, c) => (n * 31 + c.charCodeAt(0)) % 360, 7);
@@ -17,8 +22,10 @@ type Draft = { html: string; title: string; slug: string; summary: string };
 export function ArticlesHome() {
   const [list, setList] = useState<PubMeta[] | null>(null), [owner, setOwner] = useState(false), [msg, setMsg] = useState(''), [busy, setBusy] = useState(false);
   const [form, setForm] = useState<Draft | null>(null), [cmp, setCmp] = useState<{ d: Draft; slug: string; title: string; ops: Op[]; sum: Summary } | null>(null);
-  const inp = useRef<HTMLInputElement>(null);
-  const load = () => pubList().then(l => { setList(l); pubSync(l); });
+  const [saved, setSaved] = useState<Record<string, { v: number; breaks: number; missing: number }>>({});
+  const inp = useRef<HTMLInputElement>(null), [ed, setEd] = useState<{ slug: string; title: string; summary: string; html: string } | null>(null);
+  const refreshSaved = () => pubSavedAll().then(all => { const m: Record<string, { v: number; breaks: number; missing: number }> = {}; for (const a of all) { const x = summary(externalRefs(a.html)); m[a.slug] = { v: a.version, breaks: x.breaks, missing: x.missing }; } setSaved(m); }).catch(() => {});
+  const load = () => { refreshSaved(); return pubList().then(async l => { setList(l); await pubSync(l); refreshSaved(); }); };
   useEffect(() => { load(); setOwner(isOwner()); }, []);
 
   const choose = async (f: File | undefined) => {
@@ -45,6 +52,11 @@ export function ArticlesHome() {
     try { const r = await publish({ slug: d.slug, title: d.title, summary: d.summary, html: d.html }); setForm(null); setCmp(null); setMsg(r.version > 1 ? 'Replaced for everyone (version ' + r.version + ').' : 'Published. Everyone can open it now.'); load(); }
     catch (e: any) { setMsg(e?.message || 'Could not publish.'); } finally { setBusy(false); }
   };
+  const edit = async (a: PubMeta) => { setMsg('Opening the editor\u2026'); const r = await pubHtmlFresh(a.slug); setMsg(''); if (!r) { setMsg('Could not load that article. Check your connection.'); return; } setEd({ slug: a.slug, title: a.title, summary: a.summary, html: r.html }); };
+  const del = async (a: PubMeta) => {
+    const pw = await askPassword('Delete \u201C' + a.title + '\u201D?', 'It is removed for everyone and cannot be undone. Enter the owner password.'); if (!pw) return;
+    try { await pubDelete(a.slug, pw); setMsg('Deleted.'); load(); } catch (e: any) { setMsg(e?.message || 'Could not delete.'); }
+  };
   const exists = !!form && !!list?.some(p => p.slug === form.slug);
   return (<>
     <h2 className="ar-sec">Published</h2>
@@ -54,8 +66,10 @@ export function ArticlesHome() {
         <li key={a.slug}>
           <a href={'/articles/open?slug=' + encodeURIComponent(a.slug)} className="ar-c" style={{ ['--h' as any]: hue(a.slug) }}>
             <span className="ar-cov" aria-hidden="true"><b>{a.title.slice(0, 1)}</b></span>
-            <span className="ar-t"><b>{a.title}</b>{a.summary && <span>{a.summary}</span>}<small>{a.reading_minutes} min read · Interactive{a.version > 1 ? ' · updated' : ''}</small></span>
+            <span className="ar-t"><b>{a.title}</b>{a.summary && <span>{a.summary}</span>}<small>{a.reading_minutes} min read · Interactive{a.version > 1 ? ' · updated' : ''}</small>
+              {(() => { const k = saved[a.slug]; if (!k || k.v < a.version) return <small className="ar-st">Not saved on this phone yet</small>; if (k.breaks) return <small className="ar-st warn">Saved, but {k.breaks} part{k.breaks === 1 ? ' needs' : 's need'} internet</small>; if (k.missing) return <small className="ar-st warn">Saved, some pictures or fonts need internet</small>; return <small className="ar-st ok">Saved on this phone, works offline</small>; })()}</span>
           </a>
+          {owner && <div className="ar-own"><button type="button" onClick={() => edit(a)}>Edit</button><button type="button" className="dz" onClick={() => del(a)}>Delete</button></div>}
         </li>
       ))}
     </ul>
@@ -67,12 +81,15 @@ export function ArticlesHome() {
       {msg && <p className="ar-msg" role="status">{msg}</p>}
     </section>}
     {!owner && msg && <p className="ar-msg" role="status">{msg}</p>}
+    {ed && <ArticleEditor title={ed.title} html={ed.html} saveLabel="Save for everyone" note="Saving replaces the published article for everyone." onClose={() => setEd(null)}
+      onSave={async h => { const r = await pubSaveEdit(ed.slug, titleOf(h, ed.title), ed.summary, h); setEd(null); setMsg('Saved for everyone (version ' + r.version + ').'); load(); }} />}
     {form && <div className="ad" role="dialog" aria-modal="true" aria-label="Publish article">
       <header className="ad-top"><div><b>Publish a new article</b><small>Everyone will be able to open it.</small></div><button type="button" className="ad-x" onClick={() => setForm(null)}>Close</button></header>
       <div className="ar-form">
         <label>Title<input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} maxLength={160} /></label>
         <label>Address<input value={form.slug} onChange={e => setForm({ ...form, slug: slugOf(e.target.value) })} maxLength={60} /></label>
         {exists && <p className="ar-note">This address already exists. Publishing will replace that article.</p>}
+        <OfflineCheck html={form.html} />
         <label>Short description (optional)<textarea value={form.summary} onChange={e => setForm({ ...form, summary: e.target.value })} maxLength={600} rows={3} /></label>
       </div>
       <footer className="ad-foot"><div><button type="button" className="ad-go" disabled={busy || !form.title.trim()} onClick={() => go(form)}>{exists ? 'Replace for everyone' : 'Publish'}</button><button type="button" onClick={() => setForm(null)}>Cancel</button></div></footer>

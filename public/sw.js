@@ -5,7 +5,7 @@ const V = 'fr-shell-' + (new URL(self.location.href).searchParams.get('v') || 'x
 self.addEventListener('install', e => {
   // First install: nothing is running yet, so start at once. An update waits until the person taps "Reload" (see UpdatePrompt), so a page is never swapped under their hands.
   if (!self.registration.active) self.skipWaiting();
-  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/read', '/articles', '/articles/open', '/play', '/exam', '/duel', '/leeches', '/icon-192.png', '/manifest.webmanifest'].map(u => c.add(u).catch(() => {})))));
+  e.waitUntil(caches.open(V).then(c => Promise.all(['/', '/study', '/lab', '/read', '/articles', '/articles/open', '/play', '/exam', '/duel', '/leeches', '/icon-192.png', '/manifest.webmanifest', '/fonts/articles/inter-latin-400-normal.woff2','/fonts/articles/inter-latin-500-normal.woff2','/fonts/articles/inter-latin-600-normal.woff2','/fonts/articles/inter-latin-700-normal.woff2','/fonts/articles/jetbrains-mono-latin-400-normal.woff2','/fonts/articles/jetbrains-mono-latin-500-normal.woff2','/fonts/articles/jetbrains-mono-latin-600-normal.woff2','/fonts/articles/jetbrains-mono-latin-700-normal.woff2','/fonts/articles/space-grotesk-latin-400-normal.woff2','/fonts/articles/space-grotesk-latin-500-normal.woff2','/fonts/articles/space-grotesk-latin-600-normal.woff2','/fonts/articles/space-grotesk-latin-700-normal.woff2','/fonts/articles/fonts.css'].map(u => c.add(u).catch(() => {})))));
 });
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {

@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { myAll, myList, myPut, myDelete, myReplace, myUndo, MAX_BYTES } from '@/lib/articles/local';
+import { myAll, myGet, toMeta, myPut, myDelete, myReplace, myUndo, MAX_BYTES } from '@/lib/articles/local';
 import { titleOf } from '@/lib/articles/frame';
 import { diff, kept, identical, looksLikeUpdate, type Op, type Summary } from '@/lib/articles/diff';
+import { externalRefs, summary } from '@/lib/articles/offline';
 import { pubHtml } from '@/lib/articles/public';
 import { ArticleDiff } from './ArticleDiff';
+import { ArticleEditor } from './ArticleEditor';
 import type { LocalMeta } from '@/lib/articles/types';
 
 type Pub = { slug: string; title: string };
@@ -14,9 +16,10 @@ const tick = () => new Promise<void>(r => setTimeout(r, 30));   // lets "Compari
 /** Pages the person adds for themselves. Stored only on this device, never uploaded.
  *  Adding a file that is mostly the same as one already here is treated as an update: the changes are shown and the person chooses. */
 export function MyArticles({ pub = [] }: { pub?: Pub[] }) {
-  const [list, setList] = useState<LocalMeta[] | null>(null), [msg, setMsg] = useState(''), [sure, setSure] = useState(''), [busy, setBusy] = useState(false), [pend, setPend] = useState<Pending | null>(null);
+  const [list, setList] = useState<LocalMeta[] | null>(null), [msg, setMsg] = useState(''), [sure, setSure] = useState(''), [busy, setBusy] = useState(false), [pend, setPend] = useState<Pending | null>(null), [ed, setEd] = useState<{ id: string; title: string; html: string } | null>(null);
   const inp = useRef<HTMLInputElement>(null), target = useRef<string | null>(null);
-  const load = () => myList().then(setList).catch(() => setList([]));
+  const [ext, setExt] = useState<Record<string, { breaks: number; missing: number }>>({});
+  const load = () => myAll().then(all => { setList(toMeta(all)); const m: Record<string, { breaks: number; missing: number }> = {}; for (const a of all) { const x = summary(externalRefs(a.html)); m[a.id] = { breaks: x.breaks, missing: x.missing }; } setExt(m); }).catch(() => setList([]));
   useEffect(() => { load(); }, []);
 
   const pick = (forId: string | null) => { target.current = forId; inp.current?.click(); };
@@ -43,7 +46,7 @@ export function MyArticles({ pub = [] }: { pub?: Pub[] }) {
         if (k > bestKept && (forced || looksLikeUpdate(d.sum))) { bestKept = k; best = { html, title, target: { kind: c.kind, id: c.id, title: c.title }, ops: d.ops, sum: d.sum, byName: !!forced }; }
       }
       if (best) { setPend(best); return; }
-      await addNew(html, title); setMsg('Added as a new article. It stays on this device.'); load();
+      await addNew(html, title); { const x = summary(externalRefs(html)); setMsg('Added as a new article. It stays on this device.' + (x.breaks ? ' Heads up: ' + x.breaks + ' part' + (x.breaks === 1 ? '' : 's') + (x.breaks === 1 ? ' of it needs' : ' of it need') + ' internet and will not work offline.' : x.missing ? ' Some pictures or fonts need internet.' : ' It works offline.')); } load();
     } catch { setMsg('Could not save it on this device. Free some space and try again.'); }
     finally { setBusy(false); }
   };
@@ -58,8 +61,9 @@ export function MyArticles({ pub = [] }: { pub?: Pub[] }) {
       {list && list.length > 0 && <ul className="ar-ml">
         {list.map(a => (
           <li key={a.id}>
-            <a href={'/articles/open?mine=' + encodeURIComponent(a.id)}><b>{a.title}{a.version > 1 && <i className="ar-ver">v{a.version}</i>}</b><small>{Math.max(1, Math.round(a.bytes / 1024))} KB · {a.updated ? 'updated ' + new Date(a.updated).toLocaleDateString() : 'added ' + new Date(a.added).toLocaleDateString()}</small></a>
+            <a href={'/articles/open?mine=' + encodeURIComponent(a.id)}><b>{a.title}{a.version > 1 && <i className="ar-ver">v{a.version}</i>}</b><small>{Math.max(1, Math.round(a.bytes / 1024))} KB · {a.updated ? 'updated ' + new Date(a.updated).toLocaleDateString() : 'added ' + new Date(a.added).toLocaleDateString()}</small>{ext[a.id] && (ext[a.id].breaks ? <small className="ar-st warn">{ext[a.id].breaks} part{ext[a.id].breaks === 1 ? ' needs' : 's need'} internet</small> : ext[a.id].missing ? <small className="ar-st warn">Some pictures or fonts need internet</small> : <small className="ar-st ok">Works offline</small>)}</a>
             <span className="ar-acts">
+              <button type="button" onClick={async () => { const x = await myGet(a.id).catch(() => undefined); if (x) setEd({ id: x.id, title: x.title, html: x.html }); }}>Edit</button>
               <button type="button" disabled={busy} onClick={() => pick(a.id)}>Update from file</button>
               {a.hasPrev && <button type="button" onClick={async () => { await myUndo(a.id).catch(() => {}); done('Went back to the previous version.'); }}>Undo update</button>}
               <button type="button" className={sure === a.id ? 'sure' : ''} onClick={async () => { if (sure !== a.id) { setSure(a.id); setTimeout(() => setSure(s => (s === a.id ? '' : s)), 3000); return; } await myDelete(a.id).catch(() => {}); setSure(''); load(); }}>{sure === a.id ? 'Tap again to remove' : 'Remove'}</button>
@@ -67,6 +71,8 @@ export function MyArticles({ pub = [] }: { pub?: Pub[] }) {
           </li>
         ))}
       </ul>}
+      {ed && <ArticleEditor title={ed.title} html={ed.html} saveLabel="Save changes" note="The old version is kept. Tap Undo update to go back." onClose={() => setEd(null)}
+        onSave={async h => { await myReplace(ed.id, h, titleOf(h, ed.title)); setEd(null); done('Saved. The old version is kept.'); }} />}
       {pend && <ArticleDiff oldTitle={pend.target.title} newTitle={pend.title} ops={pend.ops} sum={pend.sum} newHtml={pend.html} isPublic={pend.target.kind === 'public'} byName={pend.byName}
         onCancel={() => setPend(null)}
         onAddNew={async () => { try { await addNew(pend.html, pend.title); done('Added as a new article.'); } catch { done('Could not save it on this device.'); } }}

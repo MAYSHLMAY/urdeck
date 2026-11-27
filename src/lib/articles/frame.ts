@@ -21,8 +21,23 @@ export function titleOf(html: string, fallback: string): string {
 /** For opening an article as a normal full page (not in a frame): adds a small way back to the app. Everything else in the page is left as the author wrote it. */
 const BACK = "<style>#ud-back{position:fixed;left:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:2147483647;font:700 12px/1 system-ui,sans-serif;color:#fff;background:rgba(20,24,40,.78);border:0;border-radius:99px;padding:10px 14px;cursor:pointer;opacity:.7}#ud-back:hover,#ud-back:focus{opacity:1}</style>"
   + "<button id=\"ud-back\" type=\"button\" aria-label=\"Back to UrDeck\" onclick=\"location.href='/articles'\">Back</button>"
-  + "<script>addEventListener('popstate',function(){location.reload()})</script>";
-export function standalone(html: string): string {
+  + "<script>addEventListener('popstate',function(){if(location.pathname.indexOf('/articles/open')!==0)location.reload()})</script>";
+
+/** Fonts kept inside the app (see public/fonts/articles). A page that asks Google Fonts for only these families gets the local copy, so it looks the same with no connection. Any other font is left alone. */
+const HOSTED = new Set(['inter', 'jetbrains mono', 'space grotesk']);
+export function localFonts(html: string): string {
+  const refs = html.match(/(?:<link[^>]+fonts\.googleapis\.com[^>]*>|@import\s+url\([^)]*fonts\.googleapis\.com[^)]*\)\s*;?)/gi);
+  if (!refs) return html;
+  const fams = [...refs.join(' ').matchAll(/family=([^:&"')\s;]+)/gi)].map(m => decodeURIComponent(m[1].replace(/\+/g, ' ')).toLowerCase());
+  if (!fams.length || !fams.every(f => HOSTED.has(f))) return html;
+  return '<link rel="stylesheet" href="/fonts/articles/fonts.css">' + html.replace(/<link[^>]+fonts\.(?:googleapis|gstatic)\.com[^>]*>/gi, '').replace(/@import\s+url\([^)]*fonts\.googleapis\.com[^)]*\)\s*;?/gi, '');
+}
+/** Each article gets its own private corner of localStorage (keys are prefixed), so two articles that both save "theme" never overwrite each other, and an article cannot read or change the app's own saved data. Runs before the article's own code. */
+const own = (id: string) => "<script>(function(){try{var P='ud-art:" + id.replace(/[^a-z0-9:_-]/gi, '') + ":',S=window.localStorage,keys=function(){var o=[];for(var i=0;i<S.length;i++){var k=S.key(i);if(k&&k.indexOf(P)===0)o.push(k.slice(P.length))}return o};"
+  + "var m={getItem:function(k){return S.getItem(P+k)},setItem:function(k,v){S.setItem(P+k,String(v))},removeItem:function(k){S.removeItem(P+k)},clear:function(){keys().forEach(function(k){S.removeItem(P+k)})},key:function(i){return keys()[i]===undefined?null:keys()[i]}};"
+  + "Object.defineProperty(m,'length',{get:function(){return keys().length}});Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return m}})}catch(e){}})();</script>";
+export function standalone(html: string, id = 'page'): string {
+  html = own(id) + localFonts(html);
   const i = html.toLowerCase().lastIndexOf('</body>');
   return i < 0 ? html + BACK : html.slice(0, i) + BACK + html.slice(i);
 }

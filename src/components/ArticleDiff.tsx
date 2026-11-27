@@ -2,6 +2,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { chunks, kept, type Op, type Summary } from '@/lib/articles/diff';
 import { ArticleFrame } from './ArticleFrame';
+import { OfflineCheck } from './OfflineCheck';
 
 type Show = 'add' | 'del' | 'mod' | 'code';
 const clip = (s: string, n = 260) => (s.length > n ? s.slice(0, n) + '…' : s);
@@ -58,6 +59,7 @@ export function ArticleDiff({ oldTitle, newTitle, ops, sum, newHtml, isPublic, b
         <div className="ad-prev"><ArticleFrame html={newHtml} title="New version preview" /></div>
       )}
       <footer className="ad-foot">
+        <OfflineCheck html={newHtml} />
         {isPublic
           ? <><p>{ownerAction ? 'This replaces the published article for everyone.' : 'This is a public article, so it cannot be replaced from here. You can keep your newer file as your own private copy.'}</p><div>{ownerAction && <button type="button" className="ad-go" onClick={ownerAction.run}>{ownerAction.label}</button>}<button type="button" className={ownerAction ? '' : 'ad-go'} onClick={onAddNew}>{addLabel || 'Save as my own copy'}</button><button type="button" onClick={onCancel}>Cancel</button></div></>
           : <><p>Replacing keeps the old version. You can undo it later.</p><div><button type="button" className="ad-go" onClick={onReplace}>Replace the old one</button><button type="button" onClick={onAddNew}>Add as a new article</button><button type="button" onClick={onCancel}>Cancel</button></div></>}

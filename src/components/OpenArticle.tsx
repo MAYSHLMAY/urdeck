@@ -14,7 +14,8 @@ export function OpenArticle() {
       let html: string | null = null;
       try { html = slug ? (await pubHtml(slug))?.html ?? null : mine ? (await myGet(mine))?.html ?? null : null; } catch { /* handled below */ }
       if (!html) { setErr(slug ? 'This article could not be loaded. Check your connection, or it may have been taken down.' : 'This article is not on this device any more.'); return; }
-      document.open(); document.write(standalone(html)); document.close();
+      try { navigator.storage?.persist?.(); } catch { /* ignore */ }   // ask the phone not to clear saved articles when space runs low
+      document.open(); document.write(standalone(html, slug ? 'p:' + slug : 'm:' + mine)); document.close();
     })();
   }, []);
   return (

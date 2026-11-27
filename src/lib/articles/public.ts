@@ -2,7 +2,7 @@
 import { apiUrl } from '../base';
 import { api } from '../api';
 import { timedFetch } from '../net';
-import { pubSavedGet, pubSavedPut } from './local';
+import { pubSavedGet, pubSavedPut, pubSavedDelete } from './local';
 
 export type PubMeta = { slug: string; title: string; summary: string; version: number; reading_minutes: number; published_at: string; updated_at: string };
 const K_LIST = 'ud-art-list';
@@ -41,3 +41,24 @@ export async function pubSync(list: PubMeta[]) {
   }
 }
 export const publish = (a: { slug: string; title: string; summary?: string; html: string }) => api<{ slug: string; version: number }>('/api/articles', { action: 'publish', ...a });
+
+/** The newest copy from the server (for editing); the saved copy only if the server cannot be reached. */
+export async function pubHtmlFresh(slug: string): Promise<{ html: string; meta: PubMeta } | null> {
+  try {
+    const r = await timedFetch(apiUrl('/api/articles?slug=' + encodeURIComponent(slug)), { cache: 'no-store' }, 20_000);
+    if (r.ok) return await r.json();
+  } catch { /* fall back to the saved copy */ }
+  return pubHtml(slug);
+}
+/** Save an edited page for everyone (same address, version goes up) and refresh the copy kept on this device. */
+export async function pubSaveEdit(slug: string, title: string, summary: string, html: string) {
+  const r = await publish({ slug, title, summary, html });
+  try { await pubSavedPut({ slug, version: r.version, title, summary, html, saved: Date.now() }); } catch { /* ignore */ }
+  return r;
+}
+/** Remove an article for everyone. Needs the owner password. */
+export async function pubDelete(slug: string, password: string) {
+  await api('/api/articles', { action: 'delete', slug, password });
+  try { await pubSavedDelete(slug); } catch { /* ignore */ }
+  try { const l = JSON.parse(localStorage.getItem(K_LIST) || '[]') as PubMeta[]; localStorage.setItem(K_LIST, JSON.stringify(l.filter(x => x.slug !== slug))); } catch { /* ignore */ }
+}

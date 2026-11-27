@@ -18,3 +18,17 @@
 - Published articles are saved on the device (IndexedDB `ud-articles-v1`, store `p`) in the background whenever the list loads online, and refreshed when a newer version exists. Opening one reads the saved copy first, so it works with no connection. Private articles are always on the device.
 - Article links are plain links to `/articles/open?...` (no trailing slash: a redirect there breaks offline page loads). The service worker serves the opener page from its saved copy for any query.
 - `src/lib/recover.ts` never clears saved copies or reloads when offline, or when the server does not answer (it used to, which wiped the offline copies exactly when they were needed).
+
+## Editing and deleting
+- **Edit:** every article has an Edit button (private ones on "My articles"; published ones for the owner). It opens the page's HTML with find and replace, and a Preview tab (safe frame). Nothing changes until Save. Saving a private article keeps the old version (Undo update). Saving a published one replaces it for everyone (version goes up).
+- **Delete:** private articles: Remove (tap twice). Published: owner only, Delete asks for the owner password and removes it for everyone, including the copy kept on this device.
+
+## Serving checklist (how each point of the hosting advice is handled)
+- **Own address, no frame:** an article opens at `/articles/open?slug=...` as a normal page (the opener replaces itself with the article). A server-side `/raw` route is not used because the Android build has no server.
+- **Saved settings:** each article gets its own private corner of localStorage (keys prefixed per article), so articles never overwrite each other and cannot read the app's own data. The app asks the phone to keep saved articles (`storage.persist`).
+- **Caching:** articles are kept on the device by version and opened from there. No HTTP caching rules are needed for them.
+- **Offline:** service worker (`public/sw.js`) and `manifest.webmanifest` exist. The article opener and the fonts are saved at install.
+- **Fonts:** Inter, JetBrains Mono and Space Grotesk (latin, 400 to 700) are hosted in `public/fonts/articles`. A page that asks Google Fonts for only these families is switched to the local copy automatically (`localFonts` in `src/lib/articles/frame.ts`). A page that uses any other font family keeps its own link.
+
+## Offline check
+`src/lib/articles/offline.ts` lists what a page loads from the internet (code, styles, data requests, embedded pages = will not work offline; fonts, pictures, audio, video = missing). Fonts the app hosts and plain links are not counted. Shown when publishing, comparing, editing (Preview tab) and adding a private file, and as a badge on every card ("Saved on this phone, works offline" / "Not saved yet" / "N parts need internet").
